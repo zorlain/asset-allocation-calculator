@@ -98,6 +98,42 @@ function assetStandaloneStats(ticker) {
   };
 }
 
+/* ---------- 자산 간 상관관계 ---------- */
+function correlation(a, b) {
+  const n = a.length;
+  if (n < 2) return 0;
+  const ma = mean(a);
+  const mb = mean(b);
+  let cov = 0;
+  let va = 0;
+  let vb = 0;
+  for (let i = 0; i < n; i++) {
+    const da = a[i] - ma;
+    const db = b[i] - mb;
+    cov += da * db;
+    va += da * da;
+    vb += db * db;
+  }
+  if (va === 0 || vb === 0) return 0;
+  return cov / Math.sqrt(va * vb);
+}
+
+function correlationMatrix(tickers) {
+  const matrix = {};
+  tickers.forEach((a) => {
+    matrix[a] = {};
+    tickers.forEach((b) => {
+      if (a === b) {
+        matrix[a][b] = 1;
+        return;
+      }
+      const { returnsByTicker } = alignReturns([a, b]);
+      matrix[a][b] = correlation(returnsByTicker[a], returnsByTicker[b]);
+    });
+  });
+  return matrix;
+}
+
 /* ---------- 위험(무) 이자율: 선택 구간과 겹치는 BIL 구간의 CAGR, 데이터 부족 시 2% 가정 ---------- */
 function riskFreeCagr(dates) {
   const bil = getAssetReturns("BIL");
@@ -110,22 +146,76 @@ function riskFreeCagr(dates) {
   return Math.pow(growth, 1 / years) - 1;
 }
 
-/* ---------- 포트폴리오 백테스트 (월 리밸런싱 가정) ----------
-   weights: { TICKER: 0~1 비중, 합 1 }, initialAmount: 시작 금액(만원 등 임의 단위) */
-function runBacktest(weights, initialAmount) {
+/* 월간 수익률을 달력 연도별로 복리 계산해 연도별 수익률을 구한다 (부분 연도 포함) */
+function annualReturnsFromMonthly(dates, monthlyReturns) {
+  const byYear = {};
+  dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    (byYear[y] = byYear[y] || []).push(monthlyReturns[i]);
+  });
+  const yearly = {};
+  Object.keys(byYear).forEach((y) => {
+    let g = 1;
+    byYear[y].forEach((r) => (g *= 1 + r));
+    yearly[y] = g - 1;
+  });
+  return yearly;
+}
+
+function downsideDeviation(monthlyReturns, mar = 0) {
+  if (monthlyReturns.length === 0) return 0;
+  const sqDevs = monthlyReturns.map((r) => (r < mar ? (r - mar) ** 2 : 0));
+  const avg = sqDevs.reduce((a, b) => a + b, 0) / monthlyReturns.length;
+  return Math.sqrt(avg) * Math.sqrt(12);
+}
+
+/* ---------- 포트폴리오 백테스트 ----------
+   weights: { TICKER: 0~1 비중, 합 1 }, initialAmount: 시작 금액(만원 등 임의 단위)
+   options: {
+     rebalanceMonths: 리밸런싱 주기(개월). 0이면 리밸런싱 없음(최초 매수 후 보유). 기본 1(매달)
+     feeAnnualPct: 연 운용 수수료(%, ETF 자체 보수 외 추가로 반영). 기본 0
+     startDate / endDate: "YYYY-MM" 형식, 백테스트 구간 제한. 기본 전체 구간
+   } */
+function runBacktest(weights, initialAmount, options = {}) {
+  const { rebalanceMonths = 1, feeAnnualPct = 0, startDate = null, endDate = null } = options;
   const tickers = Object.keys(weights).filter((t) => weights[t] > 0);
   if (tickers.length === 0) return null;
 
-  const { dates, returnsByTicker } = alignReturns(tickers);
+  let { dates, returnsByTicker } = alignReturns(tickers);
+  if (startDate || endDate) {
+    const keepIdx = [];
+    dates.forEach((d, i) => {
+      if (startDate && d < startDate) return;
+      if (endDate && d > endDate) return;
+      keepIdx.push(i);
+    });
+    dates = keepIdx.map((i) => dates[i]);
+    const filtered = {};
+    tickers.forEach((t) => (filtered[t] = keepIdx.map((i) => returnsByTicker[t][i])));
+    returnsByTicker = filtered;
+  }
   if (dates.length === 0) return null;
+
+  const monthlyFee = feeAnnualPct / 100 / 12;
+
+  const holdings = {};
+  tickers.forEach((t) => (holdings[t] = weights[t] * initialAmount));
 
   const values = [initialAmount];
   const monthlyReturns = [];
   for (let i = 0; i < dates.length; i++) {
-    let r = 0;
-    tickers.forEach((t) => (r += weights[t] * returnsByTicker[t][i]));
-    monthlyReturns.push(r);
-    values.push(values[values.length - 1] * (1 + r));
+    const before = tickers.reduce((sum, t) => sum + holdings[t], 0);
+    tickers.forEach((t) => {
+      holdings[t] = holdings[t] * (1 + returnsByTicker[t][i]) * (1 - monthlyFee);
+    });
+    const after = tickers.reduce((sum, t) => sum + holdings[t], 0);
+    monthlyReturns.push(after / before - 1);
+    values.push(after);
+
+    const monthIndex = i + 1;
+    if (rebalanceMonths > 0 && monthIndex % rebalanceMonths === 0) {
+      tickers.forEach((t) => (holdings[t] = weights[t] * after));
+    }
   }
 
   const months = dates.length;
@@ -144,6 +234,20 @@ function runBacktest(weights, initialAmount) {
   const rf = riskFreeCagr(dates);
   const sharpe = annVol > 0 ? (cagr - rf) / annVol : 0;
 
+  const downsideDev = downsideDeviation(monthlyReturns);
+  const sortino = downsideDev > 0 ? (cagr - rf) / downsideDev : 0;
+  const calmar = mdd < 0 ? cagr / Math.abs(mdd) : 0;
+  const winRate = monthlyReturns.filter((r) => r > 0).length / monthlyReturns.length;
+
+  const yearly = annualReturnsFromMonthly(dates, monthlyReturns);
+  const yearEntries = Object.entries(yearly);
+  let bestYear = null;
+  let worstYear = null;
+  yearEntries.forEach(([y, r]) => {
+    if (!bestYear || r > bestYear.return) bestYear = { year: y, return: r };
+    if (!worstYear || r < worstYear.return) worstYear = { year: y, return: r };
+  });
+
   return {
     dates,
     values,
@@ -151,10 +255,18 @@ function runBacktest(weights, initialAmount) {
     months,
     years,
     finalValue,
+    initialAmount,
     cagr,
     annVol,
     mdd,
     sharpe,
+    sortino,
+    calmar,
+    winRate,
+    bestYear,
+    worstYear,
+    rebalanceMonths,
+    feeAnnualPct,
     startDate: dates[0],
     endDate: dates[dates.length - 1],
   };

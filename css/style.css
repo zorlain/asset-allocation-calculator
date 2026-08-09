@@ -577,6 +577,122 @@ footer {
   font-size: 13px;
 }
 
+/* ---------- 나만의 포트폴리오 (localStorage 저장) ---------- */
+.saved-portfolios {
+  margin-bottom: 24px;
+}
+
+.saved-portfolios-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.saved-empty-hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 2px;
+}
+
+.saved-chip {
+  position: relative;
+  font-family: inherit;
+  padding-right: 30px;
+}
+
+.saved-chip-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: var(--card-elevated);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.saved-chip-delete:hover {
+  background: var(--negative);
+  color: #fff;
+}
+
+.save-portfolio-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.save-portfolio-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.save-portfolio-form input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.save-portfolio-btn {
+  flex: 0 0 auto;
+  border: none;
+  background: var(--card-elevated);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.save-portfolio-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.save-portfolio-msg {
+  min-height: 16px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------- select 입력 (리밸런싱 주기 / 백테스트 기간) ---------- */
+.select-input {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.select-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
 /* ---------- 자산 비중 입력 ---------- */
 .weight-list {
   display: grid;
@@ -683,6 +799,49 @@ footer {
   height: 260px;
 }
 
+/* ---------- 결과 상단: 파이차트 + 핵심 지표 ---------- */
+.result-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 4px;
+}
+
+.result-top .chart-wrap.pie-wrap {
+  flex: 0 0 42%;
+  height: 180px;
+  margin: 0;
+}
+
+.quick-stats {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-stat {
+  background: var(--card-elevated);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.quick-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.quick-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.quick-stat-value.positive { color: var(--positive); }
+.quick-stat-value.negative { color: var(--negative); }
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -745,6 +904,38 @@ footer {
 
 .asset-table td.positive { color: var(--positive); }
 .asset-table td.negative { color: var(--negative); }
+
+/* ---------- 자산 간 상관관계 표 ---------- */
+.corr-table {
+  border-collapse: collapse;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.corr-table th,
+.corr-table td {
+  padding: 7px 8px;
+  text-align: center;
+}
+
+.corr-table thead th {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.corr-table .corr-row-label {
+  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+  padding-right: 12px;
+}
+
+.corr-table td {
+  font-weight: 600;
+  color: var(--text);
+  border-radius: 6px;
+}
 
 /* ---------- 가이드 탭 ---------- */
 .guide-card h3 {
@@ -889,6 +1080,31 @@ footer {
   }
   .asset-table td {
     padding: 10px 6px;
+  }
+
+  .corr-table {
+    font-size: 10px;
+  }
+  .corr-table th,
+  .corr-table td {
+    padding: 5px 6px;
+  }
+
+  .result-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .result-top .chart-wrap.pie-wrap {
+    flex: none;
+    height: 180px;
+  }
+
+  .save-portfolio-form {
+    flex-direction: column;
+  }
+  .save-portfolio-btn {
+    padding: 12px;
   }
 
   footer {

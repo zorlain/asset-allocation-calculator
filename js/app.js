@@ -140,32 +140,42 @@ function setRowChecked(ticker, checked) {
   if (row) row.classList.toggle("inactive", !checked);
 }
 
-function applyPreset(key) {
-  const preset = PRESETS[key];
-  if (!preset) return;
+function clearActiveChips() {
+  document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+  document.querySelectorAll(".saved-chip").forEach((chip) => chip.classList.remove("active"));
+}
+
+function applyWeightsToInputs(weights) {
   document.querySelectorAll(".weight-input").forEach((inp) => {
     const t = inp.dataset.ticker;
-    const w = preset.weights[t] || 0;
+    const w = weights[t] || 0;
     inp.value = w > 0 ? String(+(w * 100).toFixed(2)) : "0";
     setRowChecked(t, w > 0);
   });
+  updateWeightTotal();
+}
+
+function applyPreset(key) {
+  const preset = PRESETS[key];
+  if (!preset) return;
+  applyWeightsToInputs(preset.weights);
+  clearActiveChips();
   document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => {
     chip.classList.toggle("active", chip.dataset.preset === key);
   });
-  updateWeightTotal();
 }
 
 function resetWeights() {
   document.querySelectorAll(".weight-input").forEach((inp) => (inp.value = "0"));
   document.querySelectorAll(".weight-check").forEach((cb) => setRowChecked(cb.dataset.ticker, false));
-  document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+  clearActiveChips();
   updateWeightTotal();
 }
 
 function initWeightInputs() {
   document.querySelectorAll(".weight-input").forEach((inp) => {
     inp.addEventListener("input", () => {
-      document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+      clearActiveChips();
       updateWeightTotal();
     });
   });
@@ -174,7 +184,7 @@ function initWeightInputs() {
     setRowChecked(cb.dataset.ticker, cb.checked);
     cb.addEventListener("change", () => {
       setRowChecked(cb.dataset.ticker, cb.checked);
-      document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+      clearActiveChips();
       updateWeightTotal();
     });
   });
@@ -186,6 +196,174 @@ function initWeightInputs() {
   const resetBtn = document.getElementById("preset-reset");
   if (resetBtn) resetBtn.addEventListener("click", resetWeights);
 }
+
+/* ---------- 나만의 포트폴리오 저장 (localStorage) ---------- */
+const SAVED_PORTFOLIOS_KEY = "aa-calc-saved-portfolios-v1";
+
+function loadSavedPortfolios() {
+  try {
+    const raw = localStorage.getItem(SAVED_PORTFOLIOS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedPortfolios(list) {
+  try {
+    localStorage.setItem(SAVED_PORTFOLIOS_KEY, JSON.stringify(list));
+  } catch {
+    /* localStorage 사용 불가 시 조용히 무시 */
+  }
+}
+
+function summarizeWeights(weights) {
+  return ASSET_ORDER.filter((t) => weights[t] > 0)
+    .map((t) => `${t} ${(weights[t] * 100).toFixed(0)}%`)
+    .join(" · ");
+}
+
+function renderSavedPortfolioChips() {
+  const listEl = document.getElementById("saved-portfolio-list");
+  if (!listEl) return;
+  const saved = loadSavedPortfolios();
+  if (saved.length === 0) {
+    listEl.innerHTML = `<span class="saved-empty-hint" id="saved-empty-hint">저장된 포트폴리오가 없습니다.</span>`;
+    return;
+  }
+  listEl.innerHTML = saved
+    .map(
+      (p) => `
+        <div class="preset-chip saved-chip" data-saved-id="${p.id}" role="button" tabindex="0">
+          <button type="button" class="saved-chip-delete" data-saved-id="${p.id}" aria-label="삭제">×</button>
+          <div class="preset-chip-label">${p.name}</div>
+          <div class="preset-chip-desc">${summarizeWeights(p.weights)}</div>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function saveCurrentPortfolio(name) {
+  const msgEl = document.getElementById("save-portfolio-msg");
+  const trimmed = (name || "").trim();
+  if (!trimmed) {
+    if (msgEl) msgEl.textContent = "포트폴리오 이름을 입력해주세요.";
+    return;
+  }
+  const total = weightSum();
+  if (Math.abs(total - 100) > 0.05) {
+    if (msgEl) msgEl.textContent = `체크한 자산의 비중 합이 100%일 때 저장할 수 있습니다. (현재 ${total.toFixed(1)}%)`;
+    return;
+  }
+  const weights = getWeightsFromInputs();
+  const list = loadSavedPortfolios();
+  list.push({ id: String(Date.now()), name: trimmed, weights });
+  persistSavedPortfolios(list);
+  renderSavedPortfolioChips();
+  if (msgEl) msgEl.textContent = `"${trimmed}" 저장했습니다.`;
+  const nameInput = document.getElementById("save-portfolio-name");
+  if (nameInput) nameInput.value = "";
+}
+
+function deleteSavedPortfolio(id) {
+  const list = loadSavedPortfolios().filter((p) => p.id !== id);
+  persistSavedPortfolios(list);
+  renderSavedPortfolioChips();
+}
+
+function applySavedPortfolio(id) {
+  const p = loadSavedPortfolios().find((x) => x.id === id);
+  if (!p) return;
+  applyWeightsToInputs(p.weights);
+  clearActiveChips();
+  document.querySelectorAll(".saved-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.savedId === id);
+  });
+}
+
+function initSavedPortfolios() {
+  renderSavedPortfolioChips();
+
+  const listEl = document.getElementById("saved-portfolio-list");
+  if (listEl) {
+    listEl.addEventListener("click", (e) => {
+      const delBtn = e.target.closest(".saved-chip-delete");
+      if (delBtn) {
+        e.stopPropagation();
+        deleteSavedPortfolio(delBtn.dataset.savedId);
+        return;
+      }
+      const chip = e.target.closest(".saved-chip");
+      if (chip) applySavedPortfolio(chip.dataset.savedId);
+    });
+    listEl.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const chip = e.target.closest(".saved-chip");
+      if (!chip) return;
+      e.preventDefault();
+      applySavedPortfolio(chip.dataset.savedId);
+    });
+  }
+
+  const saveBtn = document.getElementById("save-portfolio-btn");
+  const nameInput = document.getElementById("save-portfolio-name");
+  if (saveBtn && nameInput) {
+    saveBtn.addEventListener("click", () => saveCurrentPortfolio(nameInput.value));
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") saveCurrentPortfolio(nameInput.value);
+    });
+    nameInput.addEventListener("input", () => {
+      const msgEl = document.getElementById("save-portfolio-msg");
+      if (msgEl) msgEl.textContent = "";
+    });
+  }
+}
+
+/* ---------- 백테스트 설정 (수수료 / 리밸런싱 주기 / 기간) ---------- */
+function initBacktestSettings() {
+  bindThousandsInput("bt-amount");
+
+  let earliestYear = 9999;
+  ASSET_ORDER.forEach((t) => {
+    const y = Number(ASSET_DATA.assets[t].series[0].d.slice(0, 4));
+    if (y < earliestYear) earliestYear = y;
+  });
+  const latestYear = Number(ASSET_DATA.updatedAt.slice(0, 4));
+
+  const startSel = document.getElementById("bt-start-year");
+  const endSel = document.getElementById("bt-end-year");
+  if (startSel && endSel) {
+    let options = `<option value="">전체</option>`;
+    for (let y = latestYear; y >= earliestYear; y--) {
+      options += `<option value="${y}">${y}년</option>`;
+    }
+    startSel.innerHTML = options;
+    endSel.innerHTML = options;
+  }
+}
+
+function getBacktestOptions() {
+  const feeAnnualPct = toNumber(document.getElementById("bt-fee").value) || 0;
+  const rebalanceMonths = Number(document.getElementById("bt-rebalance").value);
+  const startYear = document.getElementById("bt-start-year").value;
+  const endYear = document.getElementById("bt-end-year").value;
+  return {
+    feeAnnualPct,
+    rebalanceMonths,
+    startDate: startYear ? `${startYear}-01` : null,
+    endDate: endYear ? `${endYear}-12` : null,
+  };
+}
+
+const REBALANCE_LABEL = {
+  0: "리밸런싱 없음(바이앤홀드)",
+  1: "매달 리밸런싱",
+  3: "분기 리밸런싱",
+  6: "반기 리밸런싱",
+  12: "매년 리밸런싱",
+};
 
 /* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
 let pieChart = null;
@@ -274,15 +452,42 @@ function renderLineChart(bt) {
 
 function renderResult(weights, bt) {
   const resultEl = document.getElementById("allocator-result");
+  const rebalanceLabel = REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
+  const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
+  const bestYearText = bt.bestYear ? `${bt.bestYear.year}년 ${formatSignedPct(bt.bestYear.return, 1)}` : "-";
+  const worstYearText = bt.worstYear ? `${bt.worstYear.year}년 ${formatSignedPct(bt.worstYear.return, 1)}` : "-";
+
   resultEl.innerHTML = `
-    <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
+    <div class="result-top">
+      <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
+      <div class="quick-stats">
+        <div class="quick-stat">
+          <div class="quick-stat-label">연평균(CAGR)</div>
+          <div class="quick-stat-value ${bt.cagr >= 0 ? "positive" : "negative"}">${formatSignedPct(bt.cagr, 2)}</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-label">최대낙폭(MDD)</div>
+          <div class="quick-stat-value negative">${formatPct(bt.mdd, 1)}</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-label">연변동성</div>
+          <div class="quick-stat-value">${formatPct(bt.annVol, 2)}</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-label">샤프비율</div>
+          <div class="quick-stat-value">${bt.sharpe.toFixed(2)}</div>
+        </div>
+      </div>
+    </div>
     <div class="chart-legend" id="pie-legend"></div>
+
     <div class="result-hero">
       <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · 매달 리밸런싱 가정</div>
+      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · ${rebalanceLabel}${feeNote}</div>
     </div>
     <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
+
     <div class="result-grid">
       <div class="result-stat">
         <div class="result-stat-label">연평균 수익률 (CAGR)</div>
@@ -300,6 +505,30 @@ function renderResult(weights, bt) {
         <div class="result-stat-label">샤프비율</div>
         <div class="result-stat-value">${bt.sharpe.toFixed(2)}</div>
       </div>
+      <div class="result-stat">
+        <div class="result-stat-label">소르티노비율</div>
+        <div class="result-stat-value">${bt.sortino.toFixed(2)}</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-label">칼마비율</div>
+        <div class="result-stat-value">${bt.calmar.toFixed(2)}</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-label">월간 승률</div>
+        <div class="result-stat-value">${formatPct(bt.winRate, 1)}</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-label">데이터 개월 수</div>
+        <div class="result-stat-value">${bt.months}개월</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-label">최고의 해</div>
+        <div class="result-stat-value positive">${bestYearText}</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-label">최악의 해</div>
+        <div class="result-stat-value negative">${worstYearText}</div>
+      </div>
     </div>
   `;
   renderPieChart(weights);
@@ -307,7 +536,6 @@ function renderResult(weights, bt) {
 }
 
 function setupAllocator() {
-  bindThousandsInput("bt-amount");
   document.getElementById("allocator-calc-btn").addEventListener("click", () => {
     const resultEl = document.getElementById("allocator-result");
     const total = weightSum();
@@ -317,14 +545,14 @@ function setupAllocator() {
       return;
     }
     const weights = getWeightsFromInputs();
-    const amount = toNumber(document.getElementById("bt-amount").value) || 1000;
-    const bt = runBacktest(weights, amount);
+    const amount = toNumber(document.getElementById("bt-amount").value) || 10000;
+    const options = getBacktestOptions();
+    const bt = runBacktest(weights, amount, options);
     if (!bt) {
-      resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
+      resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합·기간의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
       lastResult = null;
       return;
     }
-    bt.initialAmount = amount;
     lastResult = { weights, bt };
     renderResult(weights, bt);
   });
@@ -361,16 +589,44 @@ function renderDashboard() {
   }).join("");
 }
 
+/* ---------- 자산 간 상관관계 표 ---------- */
+function corrColor(v) {
+  const t = Math.max(-1, Math.min(1, v));
+  if (t >= 0) return `rgba(216, 49, 79, ${(t * 0.35).toFixed(3)})`;
+  return `rgba(44, 158, 68, ${(-t * 0.35).toFixed(3)})`;
+}
+
+function renderCorrelationTable() {
+  const table = document.getElementById("corr-table");
+  if (!table) return;
+  const matrix = correlationMatrix(ASSET_ORDER);
+
+  const headerCells = ASSET_ORDER.map((t) => `<th title="${ASSET_DATA.assets[t].name}">${ASSET_ICON[t]}</th>`).join("");
+  const rows = ASSET_ORDER.map((a) => {
+    const cells = ASSET_ORDER.map((b) => {
+      const v = matrix[a][b];
+      const bg = a === b ? "transparent" : corrColor(v);
+      return `<td style="background:${bg}">${v.toFixed(2)}</td>`;
+    }).join("");
+    return `<tr><th class="corr-row-label" title="${ASSET_DATA.assets[a].name}">${ASSET_ICON[a]} ${a}</th>${cells}</tr>`;
+  }).join("");
+
+  table.innerHTML = `<thead><tr><th></th>${headerCells}</tr></thead><tbody>${rows}</tbody>`;
+}
+
 /* ---------- 초기화 ---------- */
 function init() {
   initThemeToggle();
   initMenu();
   initTabs();
   initInfoTooltips();
+  initBacktestSettings();
   initWeightInputs();
+  initSavedPortfolios();
   setupAllocator();
   applyPreset("6040");
   renderDashboard();
+  renderCorrelationTable();
 }
 
 document.addEventListener("DOMContentLoaded", init);
