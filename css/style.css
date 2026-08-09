@@ -693,23 +693,6 @@ footer {
   flex-shrink: 0;
 }
 
-/* ---------- 백테스트 요약 배지 ---------- */
-.weight-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 20px;
-}
-
-.weight-summary-badge {
-  background: var(--card-elevated);
-  border-radius: 9999px;
-  padding: 7px 13px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text);
-}
-
 /* ---------- 자산 현황 테이블 ---------- */
 .asset-table-wrap {
   overflow-x: auto;

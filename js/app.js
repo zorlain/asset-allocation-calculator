@@ -122,19 +122,6 @@ function updateWeightTotal() {
   bar.classList.toggle("bad", !ok);
 }
 
-function updateWeightSummary() {
-  const el = document.getElementById("backtest-weight-summary");
-  if (!el) return;
-  const weights = getWeightsFromInputs();
-  const badges = ASSET_ORDER.filter((t) => weights[t] > 0)
-    .map((t) => {
-      const pct = (weights[t] * 100).toFixed(1).replace(/\.0$/, "");
-      return `<span class="weight-summary-badge">${ASSET_ICON[t]} ${t} ${pct}%</span>`;
-    })
-    .join("");
-  el.innerHTML = badges || `<span class="weight-summary-badge">설정된 비중이 없습니다</span>`;
-}
-
 function applyPreset(key) {
   const preset = PRESETS[key];
   if (!preset) return;
@@ -147,14 +134,12 @@ function applyPreset(key) {
     chip.classList.toggle("active", chip.dataset.preset === key);
   });
   updateWeightTotal();
-  updateWeightSummary();
 }
 
 function resetWeights() {
   document.querySelectorAll(".weight-input").forEach((inp) => (inp.value = "0"));
   document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
   updateWeightTotal();
-  updateWeightSummary();
 }
 
 function initWeightInputs() {
@@ -162,7 +147,6 @@ function initWeightInputs() {
     inp.addEventListener("input", () => {
       document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
       updateWeightTotal();
-      updateWeightSummary();
     });
   });
 
@@ -174,9 +158,10 @@ function initWeightInputs() {
   if (resetBtn) resetBtn.addEventListener("click", resetWeights);
 }
 
-/* ---------- 탭 1: 배분 계산기 ---------- */
+/* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
 let pieChart = null;
-let lastAllocatorWeights = null;
+let lineChart = null;
+let lastResult = null; // { weights, bt }
 
 function renderPieChart(weights) {
   const canvas = document.getElementById("pie-canvas");
@@ -215,63 +200,6 @@ function renderPieChart(weights) {
       .join("");
   }
 }
-
-function renderAllocatorResult(weights, bt) {
-  const resultEl = document.getElementById("allocator-result");
-  resultEl.innerHTML = `
-    <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
-    <div class="chart-legend" id="pie-legend"></div>
-    <div class="result-hero">
-      <div class="result-hero-label">연평균 기대수익률 (CAGR)</div>
-      <div class="result-hero-value">${formatSignedPct(bt.cagr, 2)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} (${bt.years.toFixed(1)}년) 과거 데이터 기준</div>
-    </div>
-    <div class="result-grid">
-      <div class="result-stat">
-        <div class="result-stat-label">연변동성</div>
-        <div class="result-stat-value">${formatPct(bt.annVol, 2)}</div>
-      </div>
-      <div class="result-stat">
-        <div class="result-stat-label">샤프비율</div>
-        <div class="result-stat-value">${bt.sharpe.toFixed(2)}</div>
-      </div>
-      <div class="result-stat">
-        <div class="result-stat-label">최대낙폭 (MDD)</div>
-        <div class="result-stat-value negative">${formatPct(bt.mdd, 1)}</div>
-      </div>
-      <div class="result-stat">
-        <div class="result-stat-label">데이터 개월 수</div>
-        <div class="result-stat-value">${bt.months}개월</div>
-      </div>
-    </div>
-  `;
-  renderPieChart(weights);
-}
-
-function setupAllocator() {
-  document.getElementById("allocator-calc-btn").addEventListener("click", () => {
-    const resultEl = document.getElementById("allocator-result");
-    const total = weightSum();
-    if (Math.abs(total - 100) > 0.05) {
-      resultEl.innerHTML = `<p class="result-placeholder">비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)</p>`;
-      lastAllocatorWeights = null;
-      return;
-    }
-    const weights = getWeightsFromInputs();
-    const bt = runBacktest(weights, 10000);
-    if (!bt) {
-      resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
-      lastAllocatorWeights = null;
-      return;
-    }
-    lastAllocatorWeights = weights;
-    renderAllocatorResult(weights, bt);
-  });
-}
-
-/* ---------- 탭 2: 백테스트 ---------- */
-let lineChart = null;
-let lastBacktest = null;
 
 function renderLineChart(bt) {
   const canvas = document.getElementById("line-canvas");
@@ -315,13 +243,15 @@ function renderLineChart(bt) {
   });
 }
 
-function renderBacktestResult(bt, amount) {
-  const resultEl = document.getElementById("backtest-result");
+function renderResult(weights, bt) {
+  const resultEl = document.getElementById("allocator-result");
   resultEl.innerHTML = `
+    <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
+    <div class="chart-legend" id="pie-legend"></div>
     <div class="result-hero">
-      <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후)</div>
+      <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(amount)} · 매달 리밸런싱 가정</div>
+      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · 매달 리밸런싱 가정</div>
     </div>
     <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
     <div class="result-grid">
@@ -343,16 +273,18 @@ function renderBacktestResult(bt, amount) {
       </div>
     </div>
   `;
+  renderPieChart(weights);
   renderLineChart(bt);
 }
 
-function setupBacktest() {
+function setupAllocator() {
   bindThousandsInput("bt-amount");
-  document.getElementById("backtest-run-btn").addEventListener("click", () => {
-    const resultEl = document.getElementById("backtest-result");
+  document.getElementById("allocator-calc-btn").addEventListener("click", () => {
+    const resultEl = document.getElementById("allocator-result");
     const total = weightSum();
     if (Math.abs(total - 100) > 0.05) {
-      resultEl.innerHTML = `<p class="result-placeholder">배분 계산기 탭에서 비중 합계를 100%로 맞춰주세요. (현재 ${total.toFixed(1)}%)</p>`;
+      resultEl.innerHTML = `<p class="result-placeholder">비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)</p>`;
+      lastResult = null;
       return;
     }
     const weights = getWeightsFromInputs();
@@ -360,20 +292,23 @@ function setupBacktest() {
     const bt = runBacktest(weights, amount);
     if (!bt) {
       resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
+      lastResult = null;
       return;
     }
-    lastBacktest = { bt, amount };
-    renderBacktestResult(bt, amount);
+    bt.initialAmount = amount;
+    lastResult = { weights, bt };
+    renderResult(weights, bt);
   });
 }
 
 /* 테마 전환 시 이미 그려진 차트가 있으면 새 테마 색상으로 다시 그린다 */
 function refreshChartsForTheme() {
-  if (lastAllocatorWeights) renderPieChart(lastAllocatorWeights);
-  if (lastBacktest) renderLineChart(lastBacktest.bt);
+  if (!lastResult) return;
+  renderPieChart(lastResult.weights);
+  renderLineChart(lastResult.bt);
 }
 
-/* ---------- 탭 3: 자산 현황 ---------- */
+/* ---------- 탭 2: 자산 현황 ---------- */
 function renderDashboard() {
   const asOfEl = document.getElementById("dashboard-asof");
   if (asOfEl) asOfEl.textContent = `기준일: ${ASSET_DATA.updatedAt} 종가 기준 (실시간 시세 아님)`;
@@ -405,7 +340,6 @@ function init() {
   initInfoTooltips();
   initWeightInputs();
   setupAllocator();
-  setupBacktest();
   applyPreset("6040");
   renderDashboard();
 }

@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=1" />
+<link rel="stylesheet" href="css/style.css?v=2" />
 </head>
 <body>
 <div class="page">
@@ -60,13 +60,12 @@
   </header>
 
   <nav class="tabs" id="tabs">
-    <button class="tab-btn active" data-tab="allocator">📊 배분 계산기</button>
-    <button class="tab-btn" data-tab="backtest">🔁 백테스트</button>
+    <button class="tab-btn active" data-tab="allocator">📊 배분·백테스트</button>
     <button class="tab-btn" data-tab="dashboard">💹 자산 현황</button>
     <button class="tab-btn" data-tab="guide">📘 가이드</button>
   </nav>
 
-  <!-- 탭 1: 배분 계산기 -->
+  <!-- 탭 1: 배분 계산기 + 백테스트 -->
   <section class="tab-panel" data-tab-panel="allocator">
     <div class="card">
       <h2>
@@ -75,7 +74,8 @@
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
             자산군별 비중(%)을 입력하면 각 자산의 과거 데이터를 기준으로 포트폴리오의 기대수익률과
-            변동성을 계산합니다. 여기서 설정한 비중은 백테스트 탭에서도 그대로 사용됩니다.
+            변동성을 계산하고, 매달 리밸런싱한다고 가정해 초기 투자금액을 과거 데이터로 백테스트합니다.
+            데이터가 존재하는 공통 구간만 사용되며, 자산 조합에 따라 시작 시점이 달라질 수 있습니다.
           </span>
         </button>
       </h2>
@@ -169,54 +169,26 @@
         </div>
       </div>
 
-      <button class="calc-btn" id="allocator-calc-btn">🔄 계산하기</button>
-    </div>
-
-    <div class="card">
-      <h2>결과</h2>
-      <div id="allocator-result">
-        <p class="result-placeholder">비중을 입력하고 계산하기를 눌러주세요.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 탭 2: 백테스트 -->
-  <section class="tab-panel" data-tab-panel="backtest" hidden>
-    <div class="card">
-      <h2>
-        🔁 백테스트 설정
-        <button type="button" class="info-btn" aria-label="자세히 보기">
-          <span aria-hidden="true">ⓘ</span>
-          <span class="info-tooltip">
-            배분 계산기 탭에서 설정한 포트폴리오 비중을 그대로 사용해, 매달 리밸런싱한다고 가정하고
-            과거 데이터를 재생합니다. 데이터가 존재하는 공통 구간만 사용되며, 자산 조합에 따라
-            시작 시점이 달라질 수 있습니다.
-          </span>
-        </button>
-      </h2>
-      <p class="card-desc-short">현재 설정된 포트폴리오 비중</p>
-      <div class="weight-summary" id="backtest-weight-summary"></div>
-
       <div class="field-group">
-        <label for="bt-amount">초기 투자금액</label>
+        <label for="bt-amount">초기 투자금액 (백테스트용)</label>
         <div class="field-input-wrap">
           <input type="text" inputmode="numeric" id="bt-amount" value="1,000" />
           <span class="field-suffix">만원</span>
         </div>
       </div>
 
-      <button class="calc-btn" id="backtest-run-btn">🔄 백테스트 실행</button>
+      <button class="calc-btn" id="allocator-calc-btn">🔄 계산하기</button>
     </div>
 
     <div class="card">
       <h2>결과</h2>
-      <div id="backtest-result">
-        <p class="result-placeholder">배분 계산기 탭에서 비중을 설정한 뒤 백테스트를 실행해주세요.</p>
+      <div id="allocator-result">
+        <p class="result-placeholder">비중과 투자금액을 입력하고 계산하기를 눌러주세요.</p>
       </div>
     </div>
   </section>
 
-  <!-- 탭 3: 자산 현황 -->
+  <!-- 탭 2: 자산 현황 -->
   <section class="tab-panel" data-tab-panel="dashboard" hidden>
     <div class="card">
       <h2>
@@ -249,7 +221,7 @@
     </div>
   </section>
 
-  <!-- 탭 4: 가이드 -->
+  <!-- 탭 3: 가이드 -->
   <section class="tab-panel" data-tab-panel="guide" hidden>
     <div class="card">
       <h2>📘 자산배분 가이드</h2>
@@ -322,6 +294,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=1"></script>
+<script src="js/app.js?v=2"></script>
 </body>
 </html>
