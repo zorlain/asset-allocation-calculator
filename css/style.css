@@ -723,11 +723,6 @@ footer {
   cursor: pointer;
 }
 
-.weight-row-icon {
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
 .weight-row-name {
   flex: 1;
   min-width: 0;
@@ -937,38 +932,57 @@ footer {
   border-radius: 6px;
 }
 
-/* ---------- 가이드 탭 ---------- */
-.guide-card h3 {
-  font-size: 15.5px;
+/* ---------- 정적/동적 배분 모드 상자 ---------- */
+.mode-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mode-box {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mode-box:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.mode-box.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.mode-box-title {
+  font-size: 14.5px;
   font-weight: 700;
-  margin: 0 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
-.guide-card p {
-  font-size: 14px;
+.mode-box-desc {
+  font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.7;
-  margin: 0;
-  word-break: keep-all;
+  line-height: 1.4;
 }
 
-.guide-card + .guide-card {
-  margin-top: 22px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
+.mode-panel {
+  margin-bottom: 4px;
 }
 
-.disclaimer-box {
-  background: var(--card-elevated);
-  border-radius: 14px;
-  padding: 16px 18px;
-  font-size: 12.5px;
+.chart-note {
+  text-align: center;
+  font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.7;
-  margin-top: 24px;
+  margin-top: 8px;
 }
 
 /* 모바일 (약 360~430px 기준) */
@@ -1061,6 +1075,10 @@ footer {
   }
   .preset-chip.reset-chip {
     min-width: 100%;
+  }
+
+  .mode-boxes {
+    grid-template-columns: 1fr;
   }
 
   .weight-list {

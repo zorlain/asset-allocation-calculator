@@ -1,19 +1,6 @@
 /* ---------- 자산군 메타데이터 & 프리셋 ---------- */
 const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
 
-const ASSET_ICON = {
-  SPY: "🇺🇸",
-  QQQ: "💻",
-  SCHD: "💰",
-  EEM: "🌏",
-  TLT: "🏛️",
-  IEF: "🏦",
-  GLD: "🥇",
-  DBC: "🛢️",
-  VNQ: "🏢",
-  BIL: "💵",
-};
-
 const PRESETS = {
   "6040": {
     label: "60/40",
@@ -29,6 +16,24 @@ const PRESETS = {
     label: "올웨더 (간소화)",
     desc: "주식30·장기채40·중기채15·금7.5·원자재7.5",
     weights: { SPY: 0.3, TLT: 0.4, IEF: 0.15, GLD: 0.075, DBC: 0.075 },
+  },
+};
+
+const DYNAMIC_STRATEGIES = {
+  momentum: {
+    label: "듀얼 모멘텀",
+    tip: "매 리밸런싱 시점마다 체크한 자산 중 최근 [기준 기간] 수익률이 가장 높은 상위 [보유 자산 수]개에 동일 비중으로 투자합니다. 선택된 자산의 수익률이 0% 이하면(절대모멘텀 미충족) 전액 현금성자산(BIL)으로 대피합니다.",
+    showTopN: true,
+  },
+  trend: {
+    label: "추세추종 (이동평균)",
+    tip: "체크한 자산별로 입력한 비중을 기준비중으로 삼아, 가격이 최근 [기준 기간] 이동평균선 위에 있으면 기준비중대로 보유하고 아래에 있으면 그만큼 현금성자산(BIL)으로 전환합니다.",
+    showTopN: false,
+  },
+  volTarget: {
+    label: "변동성 타겟팅",
+    tip: "체크한 자산들의 최근 [기준 기간] 변동성을 계산해 변동성이 낮을수록 비중을 높게 자동 배분합니다. 입력한 비중 값(%)은 사용하지 않고 체크 여부만 반영됩니다.",
+    showTopN: false,
   },
 };
 
@@ -169,7 +174,60 @@ function downsideDeviation(monthlyReturns, mar = 0) {
   return Math.sqrt(avg) * Math.sqrt(12);
 }
 
-/* ---------- 포트폴리오 백테스트 ----------
+/* ---------- 백테스트 결과 공통 지표 계산 (정적/동적 엔진이 공유) ---------- */
+function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount) {
+  const months = dates.length;
+  const years = months / 12;
+  const finalValue = values[values.length - 1];
+  const cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
+  const annVol = stdev(monthlyReturns) * Math.sqrt(12);
+
+  let peak = values[0];
+  let mdd = 0;
+  values.forEach((v) => {
+    peak = Math.max(peak, v);
+    mdd = Math.min(mdd, (v - peak) / peak);
+  });
+
+  const rf = riskFreeCagr(dates);
+  const sharpe = annVol > 0 ? (cagr - rf) / annVol : 0;
+
+  const downsideDev = downsideDeviation(monthlyReturns);
+  const sortino = downsideDev > 0 ? (cagr - rf) / downsideDev : 0;
+  const calmar = mdd < 0 ? cagr / Math.abs(mdd) : 0;
+  const winRate = monthlyReturns.length ? monthlyReturns.filter((r) => r > 0).length / monthlyReturns.length : 0;
+
+  const yearly = annualReturnsFromMonthly(dates, monthlyReturns);
+  let bestYear = null;
+  let worstYear = null;
+  Object.entries(yearly).forEach(([y, r]) => {
+    if (!bestYear || r > bestYear.return) bestYear = { year: y, return: r };
+    if (!worstYear || r < worstYear.return) worstYear = { year: y, return: r };
+  });
+
+  return {
+    dates,
+    values,
+    monthlyReturns,
+    months,
+    years,
+    finalValue,
+    initialAmount,
+    cagr,
+    annVol,
+    mdd,
+    sharpe,
+    sortino,
+    calmar,
+    winRate,
+    bestYear,
+    worstYear,
+    startDate: dates[0],
+    endDate: dates[dates.length - 1],
+  };
+}
+
+/* ---------- 포트폴리오 백테스트 (정적 배분: 고정 비중 유지) ----------
    weights: { TICKER: 0~1 비중, 합 1 }, initialAmount: 시작 금액(만원 등 임의 단위)
    options: {
      rebalanceMonths: 리밸런싱 주기(개월). 0이면 리밸런싱 없음(최초 매수 후 보유). 기본 1(매달)
@@ -218,58 +276,171 @@ function runBacktest(weights, initialAmount, options = {}) {
     }
   }
 
-  const months = dates.length;
-  const years = months / 12;
-  const finalValue = values[values.length - 1];
-  const cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
-  const annVol = stdev(monthlyReturns) * Math.sqrt(12);
+  const result = computeBacktestMetrics(dates, values, monthlyReturns, initialAmount);
+  result.rebalanceMonths = rebalanceMonths;
+  result.feeAnnualPct = feeAnnualPct;
+  result.mode = "static";
+  result.finalWeights = weights;
+  return result;
+}
 
-  let peak = values[0];
-  let mdd = 0;
-  values.forEach((v) => {
-    peak = Math.max(peak, v);
-    mdd = Math.min(mdd, (v - peak) / peak);
+/* ---------- 여러 자산의 종가를 공통 구간(교집합 날짜)으로 정렬 (동적 배분 신호 계산용) ---------- */
+function alignSeries(tickers) {
+  const perTicker = tickers.map((t) => ASSET_DATA.assets[t].series);
+  let commonDates = perTicker[0].map((p) => p.d);
+  for (let i = 1; i < perTicker.length; i++) {
+    const set = new Set(perTicker[i].map((p) => p.d));
+    commonDates = commonDates.filter((d) => set.has(d));
+  }
+  const closesByTicker = {};
+  tickers.forEach((t, idx) => {
+    const map = new Map(perTicker[idx].map((p) => [p.d, p.c]));
+    closesByTicker[t] = commonDates.map((d) => map.get(d));
+  });
+  return { dates: commonDates, closesByTicker };
+}
+
+/* ---------- 동적 배분 전략별 목표 비중 계산 ----------
+   idx: closesByTicker의 기준 시점 인덱스 (idx까지의 데이터만 사용 - 미래 데이터 참조 없음)
+   반환값이 null이면 해당 시점엔 신호를 계산할 과거 데이터가 부족하다는 뜻 */
+function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
+  const lookback = Math.max(1, params.lookback || 12);
+  if (idx < lookback) return null;
+  const weights = {};
+
+  if (strategy === "momentum") {
+    const topN = Math.max(1, params.topN || 1);
+    const scores = candidates.map((t) => ({
+      t,
+      ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
+    }));
+    scores.sort((a, b) => b.ret - a.ret);
+    const picked = scores.slice(0, topN).filter((s) => s.ret > 0);
+    if (picked.length === 0) {
+      weights[safeAsset] = 1;
+    } else {
+      const w = 1 / picked.length;
+      picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+    }
+    return weights;
+  }
+
+  if (strategy === "trend") {
+    const baseWeights = params.baseWeights || {};
+    let safeAccum = 0;
+    candidates.forEach((t) => {
+      let sum = 0;
+      for (let k = 0; k < lookback; k++) sum += closesByTicker[t][idx - k];
+      const ma = sum / lookback;
+      const price = closesByTicker[t][idx];
+      const base = baseWeights[t] || 0;
+      if (price >= ma) {
+        weights[t] = (weights[t] || 0) + base;
+      } else {
+        safeAccum += base;
+      }
+    });
+    if (safeAccum > 0) weights[safeAsset] = (weights[safeAsset] || 0) + safeAccum;
+    return weights;
+  }
+
+  if (strategy === "volTarget") {
+    let sumInv = 0;
+    const invVols = {};
+    candidates.forEach((t) => {
+      const rets = [];
+      for (let k = 0; k < lookback; k++) {
+        rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
+      }
+      const vol = stdev(rets) || 0.0001;
+      invVols[t] = 1 / vol;
+      sumInv += invVols[t];
+    });
+    candidates.forEach((t) => (weights[t] = invVols[t] / sumInv));
+    return weights;
+  }
+
+  return null;
+}
+
+/* ---------- 포트폴리오 백테스트 (동적 배분: 매 리밸런싱마다 비중 재계산) ----------
+   strategy: "momentum" | "trend" | "volTarget"
+   params: { lookback: 기준 개월 수, topN: momentum 보유 자산 수, baseWeights: trend 기준비중(합 1) }
+   candidates: 후보 자산 티커 배열, safeAsset: 신호가 부진할 때 대피할 자산(기본 BIL) */
+function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmount, options = {}) {
+  const { rebalanceMonths = 1, feeAnnualPct = 0, startDate = null, endDate = null } = options;
+  if (candidates.length === 0) return null;
+
+  const allTickers = Array.from(new Set([...candidates, safeAsset]));
+  const { dates: closeDates, closesByTicker } = alignSeries(allTickers);
+  if (closeDates.length < 2) return null;
+
+  const returnDates = closeDates.slice(1);
+  const returnsByTicker = {};
+  allTickers.forEach((t) => {
+    returnsByTicker[t] = [];
+    for (let i = 1; i < closeDates.length; i++) {
+      returnsByTicker[t].push(closesByTicker[t][i] / closesByTicker[t][i - 1] - 1);
+    }
   });
 
-  const rf = riskFreeCagr(dates);
-  const sharpe = annVol > 0 ? (cagr - rf) / annVol : 0;
+  const lookback = Math.max(1, params.lookback || 12);
 
-  const downsideDev = downsideDeviation(monthlyReturns);
-  const sortino = downsideDev > 0 ? (cagr - rf) / downsideDev : 0;
-  const calmar = mdd < 0 ? cagr / Math.abs(mdd) : 0;
-  const winRate = monthlyReturns.filter((r) => r > 0).length / monthlyReturns.length;
+  let simStart = lookback;
+  if (startDate) {
+    const idx = returnDates.findIndex((d) => d >= startDate);
+    if (idx === -1) return null;
+    simStart = Math.max(simStart, idx);
+  }
+  let simEndExclusive = returnDates.length;
+  if (endDate) {
+    let lastIdx = -1;
+    returnDates.forEach((d, i) => {
+      if (d <= endDate) lastIdx = i;
+    });
+    if (lastIdx === -1) return null;
+    simEndExclusive = lastIdx + 1;
+  }
+  if (simStart >= simEndExclusive) return null;
 
-  const yearly = annualReturnsFromMonthly(dates, monthlyReturns);
-  const yearEntries = Object.entries(yearly);
-  let bestYear = null;
-  let worstYear = null;
-  yearEntries.forEach(([y, r]) => {
-    if (!bestYear || r > bestYear.return) bestYear = { year: y, return: r };
-    if (!worstYear || r < worstYear.return) worstYear = { year: y, return: r };
-  });
+  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset);
+  if (!currentTargets) return null;
 
-  return {
-    dates,
-    values,
-    monthlyReturns,
-    months,
-    years,
-    finalValue,
-    initialAmount,
-    cagr,
-    annVol,
-    mdd,
-    sharpe,
-    sortino,
-    calmar,
-    winRate,
-    bestYear,
-    worstYear,
-    rebalanceMonths,
-    feeAnnualPct,
-    startDate: dates[0],
-    endDate: dates[dates.length - 1],
-  };
+  const monthlyFee = feeAnnualPct / 100 / 12;
+  const holdings = {};
+  allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * initialAmount));
+
+  const values = [initialAmount];
+  const monthlyReturns = [];
+  const simDates = [];
+
+  for (let i = simStart; i < simEndExclusive; i++) {
+    const before = allTickers.reduce((sum, t) => sum + holdings[t], 0);
+    allTickers.forEach((t) => {
+      holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
+    });
+    const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
+    monthlyReturns.push(after / before - 1);
+    values.push(after);
+    simDates.push(returnDates[i]);
+
+    const stepCount = i - simStart + 1;
+    if (rebalanceMonths > 0 && stepCount % rebalanceMonths === 0 && i + 1 < simEndExclusive) {
+      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset);
+      if (nextTargets) {
+        currentTargets = nextTargets;
+        allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));
+      }
+    }
+  }
+
+  const result = computeBacktestMetrics(simDates, values, monthlyReturns, initialAmount);
+  result.rebalanceMonths = rebalanceMonths;
+  result.feeAnnualPct = feeAnnualPct;
+  result.mode = "dynamic";
+  result.strategy = strategy;
+  result.finalWeights = currentTargets;
+  return result;
 }
 
 /* ---------- 포맷 유틸 ---------- */

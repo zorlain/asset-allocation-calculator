@@ -365,10 +365,52 @@ const REBALANCE_LABEL = {
   12: "매년 리밸런싱",
 };
 
+/* ---------- 정적/동적 배분 모드 전환 ---------- */
+let allocationMode = "static";
+let selectedDynamicStrategy = null;
+
+function setAllocationMode(mode) {
+  allocationMode = mode;
+  document.querySelectorAll(".mode-box").forEach((box) => {
+    box.classList.toggle("active", box.dataset.mode === mode);
+  });
+  const staticPanel = document.getElementById("static-mode-panel");
+  const dynamicPanel = document.getElementById("dynamic-mode-panel");
+  if (staticPanel) staticPanel.hidden = mode !== "static";
+  if (dynamicPanel) dynamicPanel.hidden = mode !== "dynamic";
+
+  const bar = document.getElementById("weight-total-bar");
+  if (bar) bar.hidden = mode === "dynamic";
+}
+
+function initModeBoxes() {
+  document.querySelectorAll(".mode-box").forEach((box) => {
+    box.addEventListener("click", () => setAllocationMode(box.dataset.mode));
+  });
+}
+
+function selectDynamicStrategy(key) {
+  selectedDynamicStrategy = key;
+  document.querySelectorAll("#dynamic-strategy-chips .preset-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.strategy === key);
+  });
+  const meta = DYNAMIC_STRATEGIES[key];
+  const tipEl = document.getElementById("dynamic-strategy-tip");
+  if (tipEl && meta) tipEl.textContent = meta.tip;
+  const topNGroup = document.getElementById("dynamic-topn-group");
+  if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
+}
+
+function initDynamicStrategyChips() {
+  document.querySelectorAll("#dynamic-strategy-chips .preset-chip").forEach((chip) => {
+    chip.addEventListener("click", () => selectDynamicStrategy(chip.dataset.strategy));
+  });
+}
+
 /* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
 let pieChart = null;
 let lineChart = null;
-let lastResult = null; // { weights, bt }
+let lastResult = null; // bt (finalWeights 포함)
 
 function renderPieChart(weights) {
   const canvas = document.getElementById("pie-canvas");
@@ -450,12 +492,14 @@ function renderLineChart(bt) {
   });
 }
 
-function renderResult(weights, bt) {
+function renderResult(bt) {
   const resultEl = document.getElementById("allocator-result");
   const rebalanceLabel = REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
   const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
+  const strategyNote = bt.mode === "dynamic" ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""} · ` : "";
   const bestYearText = bt.bestYear ? `${bt.bestYear.year}년 ${formatSignedPct(bt.bestYear.return, 1)}` : "-";
   const worstYearText = bt.worstYear ? `${bt.worstYear.year}년 ${formatSignedPct(bt.worstYear.return, 1)}` : "-";
+  const pieCaption = bt.mode === "dynamic" ? `<div class="chart-note">마지막 리밸런싱 시점 기준 비중</div>` : "";
 
   resultEl.innerHTML = `
     <div class="result-top">
@@ -480,11 +524,12 @@ function renderResult(weights, bt) {
       </div>
     </div>
     <div class="chart-legend" id="pie-legend"></div>
+    ${pieCaption}
 
     <div class="result-hero">
       <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · ${rebalanceLabel}${feeNote}</div>
+      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · ${strategyNote}${rebalanceLabel}${feeNote}</div>
     </div>
     <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
 
@@ -531,38 +576,80 @@ function renderResult(weights, bt) {
       </div>
     </div>
   `;
-  renderPieChart(weights);
+  renderPieChart(bt.finalWeights || {});
   renderLineChart(bt);
+}
+
+function runStaticCalc(amount, options) {
+  const resultEl = document.getElementById("allocator-result");
+  const total = weightSum();
+  if (Math.abs(total - 100) > 0.05) {
+    resultEl.innerHTML = `<p class="result-placeholder">비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)</p>`;
+    return null;
+  }
+  const weights = getWeightsFromInputs();
+  const bt = runBacktest(weights, amount, options);
+  if (!bt) {
+    resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합·기간의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
+    return null;
+  }
+  return bt;
+}
+
+function runDynamicCalc(amount, options) {
+  const resultEl = document.getElementById("allocator-result");
+  if (!selectedDynamicStrategy) {
+    resultEl.innerHTML = `<p class="result-placeholder">동적 배분 전략을 선택해주세요.</p>`;
+    return null;
+  }
+  const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerChecked(t));
+  if (candidates.length === 0) {
+    resultEl.innerHTML = `<p class="result-placeholder">후보 자산을 1개 이상 체크해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)</p>`;
+    return null;
+  }
+
+  const lookback = Math.max(1, Math.round(toNumber(document.getElementById("dynamic-lookback").value)) || 12);
+  const params = { lookback };
+
+  if (selectedDynamicStrategy === "momentum") {
+    const topN = Math.round(toNumber(document.getElementById("dynamic-topn").value)) || 1;
+    params.topN = Math.min(Math.max(1, topN), candidates.length);
+  } else if (selectedDynamicStrategy === "trend") {
+    const rawWeights = getWeightsFromInputs();
+    const totalW = candidates.reduce((sum, t) => sum + (rawWeights[t] || 0), 0);
+    const baseWeights = {};
+    if (totalW > 0) {
+      candidates.forEach((t) => (baseWeights[t] = (rawWeights[t] || 0) / totalW));
+    } else {
+      const eq = 1 / candidates.length;
+      candidates.forEach((t) => (baseWeights[t] = eq));
+    }
+    params.baseWeights = baseWeights;
+  }
+
+  const bt = runDynamicBacktest(selectedDynamicStrategy, params, candidates, "BIL", amount, options);
+  if (!bt) {
+    resultEl.innerHTML = `<p class="result-placeholder">선택한 조건으로는 충분한 과거 데이터를 찾을 수 없습니다. 기준 기간을 줄이거나 백테스트 기간을 조정해보세요.</p>`;
+    return null;
+  }
+  return bt;
 }
 
 function setupAllocator() {
   document.getElementById("allocator-calc-btn").addEventListener("click", () => {
-    const resultEl = document.getElementById("allocator-result");
-    const total = weightSum();
-    if (Math.abs(total - 100) > 0.05) {
-      resultEl.innerHTML = `<p class="result-placeholder">비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)</p>`;
-      lastResult = null;
-      return;
-    }
-    const weights = getWeightsFromInputs();
     const amount = toNumber(document.getElementById("bt-amount").value) || 10000;
     const options = getBacktestOptions();
-    const bt = runBacktest(weights, amount, options);
-    if (!bt) {
-      resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합·기간의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
-      lastResult = null;
-      return;
-    }
-    lastResult = { weights, bt };
-    renderResult(weights, bt);
+    const bt = allocationMode === "static" ? runStaticCalc(amount, options) : runDynamicCalc(amount, options);
+    lastResult = bt;
+    if (bt) renderResult(bt);
   });
 }
 
 /* 테마 전환 시 이미 그려진 차트가 있으면 새 테마 색상으로 다시 그린다 */
 function refreshChartsForTheme() {
   if (!lastResult) return;
-  renderPieChart(lastResult.weights);
-  renderLineChart(lastResult.bt);
+  renderPieChart(lastResult.finalWeights || {});
+  renderLineChart(lastResult);
 }
 
 /* ---------- 탭 2: 자산 현황 ---------- */
@@ -578,7 +665,7 @@ function renderDashboard() {
     const cls1y = s.oneYearReturn === null ? "" : s.oneYearReturn >= 0 ? "positive" : "negative";
     return `
       <tr>
-        <td class="asset-name-cell">${ASSET_ICON[t]} ${s.name}</td>
+        <td class="asset-name-cell">${s.name}</td>
         <td>${formatUsd(s.lastClose)}</td>
         <td class="${cls1m}">${formatSignedPct(s.oneMonthReturn, 1)}</td>
         <td class="${cls1y}">${s.oneYearReturn === null ? "-" : formatSignedPct(s.oneYearReturn, 1)}</td>
@@ -601,14 +688,14 @@ function renderCorrelationTable() {
   if (!table) return;
   const matrix = correlationMatrix(ASSET_ORDER);
 
-  const headerCells = ASSET_ORDER.map((t) => `<th title="${ASSET_DATA.assets[t].name}">${ASSET_ICON[t]}</th>`).join("");
+  const headerCells = ASSET_ORDER.map((t) => `<th title="${ASSET_DATA.assets[t].name}">${t}</th>`).join("");
   const rows = ASSET_ORDER.map((a) => {
     const cells = ASSET_ORDER.map((b) => {
       const v = matrix[a][b];
       const bg = a === b ? "transparent" : corrColor(v);
       return `<td style="background:${bg}">${v.toFixed(2)}</td>`;
     }).join("");
-    return `<tr><th class="corr-row-label" title="${ASSET_DATA.assets[a].name}">${ASSET_ICON[a]} ${a}</th>${cells}</tr>`;
+    return `<tr><th class="corr-row-label" title="${ASSET_DATA.assets[a].name}">${a}</th>${cells}</tr>`;
   }).join("");
 
   table.innerHTML = `<thead><tr><th></th>${headerCells}</tr></thead><tbody>${rows}</tbody>`;
@@ -623,6 +710,8 @@ function init() {
   initBacktestSettings();
   initWeightInputs();
   initSavedPortfolios();
+  initModeBoxes();
+  initDynamicStrategyChips();
   setupAllocator();
   applyPreset("6040");
   renderDashboard();
