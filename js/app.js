@@ -85,6 +85,8 @@ function initMenu() {
 /* ---------- 자산군 색상 (파이/라인 차트용) ---------- */
 const TICKER_COLORS = {
   SPY: "#494fdf",
+  QQQ: "#7c4fd8",
+  SCHD: "#c25b8f",
   EEM: "#21b3a4",
   TLT: "#f2665e",
   IEF: "#f2a341",
@@ -94,11 +96,17 @@ const TICKER_COLORS = {
   BIL: "#9aa0a6",
 };
 
-/* ---------- 비중 입력 상태 ---------- */
+/* ---------- 비중 입력 상태 (체크박스로 켠 자산만 반영) ---------- */
+function isTickerChecked(ticker) {
+  const cb = document.querySelector(`.weight-check[data-ticker="${ticker}"]`);
+  return !!cb && cb.checked;
+}
+
 function getWeightsFromInputs() {
   const weights = {};
   document.querySelectorAll(".weight-input").forEach((inp) => {
     const t = inp.dataset.ticker;
+    if (!isTickerChecked(t)) return;
     const v = parsePercent(inp.value);
     if (v > 0) weights[t] = v / 100;
   });
@@ -107,7 +115,9 @@ function getWeightsFromInputs() {
 
 function weightSum() {
   let sum = 0;
-  document.querySelectorAll(".weight-input").forEach((inp) => (sum += parsePercent(inp.value)));
+  document.querySelectorAll(".weight-input").forEach((inp) => {
+    if (isTickerChecked(inp.dataset.ticker)) sum += parsePercent(inp.value);
+  });
   return sum;
 }
 
@@ -122,6 +132,14 @@ function updateWeightTotal() {
   bar.classList.toggle("bad", !ok);
 }
 
+function setRowChecked(ticker, checked) {
+  const cb = document.querySelector(`.weight-check[data-ticker="${ticker}"]`);
+  if (!cb) return;
+  cb.checked = checked;
+  const row = cb.closest(".weight-row");
+  if (row) row.classList.toggle("inactive", !checked);
+}
+
 function applyPreset(key) {
   const preset = PRESETS[key];
   if (!preset) return;
@@ -129,6 +147,7 @@ function applyPreset(key) {
     const t = inp.dataset.ticker;
     const w = preset.weights[t] || 0;
     inp.value = w > 0 ? String(+(w * 100).toFixed(2)) : "0";
+    setRowChecked(t, w > 0);
   });
   document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => {
     chip.classList.toggle("active", chip.dataset.preset === key);
@@ -138,6 +157,7 @@ function applyPreset(key) {
 
 function resetWeights() {
   document.querySelectorAll(".weight-input").forEach((inp) => (inp.value = "0"));
+  document.querySelectorAll(".weight-check").forEach((cb) => setRowChecked(cb.dataset.ticker, false));
   document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
   updateWeightTotal();
 }
@@ -145,6 +165,15 @@ function resetWeights() {
 function initWeightInputs() {
   document.querySelectorAll(".weight-input").forEach((inp) => {
     inp.addEventListener("input", () => {
+      document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+      updateWeightTotal();
+    });
+  });
+
+  document.querySelectorAll(".weight-check").forEach((cb) => {
+    setRowChecked(cb.dataset.ticker, cb.checked);
+    cb.addEventListener("change", () => {
+      setRowChecked(cb.dataset.ticker, cb.checked);
       document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
       updateWeightTotal();
     });

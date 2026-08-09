@@ -10,14 +10,16 @@ $outPath = Join-Path $root "data\asset-data.js"
 
 # 자산군 => 대표 ETF 매핑
 $assets = [ordered]@{
-  SPY = "미국주식 (S&P500)"
-  EEM = "신흥국주식 (MSCI EM)"
-  TLT = "미국 장기국채 (20년+)"
-  IEF = "미국 중기국채 (7-10년)"
-  GLD = "금"
-  DBC = "원자재"
-  VNQ = "미국 리츠 (REITs)"
-  BIL = "현금성자산 (미국 단기국채)"
+  SPY  = "미국주식 (S&P500)"
+  QQQ  = "미국 기술주 (나스닥100)"
+  SCHD = "미국 배당주 (SCHD)"
+  EEM  = "신흥국주식 (MSCI EM)"
+  TLT  = "미국 장기국채 (20년+)"
+  IEF  = "미국 중기국채 (7-10년)"
+  GLD  = "금"
+  DBC  = "원자재"
+  VNQ  = "미국 리츠 (REITs)"
+  BIL  = "현금성자산 (미국 단기국채)"
 }
 
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }

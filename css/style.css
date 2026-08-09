@@ -592,6 +592,19 @@ footer {
   background: var(--card-elevated);
   border-radius: 12px;
   padding: 10px 12px;
+  transition: opacity 0.15s;
+}
+
+.weight-row.inactive {
+  opacity: 0.5;
+}
+
+.weight-check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .weight-row-icon {
@@ -617,7 +630,7 @@ footer {
   gap: 3px;
 }
 
-.weight-row input {
+.weight-row input.weight-input {
   width: 48px;
   padding: 6px 4px;
   border: 1px solid var(--border);
@@ -630,7 +643,7 @@ footer {
   font-family: inherit;
 }
 
-.weight-row input:focus {
+.weight-row input.weight-input:focus {
   border-color: var(--accent);
   outline: none;
 }

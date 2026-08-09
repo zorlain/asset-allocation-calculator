@@ -1,8 +1,10 @@
 /* ---------- 자산군 메타데이터 & 프리셋 ---------- */
-const ASSET_ORDER = ["SPY", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
+const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
 
 const ASSET_ICON = {
   SPY: "🇺🇸",
+  QQQ: "💻",
+  SCHD: "💰",
   EEM: "🌏",
   TLT: "🏛️",
   IEF: "🏦",

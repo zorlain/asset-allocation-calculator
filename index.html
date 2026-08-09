@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=2" />
+<link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
 <div class="page">
@@ -79,7 +79,7 @@
           </span>
         </button>
       </h2>
-      <p class="card-desc-short">프리셋을 선택하거나 자산군별 비중을 직접 입력하세요. 합이 100%가 되어야 계산할 수 있습니다.</p>
+      <p class="card-desc-short">프리셋을 선택하거나 자산군별 비중을 입력하고 체크박스를 눌러 포함하세요. 체크한 자산의 비중 합이 100%가 되어야 계산할 수 있습니다.</p>
 
       <div class="preset-chips" id="preset-chips">
         <button type="button" class="preset-chip" data-preset="6040">
@@ -104,6 +104,7 @@
 
       <div class="weight-list" id="weight-list">
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="SPY" />
           <span class="weight-row-icon">🇺🇸</span>
           <span class="weight-row-name">미국주식 (SPY)</span>
           <div class="weight-row-input-wrap">
@@ -112,6 +113,25 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="QQQ" />
+          <span class="weight-row-icon">💻</span>
+          <span class="weight-row-name">미국 기술주 (QQQ)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="QQQ" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="SCHD" />
+          <span class="weight-row-icon">💰</span>
+          <span class="weight-row-name">미국 배당주 (SCHD)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="SCHD" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="EEM" />
           <span class="weight-row-icon">🌏</span>
           <span class="weight-row-name">신흥국주식 (EEM)</span>
           <div class="weight-row-input-wrap">
@@ -120,6 +140,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="TLT" />
           <span class="weight-row-icon">🏛️</span>
           <span class="weight-row-name">미국 장기국채 (TLT)</span>
           <div class="weight-row-input-wrap">
@@ -128,6 +149,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="IEF" />
           <span class="weight-row-icon">🏦</span>
           <span class="weight-row-name">미국 중기국채 (IEF)</span>
           <div class="weight-row-input-wrap">
@@ -136,6 +158,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="GLD" />
           <span class="weight-row-icon">🥇</span>
           <span class="weight-row-name">금 (GLD)</span>
           <div class="weight-row-input-wrap">
@@ -144,6 +167,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="DBC" />
           <span class="weight-row-icon">🛢️</span>
           <span class="weight-row-name">원자재 (DBC)</span>
           <div class="weight-row-input-wrap">
@@ -152,6 +176,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="VNQ" />
           <span class="weight-row-icon">🏢</span>
           <span class="weight-row-name">미국 리츠 (VNQ)</span>
           <div class="weight-row-input-wrap">
@@ -160,6 +185,7 @@
           </div>
         </div>
         <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="BIL" />
           <span class="weight-row-icon">💵</span>
           <span class="weight-row-name">현금성자산 (BIL)</span>
           <div class="weight-row-input-wrap">
@@ -276,7 +302,7 @@
       </div>
 
       <div class="disclaimer-box">
-        이 사이트의 모든 계산과 백테스트는 미국 상장 ETF(SPY, EEM, TLT, IEF, GLD, DBC, VNQ, BIL)의
+        이 사이트의 모든 계산과 백테스트는 미국 상장 ETF(SPY, QQQ, SCHD, EEM, TLT, IEF, GLD, DBC, VNQ, BIL)의
         과거 월간 종가를 기준으로 하며, 환율 변동은 반영하지 않습니다. 과거 수익률은 미래 수익률을
         보장하지 않으며, 이 사이트는 투자 자문이 아닌 참고용 시뮬레이션입니다. 실제 투자 결정은
         본인의 판단과 책임 하에 신중히 내리시기 바랍니다.
@@ -294,6 +320,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=2"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>
