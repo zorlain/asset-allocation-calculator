@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=6" />
+<link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
 <div class="page">
@@ -120,22 +120,22 @@
         </button>
       </h2>
 
-      <div class="mode-select" id="mode-select">
-        <button type="button" class="mode-select-toggle" id="mode-select-toggle" aria-haspopup="listbox" aria-expanded="false">
-          <span class="mode-select-toggle-text">
-            <span class="mode-select-title" id="mode-select-title">정적 자산배분</span>
-            <span class="mode-select-desc" id="mode-select-desc">고정 비중을 유지하며 주기적으로 리밸런싱</span>
+      <div class="select-box" id="mode-select">
+        <button type="button" class="select-box-toggle" id="mode-select-toggle" aria-haspopup="listbox" aria-expanded="false">
+          <span class="select-box-toggle-text">
+            <span class="select-box-title" id="mode-select-title">정적 자산배분</span>
+            <span class="select-box-desc" id="mode-select-desc">고정 비중을 유지하며 주기적으로 리밸런싱</span>
           </span>
-          <span class="mode-select-caret" aria-hidden="true">▾</span>
+          <span class="select-box-caret" aria-hidden="true">▾</span>
         </button>
-        <div class="mode-select-dropdown" id="mode-select-dropdown" role="listbox">
-          <button type="button" class="mode-select-option active" data-mode="static" role="option" aria-selected="true">
-            <div class="mode-option-title">정적 자산배분</div>
-            <div class="mode-option-desc">고정 비중을 유지하며 주기적으로 리밸런싱</div>
+        <div class="select-box-dropdown" id="mode-select-dropdown" role="listbox">
+          <button type="button" class="select-box-option active" data-mode="static" role="option" aria-selected="true">
+            <div class="select-box-option-title">정적 자산배분</div>
+            <div class="select-box-option-desc">고정 비중을 유지하며 주기적으로 리밸런싱</div>
           </button>
-          <button type="button" class="mode-select-option" data-mode="dynamic" role="option" aria-selected="false">
-            <div class="mode-option-title">동적 자산배분</div>
-            <div class="mode-option-desc">시장 상황에 따라 비중이 자동으로 변경</div>
+          <button type="button" class="select-box-option" data-mode="dynamic" role="option" aria-selected="false">
+            <div class="select-box-option-title">동적 자산배분</div>
+            <div class="select-box-option-desc">시장 상황에 따라 비중이 자동으로 변경</div>
           </button>
         </div>
       </div>
@@ -154,20 +154,32 @@
           </select>
         </div>
 
-        <div class="preset-chips" id="preset-chips">
-          <button type="button" class="preset-chip" data-preset="6040">
-            <div class="preset-chip-label">60/40</div>
-            <div class="preset-chip-desc">주식 60% · 중기국채 40%</div>
+        <div class="select-box" id="preset-select">
+          <button type="button" class="select-box-toggle" id="preset-select-toggle" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-box-toggle-text">
+              <span class="select-box-title" id="preset-select-title">60/40</span>
+              <span class="select-box-desc" id="preset-select-desc">주식 60% · 중기국채 40%</span>
+            </span>
+            <span class="select-box-caret" aria-hidden="true">▾</span>
           </button>
-          <button type="button" class="preset-chip" data-preset="permanent">
-            <div class="preset-chip-label">영구 포트폴리오</div>
-            <div class="preset-chip-desc">주식·장기채·금·현금 각 25%</div>
-          </button>
-          <button type="button" class="preset-chip" data-preset="allweather">
-            <div class="preset-chip-label">올웨더 (간소화)</div>
-            <div class="preset-chip-desc">주식30·장기채40·중기채15·금7.5·원자재7.5</div>
-          </button>
-          <button type="button" class="preset-chip reset-chip" id="preset-reset">초기화</button>
+          <div class="select-box-dropdown" id="preset-select-dropdown" role="listbox">
+            <button type="button" class="select-box-option active" data-preset="6040" role="option" aria-selected="true">
+              <div class="select-box-option-title">60/40</div>
+              <div class="select-box-option-desc">주식 60% · 중기국채 40%</div>
+            </button>
+            <button type="button" class="select-box-option" data-preset="permanent" role="option" aria-selected="false">
+              <div class="select-box-option-title">영구 포트폴리오</div>
+              <div class="select-box-option-desc">주식·장기채·금·현금 각 25%</div>
+            </button>
+            <button type="button" class="select-box-option" data-preset="allweather" role="option" aria-selected="false">
+              <div class="select-box-option-title">올웨더 (간소화)</div>
+              <div class="select-box-option-desc">주식30·장기채40·중기채15·금7.5·원자재7.5</div>
+            </button>
+            <button type="button" class="select-box-option" data-action="reset" role="option" aria-selected="false">
+              <div class="select-box-option-title">직접 입력</div>
+              <div class="select-box-option-desc">비중을 모두 초기화하고 직접 설정</div>
+            </button>
+          </div>
         </div>
 
         <div class="saved-portfolios">
@@ -186,19 +198,28 @@
       <div class="mode-panel" id="dynamic-mode-panel" hidden>
         <p class="card-desc-short">전략을 선택하세요. 아래 자산 목록에서 체크한 자산이 후보군이 되며, 현금성자산(BIL)은 신호가 부진할 때의 대피처로 자동 사용되어 후보에서 제외됩니다.</p>
 
-        <div class="preset-chips" id="dynamic-strategy-chips">
-          <button type="button" class="preset-chip" data-strategy="momentum">
-            <div class="preset-chip-label">듀얼 모멘텀</div>
-            <div class="preset-chip-desc">최근 수익률 1위 후보에 집중, 전부 부진하면 현금성자산으로 대피</div>
+        <div class="select-box" id="strategy-select">
+          <button type="button" class="select-box-toggle" id="strategy-select-toggle" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-box-toggle-text">
+              <span class="select-box-title" id="strategy-select-title">전략을 선택하세요</span>
+              <span class="select-box-desc" id="strategy-select-desc">아래에서 전략을 고르면 설명이 여기 표시됩니다</span>
+            </span>
+            <span class="select-box-caret" aria-hidden="true">▾</span>
           </button>
-          <button type="button" class="preset-chip" data-strategy="trend">
-            <div class="preset-chip-label">추세추종 (이동평균)</div>
-            <div class="preset-chip-desc">이동평균선 위 자산만 보유, 아래로 내려가면 현금성자산으로 전환</div>
-          </button>
-          <button type="button" class="preset-chip" data-strategy="volTarget">
-            <div class="preset-chip-label">변동성 타겟팅</div>
-            <div class="preset-chip-desc">변동성이 낮은 자산일수록 비중을 높게 자동 배분</div>
-          </button>
+          <div class="select-box-dropdown" id="strategy-select-dropdown" role="listbox">
+            <button type="button" class="select-box-option" data-strategy="momentum" role="option" aria-selected="false">
+              <div class="select-box-option-title">듀얼 모멘텀</div>
+              <div class="select-box-option-desc">최근 수익률 1위 후보에 집중, 전부 부진하면 현금성자산으로 대피</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="trend" role="option" aria-selected="false">
+              <div class="select-box-option-title">추세추종 (이동평균)</div>
+              <div class="select-box-option-desc">이동평균선 위 자산만 보유, 아래로 내려가면 현금성자산으로 전환</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="volTarget" role="option" aria-selected="false">
+              <div class="select-box-option-title">변동성 타겟팅</div>
+              <div class="select-box-option-desc">변동성이 낮은 자산일수록 비중을 높게 자동 배분</div>
+            </button>
+          </div>
         </div>
 
         <div class="field-row">
@@ -410,6 +431,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

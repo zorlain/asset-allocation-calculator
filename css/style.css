@@ -956,13 +956,13 @@ footer {
   border-radius: 6px;
 }
 
-/* ---------- 정적/동적 배분 모드 선택 (드롭다운 상자 1개) ---------- */
-.mode-select {
+/* ---------- 상자 드롭다운 선택 (정적/동적 모드, 프리셋, 동적 전략에서 공용) ---------- */
+.select-box {
   position: relative;
   margin-bottom: 20px;
 }
 
-.mode-select-toggle {
+.select-box-toggle {
   width: 100%;
   display: flex;
   align-items: center;
@@ -978,40 +978,40 @@ footer {
   transition: border-color 0.15s;
 }
 
-.mode-select-toggle:hover {
+.select-box-toggle:hover {
   border-color: var(--accent);
 }
 
-.mode-select-toggle-text {
+.select-box-toggle-text {
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
-.mode-select-title {
+.select-box-title {
   font-size: 14.5px;
   font-weight: 700;
   color: var(--text);
 }
 
-.mode-select-desc {
+.select-box-desc {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-.mode-select-caret {
+.select-box-caret {
   flex-shrink: 0;
   color: var(--text-muted);
   font-size: 13px;
   transition: transform 0.15s;
 }
 
-.mode-select-toggle[aria-expanded="true"] .mode-select-caret {
+.select-box-toggle[aria-expanded="true"] .select-box-caret {
   transform: rotate(180deg);
 }
 
-.mode-select-dropdown {
+.select-box-dropdown {
   position: absolute;
   left: 0;
   right: 0;
@@ -1027,15 +1027,17 @@ footer {
   transform: translateY(-4px);
   transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
   z-index: 30;
+  max-height: 320px;
+  overflow-y: auto;
 }
 
-.mode-select-dropdown.open {
+.select-box-dropdown.open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
 
-.mode-select-option {
+.select-box-option {
   text-align: left;
   border: none;
   background: transparent;
@@ -1046,22 +1048,22 @@ footer {
   transition: background 0.15s;
 }
 
-.mode-select-option:hover {
+.select-box-option:hover {
   background: var(--accent-soft);
 }
 
-.mode-select-option.active {
+.select-box-option.active {
   background: var(--accent-soft);
 }
 
-.mode-option-title {
+.select-box-option-title {
   font-size: 13.5px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 3px;
 }
 
-.mode-option-desc {
+.select-box-option-desc {
   font-size: 11.5px;
   color: var(--text-muted);
   line-height: 1.4;

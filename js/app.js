@@ -164,9 +164,14 @@ function setRowChecked(ticker, checked) {
   if (row) row.classList.toggle("inactive", !checked);
 }
 
-function clearActiveChips() {
-  document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => chip.classList.remove("active"));
+function clearSavedChipActive() {
   document.querySelectorAll(".saved-chip").forEach((chip) => chip.classList.remove("active"));
+}
+
+/* 사용자가 비중/체크박스를 직접 건드리면 프리셋 상자를 "직접 입력" 상태로 되돌린다 */
+function markPresetAsCustom() {
+  deactivateSelectBox("preset-select", "직접 입력", "자산별 비중을 직접 설정");
+  clearSavedChipActive();
 }
 
 function applyWeightsToInputs(weights) {
@@ -183,23 +188,18 @@ function applyPreset(key) {
   const preset = PRESETS[key];
   if (!preset) return;
   applyWeightsToInputs(preset.weights);
-  clearActiveChips();
-  document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.preset === key);
-  });
 }
 
 function resetWeights() {
   document.querySelectorAll(".weight-input").forEach((inp) => (inp.value = "0"));
   document.querySelectorAll(".weight-check").forEach((cb) => setRowChecked(cb.dataset.ticker, false));
-  clearActiveChips();
   updateWeightTotal();
 }
 
 function initWeightInputs() {
   document.querySelectorAll(".weight-input").forEach((inp) => {
     inp.addEventListener("input", () => {
-      clearActiveChips();
+      markPresetAsCustom();
       updateWeightTotal();
     });
   });
@@ -208,17 +208,10 @@ function initWeightInputs() {
     setRowChecked(cb.dataset.ticker, cb.checked);
     cb.addEventListener("change", () => {
       setRowChecked(cb.dataset.ticker, cb.checked);
-      clearActiveChips();
+      markPresetAsCustom();
       updateWeightTotal();
     });
   });
-
-  document.querySelectorAll(".preset-chip[data-preset]").forEach((chip) => {
-    chip.addEventListener("click", () => applyPreset(chip.dataset.preset));
-  });
-
-  const resetBtn = document.getElementById("preset-reset");
-  if (resetBtn) resetBtn.addEventListener("click", resetWeights);
 }
 
 /* ---------- 나만의 포트폴리오 저장 (localStorage) ---------- */
@@ -301,7 +294,7 @@ function applySavedPortfolio(id) {
   const p = loadSavedPortfolios().find((x) => x.id === id);
   if (!p) return;
   applyWeightsToInputs(p.weights);
-  clearActiveChips();
+  deactivateSelectBox("preset-select", p.name, summarizeWeights(p.weights));
   document.querySelectorAll(".saved-chip").forEach((chip) => {
     chip.classList.toggle("active", chip.dataset.savedId === id);
   });
@@ -398,29 +391,84 @@ const DYNAMIC_REBALANCE_LABEL = {
   12: "매년 재평가",
 };
 
-/* ---------- 정적/동적 배분 모드 선택 (드롭다운) ---------- */
+/* ---------- 상자 드롭다운 선택 공통 로직 (모드 / 프리셋 / 동적전략에서 재사용) ---------- */
+function activateSelectBoxOption(rootId, optionEl) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  root.querySelectorAll(".select-box-option").forEach((o) => {
+    const isActive = o === optionEl;
+    o.classList.toggle("active", isActive);
+    o.setAttribute("aria-selected", String(isActive));
+  });
+  if (!optionEl) return;
+  const titleEl = root.querySelector(".select-box-title");
+  const descEl = root.querySelector(".select-box-desc");
+  const optTitle = optionEl.querySelector(".select-box-option-title");
+  const optDesc = optionEl.querySelector(".select-box-option-desc");
+  if (titleEl && optTitle) titleEl.textContent = optTitle.textContent;
+  if (descEl && optDesc) descEl.textContent = optDesc.textContent;
+}
+
+function deactivateSelectBox(rootId, title, desc) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  root.querySelectorAll(".select-box-option").forEach((o) => {
+    o.classList.remove("active");
+    o.setAttribute("aria-selected", "false");
+  });
+  const titleEl = root.querySelector(".select-box-title");
+  const descEl = root.querySelector(".select-box-desc");
+  if (titleEl) titleEl.textContent = title;
+  if (descEl) descEl.textContent = desc;
+}
+
+function closeSelectBoxDropdown(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  const dropdown = root.querySelector(".select-box-dropdown");
+  const toggle = root.querySelector(".select-box-toggle");
+  if (dropdown) dropdown.classList.remove("open");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+}
+
+function closeAllSelectBoxDropdowns() {
+  document.querySelectorAll(".select-box-dropdown.open").forEach((d) => d.classList.remove("open"));
+  document.querySelectorAll('.select-box-toggle[aria-expanded="true"]').forEach((t) => t.setAttribute("aria-expanded", "false"));
+}
+
+function initSelectBox(rootId, onSelect) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  const toggle = root.querySelector(".select-box-toggle");
+  const dropdown = root.querySelector(".select-box-dropdown");
+  if (!toggle || !dropdown) return;
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !dropdown.classList.contains("open");
+    closeAllSelectBoxDropdowns();
+    dropdown.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  root.querySelectorAll(".select-box-option").forEach((opt) => {
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      activateSelectBoxOption(rootId, opt);
+      closeSelectBoxDropdown(rootId);
+      onSelect(opt.dataset, opt);
+    });
+  });
+
+  document.addEventListener("click", () => closeSelectBoxDropdown(rootId));
+}
+
+/* ---------- 정적/동적 배분 모드 ---------- */
 let allocationMode = "static";
 let selectedDynamicStrategy = null;
 
-const MODE_META = {
-  static: { title: "정적 자산배분", desc: "고정 비중을 유지하며 주기적으로 리밸런싱" },
-  dynamic: { title: "동적 자산배분", desc: "시장 상황에 따라 비중이 자동으로 변경" },
-};
-
 function setAllocationMode(mode) {
   allocationMode = mode;
-  const meta = MODE_META[mode];
-  const titleEl = document.getElementById("mode-select-title");
-  const descEl = document.getElementById("mode-select-desc");
-  if (titleEl && meta) titleEl.textContent = meta.title;
-  if (descEl && meta) descEl.textContent = meta.desc;
-
-  document.querySelectorAll(".mode-select-option").forEach((opt) => {
-    const isActive = opt.dataset.mode === mode;
-    opt.classList.toggle("active", isActive);
-    opt.setAttribute("aria-selected", String(isActive));
-  });
-
   const staticPanel = document.getElementById("static-mode-panel");
   const dynamicPanel = document.getElementById("dynamic-mode-panel");
   if (staticPanel) staticPanel.hidden = mode !== "static";
@@ -428,51 +476,25 @@ function setAllocationMode(mode) {
 
   const bar = document.getElementById("weight-total-bar");
   if (bar) bar.hidden = mode === "dynamic";
-
-  const dropdown = document.getElementById("mode-select-dropdown");
-  const toggle = document.getElementById("mode-select-toggle");
-  if (dropdown) dropdown.classList.remove("open");
-  if (toggle) toggle.setAttribute("aria-expanded", "false");
 }
 
-function initModeSelect() {
-  const toggle = document.getElementById("mode-select-toggle");
-  const dropdown = document.getElementById("mode-select-dropdown");
-  if (!toggle || !dropdown) return;
-
-  toggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const willOpen = !dropdown.classList.contains("open");
-    dropdown.classList.toggle("open", willOpen);
-    toggle.setAttribute("aria-expanded", String(willOpen));
-  });
-
-  document.querySelectorAll(".mode-select-option").forEach((opt) => {
-    opt.addEventListener("click", () => setAllocationMode(opt.dataset.mode));
-  });
-
-  document.addEventListener("click", () => {
-    dropdown.classList.remove("open");
-    toggle.setAttribute("aria-expanded", "false");
-  });
+/* ---------- 프리셋 상자 (60/40, 영구, 올웨더, 직접 입력) ---------- */
+function handlePresetSelect(data) {
+  if (data.preset) {
+    applyPreset(data.preset);
+  } else if (data.action === "reset") {
+    resetWeights();
+  }
 }
 
+/* ---------- 동적 전략 상자 ---------- */
 function selectDynamicStrategy(key) {
   selectedDynamicStrategy = key;
-  document.querySelectorAll("#dynamic-strategy-chips .preset-chip").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.strategy === key);
-  });
   const meta = DYNAMIC_STRATEGIES[key];
   const tipEl = document.getElementById("dynamic-strategy-tip");
   if (tipEl && meta) tipEl.textContent = meta.tip;
   const topNGroup = document.getElementById("dynamic-topn-group");
   if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
-}
-
-function initDynamicStrategyChips() {
-  document.querySelectorAll("#dynamic-strategy-chips .preset-chip").forEach((chip) => {
-    chip.addEventListener("click", () => selectDynamicStrategy(chip.dataset.strategy));
-  });
 }
 
 /* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
@@ -804,8 +826,9 @@ function init() {
   initBacktestSettings();
   initWeightInputs();
   initSavedPortfolios();
-  initModeSelect();
-  initDynamicStrategyChips();
+  initSelectBox("mode-select", (data) => setAllocationMode(data.mode));
+  initSelectBox("preset-select", handlePresetSelect);
+  initSelectBox("strategy-select", (data) => selectDynamicStrategy(data.strategy));
   setupAllocator();
   applyPreset("6040");
   renderDashboard();
