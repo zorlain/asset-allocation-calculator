@@ -1,5 +1,8 @@
 /* ---------- 자산군 메타데이터 & 프리셋 ---------- */
-const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
+const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "KOSPI", "KOSDAQ", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
+
+/* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
+const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 
 const PRESETS = {
   "6040": {
@@ -165,6 +168,25 @@ function annualReturnsFromMonthly(dates, monthlyReturns) {
     yearly[y] = g - 1;
   });
   return yearly;
+}
+
+/* 월별 수익률을 연도 x 1~12월 표 형태로 정리 (결과 화면의 월별 수익률 표에 사용) */
+function monthlyReturnsTable(dates, monthlyReturns) {
+  const byYear = {};
+  dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    const m = Number(d.slice(5, 7));
+    byYear[y] = byYear[y] || {};
+    byYear[y][m] = monthlyReturns[i];
+  });
+  const annual = annualReturnsFromMonthly(dates, monthlyReturns);
+  return Object.keys(byYear)
+    .sort()
+    .map((y) => ({
+      year: y,
+      months: Array.from({ length: 12 }, (_, i) => (byYear[y][i + 1] !== undefined ? byYear[y][i + 1] : null)),
+      annual: annual[y],
+    }));
 }
 
 function downsideDeviation(monthlyReturns, mar = 0) {
@@ -457,6 +479,14 @@ function formatSignedPct(x, digits = 1) {
 
 function formatUsd(x) {
   return `$${x.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+}
+
+function formatIndexPoint(x) {
+  return `${x.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}pt`;
+}
+
+function formatAssetPrice(ticker, x) {
+  return INDEX_POINT_ASSETS.has(ticker) ? formatIndexPoint(x) : formatUsd(x);
 }
 
 function formatManwon(n) {

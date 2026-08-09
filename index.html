@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=5" />
+<link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
 <div class="page">
@@ -72,37 +72,26 @@
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
-            초기 투자금액, 연 수수료, 리밸런싱 주기, 백테스트 기간을 설정합니다. 리밸런싱 주기를
-            "없음"으로 두면 최초 비중대로 매수한 뒤 그대로 보유(바이앤홀드)한다고 가정합니다.
+            초기 투자금액, 연 수수료, 백테스트 기간을 설정합니다. 리밸런싱 주기는 정적/동적 배분마다
+            의미가 달라 포트폴리오 구성 쪽에서 방식별로 따로 설정합니다.
           </span>
         </button>
       </h2>
 
-      <div class="field-group">
-        <label for="bt-amount">초기 투자금액</label>
-        <div class="field-input-wrap">
-          <input type="text" inputmode="numeric" id="bt-amount" value="10,000" />
-          <span class="field-suffix">만원</span>
-        </div>
-      </div>
-
       <div class="field-row">
+        <div class="field-group">
+          <label for="bt-amount">초기 투자금액</label>
+          <div class="field-input-wrap">
+            <input type="text" inputmode="numeric" id="bt-amount" value="10,000" />
+            <span class="field-suffix">만원</span>
+          </div>
+        </div>
         <div class="field-group">
           <label for="bt-fee">연 수수료</label>
           <div class="field-input-wrap">
             <input type="text" inputmode="decimal" id="bt-fee" value="0" />
             <span class="field-suffix">%</span>
           </div>
-        </div>
-        <div class="field-group">
-          <label for="bt-rebalance">리밸런싱 주기</label>
-          <select id="bt-rebalance" class="select-input">
-            <option value="1" selected>매달</option>
-            <option value="3">분기 (3개월)</option>
-            <option value="6">반기 (6개월)</option>
-            <option value="12">매년</option>
-            <option value="0">없음 (바이앤홀드)</option>
-          </select>
         </div>
       </div>
 
@@ -131,19 +120,39 @@
         </button>
       </h2>
 
-      <div class="mode-boxes" id="mode-boxes">
-        <button type="button" class="mode-box active" data-mode="static">
-          <div class="mode-box-title">정적 자산배분</div>
-          <div class="mode-box-desc">고정 비중을 유지하며 주기적으로 리밸런싱</div>
+      <div class="mode-select" id="mode-select">
+        <button type="button" class="mode-select-toggle" id="mode-select-toggle" aria-haspopup="listbox" aria-expanded="false">
+          <span class="mode-select-toggle-text">
+            <span class="mode-select-title" id="mode-select-title">정적 자산배분</span>
+            <span class="mode-select-desc" id="mode-select-desc">고정 비중을 유지하며 주기적으로 리밸런싱</span>
+          </span>
+          <span class="mode-select-caret" aria-hidden="true">▾</span>
         </button>
-        <button type="button" class="mode-box" data-mode="dynamic">
-          <div class="mode-box-title">동적 자산배분</div>
-          <div class="mode-box-desc">시장 상황에 따라 비중이 자동으로 변경</div>
-        </button>
+        <div class="mode-select-dropdown" id="mode-select-dropdown" role="listbox">
+          <button type="button" class="mode-select-option active" data-mode="static" role="option" aria-selected="true">
+            <div class="mode-option-title">정적 자산배분</div>
+            <div class="mode-option-desc">고정 비중을 유지하며 주기적으로 리밸런싱</div>
+          </button>
+          <button type="button" class="mode-select-option" data-mode="dynamic" role="option" aria-selected="false">
+            <div class="mode-option-title">동적 자산배분</div>
+            <div class="mode-option-desc">시장 상황에 따라 비중이 자동으로 변경</div>
+          </button>
+        </div>
       </div>
 
       <div class="mode-panel" id="static-mode-panel">
         <p class="card-desc-short">프리셋을 선택하거나 자산군별 비중을 입력하고 체크박스를 눌러 포함하세요. 체크한 자산의 비중 합이 100%가 되어야 계산할 수 있습니다.</p>
+
+        <div class="field-group">
+          <label for="static-rebalance">리밸런싱 주기</label>
+          <select id="static-rebalance" class="select-input">
+            <option value="1" selected>매달</option>
+            <option value="3">분기 (3개월)</option>
+            <option value="6">반기 (6개월)</option>
+            <option value="12">매년</option>
+            <option value="0">없음 (바이앤홀드)</option>
+          </select>
+        </div>
 
         <div class="preset-chips" id="preset-chips">
           <button type="button" class="preset-chip" data-preset="6040">
@@ -200,12 +209,22 @@
               <span class="field-suffix">개월</span>
             </div>
           </div>
-          <div class="field-group" id="dynamic-topn-group" hidden>
-            <label for="dynamic-topn">보유 자산 수</label>
-            <div class="field-input-wrap">
-              <input type="text" inputmode="numeric" id="dynamic-topn" value="1" />
-              <span class="field-suffix">개</span>
-            </div>
+          <div class="field-group">
+            <label for="dynamic-rebalance">재평가 주기</label>
+            <select id="dynamic-rebalance" class="select-input">
+              <option value="1" selected>매달</option>
+              <option value="3">분기 (3개월)</option>
+              <option value="6">반기 (6개월)</option>
+              <option value="12">매년</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group" id="dynamic-topn-group" hidden>
+          <label for="dynamic-topn">보유 자산 수</label>
+          <div class="field-input-wrap">
+            <input type="text" inputmode="numeric" id="dynamic-topn" value="1" />
+            <span class="field-suffix">개</span>
           </div>
         </div>
 
@@ -239,6 +258,22 @@
           <span class="weight-row-name">미국 배당주 (SCHD)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="SCHD" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="KOSPI" />
+          <span class="weight-row-name">코스피</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="KOSPI" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <input type="checkbox" class="weight-check" data-ticker="KOSDAQ" />
+          <span class="weight-row-name">코스닥</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="KOSDAQ" value="0" />
             <span class="weight-row-suffix">%</span>
           </div>
         </div>
@@ -363,10 +398,11 @@
   </section>
 
   <footer>
-    이 사이트의 모든 계산과 백테스트는 미국 상장 ETF(SPY, QQQ, SCHD, EEM, TLT, IEF, GLD, DBC, VNQ, BIL)의
-    과거 월간 종가를 기준으로 한 참고용 시뮬레이션이며, 환율 변동은 반영하지 않습니다. 과거 수익률은
-    미래 수익률을 보장하지 않으며, 이 사이트는 투자 자문이 아닙니다. 실제 투자 결정은 본인의 판단과
-    책임 하에 신중히 내리시기 바랍니다.
+    이 사이트의 모든 계산과 백테스트는 미국 상장 ETF(SPY, QQQ, SCHD, EEM, TLT, IEF, GLD, DBC, VNQ, BIL)와
+    코스피·코스닥 지수의 과거 월간 종가를 기준으로 한 참고용 시뮬레이션이며, 환율 변동은 반영하지
+    않습니다. 코스피·코스닥은 배당을 반영하지 않는 가격지수여서 실제 투자 시 수익률과 차이가 있을 수
+    있습니다. 과거 수익률은 미래 수익률을 보장하지 않으며, 이 사이트는 투자 자문이 아닙니다. 실제
+    투자 결정은 본인의 판단과 책임 하에 신중히 내리시기 바랍니다.
   </footer>
 
 </div>
@@ -374,6 +410,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/app.js?v=6"></script>
 </body>
 </html>

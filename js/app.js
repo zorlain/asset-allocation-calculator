@@ -22,16 +22,17 @@ function bindThousandsInput(id) {
 }
 
 /* ---------- 정보 툴팁 ---------- */
+/* 이벤트 위임 사용 - renderResult()가 나중에 동적으로 추가하는 info-btn(지표 설명)도 자동으로 동작한다 */
 function initInfoTooltips() {
-  document.querySelectorAll(".info-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".info-btn");
+    if (btn) {
       e.stopPropagation();
       const wasOpen = btn.classList.contains("open");
       document.querySelectorAll(".info-btn.open").forEach((b) => b.classList.remove("open"));
       if (!wasOpen) btn.classList.add("open");
-    });
-  });
-  document.addEventListener("click", () => {
+      return;
+    }
     document.querySelectorAll(".info-btn.open").forEach((b) => b.classList.remove("open"));
   });
 }
@@ -82,11 +83,34 @@ function initMenu() {
   document.addEventListener("click", () => menu.classList.remove("open"));
 }
 
+/* ---------- 지표 설명 (어려운 용어에 물음표 툴팁 추가) ---------- */
+const METRIC_INFO = {
+  mdd: "투자 기간 중 고점 대비 자산이 가장 많이 떨어졌던 비율입니다. 0에 가까울수록 하락 시기의 타격이 작았다는 뜻입니다.",
+  sharpe:
+    "위험(변동성) 대비 초과수익을 보여주는 지표입니다. 현금성자산 대비 얼마나 더 벌었는지를 변동성으로 나눈 값으로, 높을수록 감수한 위험 대비 수익이 좋았다는 뜻입니다.",
+  sortino:
+    "샤프비율과 비슷하지만 상승 변동성은 빼고 하락 변동성만으로 위험을 계산합니다. 손실 위험 대비 수익 효율을 더 정확히 보여줍니다.",
+  calmar:
+    "연평균 수익률(CAGR)을 최대낙폭(MDD)으로 나눈 값입니다. 감내해야 했던 최악의 하락폭 대비 수익이 얼마나 좋았는지를 보여줍니다.",
+};
+
+function statLabelWithInfo(label, key) {
+  const tip = METRIC_INFO[key];
+  if (!tip) return label;
+  return `${label}
+    <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+      <span aria-hidden="true">ⓘ</span>
+      <span class="info-tooltip">${tip}</span>
+    </button>`;
+}
+
 /* ---------- 자산군 색상 (파이/라인 차트용) ---------- */
 const TICKER_COLORS = {
   SPY: "#494fdf",
   QQQ: "#7c4fd8",
   SCHD: "#c25b8f",
+  KOSPI: "#3a6ea5",
+  KOSDAQ: "#6aa84f",
   EEM: "#21b3a4",
   TLT: "#f2665e",
   IEF: "#f2a341",
@@ -344,9 +368,11 @@ function initBacktestSettings() {
   }
 }
 
-function getBacktestOptions() {
+/* 리밸런싱(정적) / 재평가(동적) 주기는 모드별로 별도 컨트롤을 사용한다 */
+function getBacktestOptions(mode) {
   const feeAnnualPct = toNumber(document.getElementById("bt-fee").value) || 0;
-  const rebalanceMonths = Number(document.getElementById("bt-rebalance").value);
+  const rebalanceSelectId = mode === "dynamic" ? "dynamic-rebalance" : "static-rebalance";
+  const rebalanceMonths = Number(document.getElementById(rebalanceSelectId).value);
   const startYear = document.getElementById("bt-start-year").value;
   const endYear = document.getElementById("bt-end-year").value;
   return {
@@ -365,15 +391,36 @@ const REBALANCE_LABEL = {
   12: "매년 리밸런싱",
 };
 
-/* ---------- 정적/동적 배분 모드 전환 ---------- */
+const DYNAMIC_REBALANCE_LABEL = {
+  1: "매달 재평가",
+  3: "분기 재평가",
+  6: "반기 재평가",
+  12: "매년 재평가",
+};
+
+/* ---------- 정적/동적 배분 모드 선택 (드롭다운) ---------- */
 let allocationMode = "static";
 let selectedDynamicStrategy = null;
 
+const MODE_META = {
+  static: { title: "정적 자산배분", desc: "고정 비중을 유지하며 주기적으로 리밸런싱" },
+  dynamic: { title: "동적 자산배분", desc: "시장 상황에 따라 비중이 자동으로 변경" },
+};
+
 function setAllocationMode(mode) {
   allocationMode = mode;
-  document.querySelectorAll(".mode-box").forEach((box) => {
-    box.classList.toggle("active", box.dataset.mode === mode);
+  const meta = MODE_META[mode];
+  const titleEl = document.getElementById("mode-select-title");
+  const descEl = document.getElementById("mode-select-desc");
+  if (titleEl && meta) titleEl.textContent = meta.title;
+  if (descEl && meta) descEl.textContent = meta.desc;
+
+  document.querySelectorAll(".mode-select-option").forEach((opt) => {
+    const isActive = opt.dataset.mode === mode;
+    opt.classList.toggle("active", isActive);
+    opt.setAttribute("aria-selected", String(isActive));
   });
+
   const staticPanel = document.getElementById("static-mode-panel");
   const dynamicPanel = document.getElementById("dynamic-mode-panel");
   if (staticPanel) staticPanel.hidden = mode !== "static";
@@ -381,11 +428,32 @@ function setAllocationMode(mode) {
 
   const bar = document.getElementById("weight-total-bar");
   if (bar) bar.hidden = mode === "dynamic";
+
+  const dropdown = document.getElementById("mode-select-dropdown");
+  const toggle = document.getElementById("mode-select-toggle");
+  if (dropdown) dropdown.classList.remove("open");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
 }
 
-function initModeBoxes() {
-  document.querySelectorAll(".mode-box").forEach((box) => {
-    box.addEventListener("click", () => setAllocationMode(box.dataset.mode));
+function initModeSelect() {
+  const toggle = document.getElementById("mode-select-toggle");
+  const dropdown = document.getElementById("mode-select-dropdown");
+  if (!toggle || !dropdown) return;
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !dropdown.classList.contains("open");
+    dropdown.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  document.querySelectorAll(".mode-select-option").forEach((opt) => {
+    opt.addEventListener("click", () => setAllocationMode(opt.dataset.mode));
+  });
+
+  document.addEventListener("click", () => {
+    dropdown.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
   });
 }
 
@@ -494,7 +562,10 @@ function renderLineChart(bt) {
 
 function renderResult(bt) {
   const resultEl = document.getElementById("allocator-result");
-  const rebalanceLabel = REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
+  const rebalanceLabel =
+    bt.mode === "dynamic"
+      ? DYNAMIC_REBALANCE_LABEL[bt.rebalanceMonths] || "매달 재평가"
+      : REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
   const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
   const strategyNote = bt.mode === "dynamic" ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""} · ` : "";
   const bestYearText = bt.bestYear ? `${bt.bestYear.year}년 ${formatSignedPct(bt.bestYear.return, 1)}` : "-";
@@ -543,19 +614,19 @@ function renderResult(bt) {
         <div class="result-stat-value">${formatPct(bt.annVol, 2)}</div>
       </div>
       <div class="result-stat">
-        <div class="result-stat-label">최대낙폭 (MDD)</div>
+        <div class="result-stat-label">${statLabelWithInfo("최대낙폭 (MDD)", "mdd")}</div>
         <div class="result-stat-value negative">${formatPct(bt.mdd, 1)}</div>
       </div>
       <div class="result-stat">
-        <div class="result-stat-label">샤프비율</div>
+        <div class="result-stat-label">${statLabelWithInfo("샤프비율", "sharpe")}</div>
         <div class="result-stat-value">${bt.sharpe.toFixed(2)}</div>
       </div>
       <div class="result-stat">
-        <div class="result-stat-label">소르티노비율</div>
+        <div class="result-stat-label">${statLabelWithInfo("소르티노비율", "sortino")}</div>
         <div class="result-stat-value">${bt.sortino.toFixed(2)}</div>
       </div>
       <div class="result-stat">
-        <div class="result-stat-label">칼마비율</div>
+        <div class="result-stat-label">${statLabelWithInfo("칼마비율", "calmar")}</div>
         <div class="result-stat-value">${bt.calmar.toFixed(2)}</div>
       </div>
       <div class="result-stat">
@@ -575,9 +646,32 @@ function renderResult(bt) {
         <div class="result-stat-value negative">${worstYearText}</div>
       </div>
     </div>
+
+    <h3 class="result-subheading">월별 수익률</h3>
+    <div class="asset-table-wrap">
+      <table class="asset-table monthly-table">
+        ${buildMonthlyTable(bt)}
+      </table>
+    </div>
   `;
   renderPieChart(bt.finalWeights || {});
   renderLineChart(bt);
+}
+
+function buildMonthlyTable(bt) {
+  const rows = monthlyReturnsTable(bt.dates, bt.monthlyReturns);
+  const monthHeaders = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+  const headerRow = `<tr><th>연도</th>${monthHeaders.map((m) => `<th>${m}</th>`).join("")}<th>연간</th></tr>`;
+  const bodyRows = rows
+    .map((row) => {
+      const cells = row.months
+        .map((r) => (r === null ? `<td>-</td>` : `<td class="${r >= 0 ? "positive" : "negative"}">${formatSignedPct(r, 1)}</td>`))
+        .join("");
+      const annualCls = row.annual >= 0 ? "positive" : "negative";
+      return `<tr><td class="asset-name-cell">${row.year}</td>${cells}<td class="${annualCls}" style="font-weight:800">${formatSignedPct(row.annual, 1)}</td></tr>`;
+    })
+    .join("");
+  return `<thead>${headerRow}</thead><tbody>${bodyRows}</tbody>`;
 }
 
 function runStaticCalc(amount, options) {
@@ -638,7 +732,7 @@ function runDynamicCalc(amount, options) {
 function setupAllocator() {
   document.getElementById("allocator-calc-btn").addEventListener("click", () => {
     const amount = toNumber(document.getElementById("bt-amount").value) || 10000;
-    const options = getBacktestOptions();
+    const options = getBacktestOptions(allocationMode);
     const bt = allocationMode === "static" ? runStaticCalc(amount, options) : runDynamicCalc(amount, options);
     lastResult = bt;
     if (bt) renderResult(bt);
@@ -666,7 +760,7 @@ function renderDashboard() {
     return `
       <tr>
         <td class="asset-name-cell">${s.name}</td>
-        <td>${formatUsd(s.lastClose)}</td>
+        <td>${formatAssetPrice(t, s.lastClose)}</td>
         <td class="${cls1m}">${formatSignedPct(s.oneMonthReturn, 1)}</td>
         <td class="${cls1y}">${s.oneYearReturn === null ? "-" : formatSignedPct(s.oneYearReturn, 1)}</td>
         <td>${formatSignedPct(s.cagr, 1)}</td>
@@ -710,7 +804,7 @@ function init() {
   initBacktestSettings();
   initWeightInputs();
   initSavedPortfolios();
-  initModeBoxes();
+  initModeSelect();
   initDynamicStrategyChips();
   setupAllocator();
   applyPreset("6040");

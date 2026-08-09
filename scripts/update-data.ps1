@@ -8,26 +8,30 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $outPath = Join-Path $root "data\asset-data.js"
 
-# 자산군 => 대표 ETF 매핑
+# 자산군 => { 표시 이름, Yahoo Finance 조회 심볼 } 매핑 (내부 키와 조회 심볼이 다른 경우 있음: 지수 등)
 $assets = [ordered]@{
-  SPY  = "미국주식 (S&P500)"
-  QQQ  = "미국 기술주 (나스닥100)"
-  SCHD = "미국 배당주 (SCHD)"
-  EEM  = "신흥국주식 (MSCI EM)"
-  TLT  = "미국 장기국채 (20년+)"
-  IEF  = "미국 중기국채 (7-10년)"
-  GLD  = "금"
-  DBC  = "원자재"
-  VNQ  = "미국 리츠 (REITs)"
-  BIL  = "현금성자산 (미국 단기국채)"
+  SPY    = @{ name = "미국주식 (S&P500)"; symbol = "SPY" }
+  QQQ    = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
+  SCHD   = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
+  KOSPI  = @{ name = "코스피"; symbol = "^KS11" }
+  KOSDAQ = @{ name = "코스닥"; symbol = "^KQ11" }
+  EEM    = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
+  TLT    = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
+  IEF    = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
+  GLD    = @{ name = "금"; symbol = "GLD" }
+  DBC    = @{ name = "원자재"; symbol = "DBC" }
+  VNQ    = @{ name = "미국 리츠 (REITs)"; symbol = "VNQ" }
+  BIL    = @{ name = "현금성자산 (미국 단기국채)"; symbol = "BIL" }
 }
 
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
 
 $result = [ordered]@{}
 foreach ($ticker in $assets.Keys) {
-  Write-Host "다운로드 중: $ticker ($($assets[$ticker]))..."
-  $url = "https://query1.finance.yahoo.com/v8/finance/chart/$ticker`?range=max&interval=1mo"
+  $meta = $assets[$ticker]
+  Write-Host "다운로드 중: $ticker ($($meta.name))..."
+  $encodedSymbol = [Uri]::EscapeDataString($meta.symbol)
+  $url = "https://query1.finance.yahoo.com/v8/finance/chart/$encodedSymbol`?range=max&interval=1mo"
   $resp = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
   $json = $resp.Content | ConvertFrom-Json
   $chartResult = $json.chart.result[0]
@@ -50,7 +54,7 @@ foreach ($ticker in $assets.Keys) {
   }
 
   $result[$ticker] = [ordered]@{
-    name   = $assets[$ticker]
+    name   = $meta.name
     series = $series
   }
 
