@@ -1,0 +1,903 @@
+/* 레볼루트(Revolut) 디자인 언어 — 계산기류 사이트는 라이트가 기본값(로또/연금복권은 다크
+   기본값). 코발트 바이올렛 포인트(버튼 표면 X, 아껴서 사용), 1차 버튼은 캔버스 반대색 알약,
+   그림자 완전 배제. data-theme="dark"로 다크 모드 전환. */
+:root {
+  --bg: #ffffff;
+  --card: #f7f7f8;
+  --card-elevated: #ececef;
+  --text: #0a0a0a;
+  --text-muted: rgba(10, 10, 10, 0.62);
+  --border: rgba(10, 10, 10, 0.12);
+  --accent: #494fdf;
+  --accent-hover: #4046c8;
+  --accent-soft: rgba(73, 79, 223, 0.12);
+  --accent-on: #ffffff;
+  --chart-fill: #494fdf;
+  --btn-primary-bg: #0a0a0a;
+  --btn-primary-text: #ffffff;
+  --btn-primary-pressed: #2e2e2e;
+  --hover-tint: rgba(10, 10, 10, 0.06);
+
+  --positive: #2c9e44;
+  --negative: #d8314f;
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --card: #16181a;
+  --card-elevated: #1f2226;
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.72);
+  --border: rgba(255, 255, 255, 0.12);
+  --accent-hover: #4f55f1;
+  --accent-soft: rgba(73, 79, 223, 0.16);
+  --chart-fill: #3a40c4;
+  --btn-primary-bg: #ffffff;
+  --btn-primary-text: #000000;
+  --btn-primary-pressed: #c9c9cd;
+  --hover-tint: rgba(255, 255, 255, 0.08);
+}
+
+/* 테마 토글 버튼 */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--text);
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.theme-toggle:hover {
+  background: var(--hover-tint);
+}
+
+.theme-toggle:active {
+  transform: scale(0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Pretendard Variable", Pretendard, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 56px 24px 110px;
+}
+
+header.hero {
+  text-align: center;
+  margin-bottom: 44px;
+}
+
+header.hero h1 {
+  font-size: 34px;
+  font-weight: 500;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+header.hero p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.56;
+  letter-spacing: -0.09px;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  position: relative;
+}
+
+/* 헤더 햄버거 메뉴 — 누르면 다른 도구 목록이 드롭다운으로 표시 */
+.menu {
+  position: relative;
+}
+
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--text);
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.menu-toggle:hover {
+  background: var(--hover-tint);
+}
+
+.menu-toggle:active {
+  transform: scale(0.94);
+}
+
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card-elevated);
+  border-radius: 16px;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  z-index: 40;
+}
+
+.menu.open .menu-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tool-list-group-label {
+  padding: 6px 10px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tool-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.tool-list-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 탭 내비게이션 */
+.tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--accent-soft);
+  border-radius: 9999px;
+  padding: 8px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 16px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tab-btn.active {
+  background: var(--card);
+  color: var(--accent);
+}
+
+.card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 28px;
+}
+
+.card h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card .card-desc {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: -12px 0 22px;
+  text-align: center;
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+.card-desc-short {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: -12px 0 16px;
+}
+
+.tip-text {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  background: var(--card-elevated);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 20px;
+}
+
+.field-hint {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* 설명 아이콘 + 툴팁 */
+.info-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--card-elevated);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.info-btn:hover,
+.info-btn:focus-visible,
+.info-btn.open {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.info-tooltip {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  top: calc(100% + 8px);
+  width: 280px;
+  max-width: 78vw;
+  background: var(--card-elevated);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: normal;
+  border-radius: 12px;
+  padding: 13px 15px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  pointer-events: none;
+}
+
+.info-btn:hover .info-tooltip,
+.info-btn:focus-visible .info-tooltip,
+.info-btn.open .info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 입력 폼 */
+.field-group {
+  margin-bottom: 20px;
+}
+
+.field-group:last-child {
+  margin-bottom: 0;
+}
+
+.field-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.field-input-wrap {
+  position: relative;
+}
+
+.field-input-wrap input {
+  width: 100%;
+  padding: 16px 52px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.field-input-wrap input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.field-input-wrap .field-suffix {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.calc-btn {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.24px;
+  color: var(--btn-primary-text);
+  background: var(--btn-primary-bg);
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  margin-top: 24px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.calc-btn:hover {
+  background: var(--btn-primary-bg);
+}
+
+.calc-btn:active {
+  background: var(--btn-primary-pressed);
+  transform: scale(0.98);
+}
+
+.calc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 결과 영역 */
+.result-hero {
+  text-align: center;
+  padding: 8px 0 24px;
+}
+
+.result-hero-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.result-hero-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  word-break: break-all;
+}
+
+.result-hero-sub {
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.result-stat {
+  background: var(--card-elevated);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.result-stat-label {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.result-stat-value {
+  font-size: 17px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.result-stat-value.positive { color: var(--positive); }
+.result-stat-value.negative { color: var(--negative); }
+
+.result-placeholder {
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.progress-wrap {
+  margin-top: 20px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--card-elevated);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+  transition: width 0.3s;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 48px;
+  line-height: 1.8;
+}
+
+/* ---------- 프리셋 칩 ---------- */
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.preset-chip {
+  flex: 1 1 auto;
+  min-width: 130px;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.preset-chip:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.preset-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.preset-chip-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.preset-chip-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.preset-chip.reset-chip {
+  flex: 0 0 auto;
+  min-width: 80px;
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ---------- 자산 비중 입력 ---------- */
+.weight-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.weight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-elevated);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.weight-row-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.weight-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weight-row-input-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 3px;
+}
+
+.weight-row input {
+  width: 48px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+  font-family: inherit;
+}
+
+.weight-row input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.weight-row-suffix {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.weight-total-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-elevated);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.weight-total-bar.ok { color: var(--positive); }
+.weight-total-bar.bad { color: var(--negative); }
+
+/* ---------- 차트 캔버스 ---------- */
+.chart-wrap {
+  position: relative;
+  margin: 4px 0 22px;
+}
+
+.chart-wrap.pie-wrap {
+  height: 240px;
+}
+
+.chart-wrap.line-wrap {
+  height: 260px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chart-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---------- 백테스트 요약 배지 ---------- */
+.weight-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.weight-summary-badge {
+  background: var(--card-elevated);
+  border-radius: 9999px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ---------- 자산 현황 테이블 ---------- */
+.asset-table-wrap {
+  overflow-x: auto;
+}
+
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.asset-table th {
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 0 8px 10px;
+  white-space: nowrap;
+}
+
+.asset-table th:first-child,
+.asset-table td:first-child {
+  text-align: left;
+}
+
+.asset-table td {
+  padding: 12px 8px;
+  border-top: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.asset-table td.asset-name-cell {
+  font-weight: 700;
+}
+
+.asset-table td.positive { color: var(--positive); }
+.asset-table td.negative { color: var(--negative); }
+
+/* ---------- 가이드 탭 ---------- */
+.guide-card h3 {
+  font-size: 15.5px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin: 0;
+  word-break: keep-all;
+}
+
+.guide-card + .guide-card {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.disclaimer-box {
+  background: var(--card-elevated);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-top: 24px;
+}
+
+/* 모바일 (약 360~430px 기준) */
+@media (max-width: 640px) {
+  .page {
+    padding: 28px 16px 72px;
+  }
+
+  .info-tooltip {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 20px;
+    width: auto;
+    max-width: none;
+    font-size: 13.5px;
+    padding: 14px 16px;
+    transform: translateY(6px);
+  }
+  .info-btn:hover .info-tooltip,
+  .info-btn:focus-visible .info-tooltip,
+  .info-btn.open .info-tooltip {
+    transform: translateY(0);
+  }
+
+  header.hero {
+    margin-bottom: 28px;
+  }
+  header.hero h1 {
+    font-size: 25px;
+    margin: 0 0 8px;
+  }
+  header.hero p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .hero-actions {
+    margin-top: 14px;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 17px;
+    margin: 0 0 12px;
+  }
+
+  .tabs {
+    padding: 5px;
+    gap: 4px;
+    margin-bottom: 18px;
+  }
+  .tab-btn {
+    font-size: 12.5px;
+    padding: 12px 6px;
+    line-height: 1.3;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .calc-btn {
+    padding: 17px;
+    font-size: 16px;
+  }
+
+  .result-hero-value {
+    font-size: 28px;
+  }
+
+  .result-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .result-stat {
+    padding: 13px 14px;
+  }
+  .result-stat-value {
+    font-size: 15px;
+  }
+
+  .preset-chip {
+    min-width: 100%;
+  }
+  .preset-chip.reset-chip {
+    min-width: 100%;
+  }
+
+  .weight-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .chart-wrap.pie-wrap {
+    height: 200px;
+  }
+  .chart-wrap.line-wrap {
+    height: 200px;
+  }
+
+  .asset-table {
+    font-size: 12.5px;
+  }
+  .asset-table td {
+    padding: 10px 6px;
+  }
+
+  footer {
+    font-size: 12px;
+    margin-top: 32px;
+    line-height: 1.7;
+  }
+}

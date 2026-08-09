@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zorlain.github.io/asset-allocation-calculator/sitemap.xml

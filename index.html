@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>
+  (function () {
+    var saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") {
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+  })();
+</script>
+<title>무료 자산배분계산기 - 포트폴리오 배분·백테스트 시뮬레이터</title>
+<meta name="description" content="주식·채권·금·리츠 등 자산군별 비중을 입력해 기대수익률과 변동성을 계산하고, 60/40·영구포트폴리오·올웨더 같은 전략을 과거 데이터로 백테스트해보세요. 무료입니다." />
+<meta name="keywords" content="자산배분계산기,포트폴리오계산기,백테스트,자산배분,영구포트폴리오,올웨더포트폴리오,60대40포트폴리오,분산투자" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://zorlain.github.io/asset-allocation-calculator/" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="무료 자산배분계산기 - 포트폴리오 배분·백테스트 시뮬레이터" />
+<meta property="og:description" content="자산군별 비중으로 기대수익률·변동성을 계산하고, 대표 포트폴리오 전략을 과거 데이터로 백테스트합니다." />
+<meta property="og:url" content="https://zorlain.github.io/asset-allocation-calculator/" />
+<meta property="og:locale" content="ko_KR" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="무료 자산배분계산기" />
+<meta name="twitter:description" content="포트폴리오 배분 계산과 백테스트를 무료로 바로 해보세요." />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="stylesheet" href="css/style.css?v=1" />
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <h1>📊 자산배분계산기</h1>
+    <p>자산군별 비중으로 기대수익률과 변동성을 계산하고, 과거 데이터로 백테스트합니다.</p>
+    <div class="hero-actions">
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크/라이트 모드 전환">🌙</button>
+      <div class="menu" id="menu">
+        <button type="button" class="menu-toggle" id="menu-toggle" aria-label="메뉴 열기">☰</button>
+        <div class="menu-dropdown" id="menu-dropdown">
+          <div class="tool-list-group-label">다른 도구</div>
+          <a class="tool-list-item" href="https://zorlain.github.io/retirement-calculator/">🏦 은퇴자산계산기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또 번호 생성기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/pension-lotto-generator/">🎰 연금복권 번호 생성기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/loan-calculator/">💰 대출·예금 계산기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/salary-calculator/">💵 연봉·퇴직금 계산기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/health-calculator/">🩺 BMI·대사량 계산기</a>
+          <a class="tool-list-item" href="https://zorlain.github.io/date-calculator/">📆 디데이·나이 계산기</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="allocator">📊 배분 계산기</button>
+    <button class="tab-btn" data-tab="backtest">🔁 백테스트</button>
+    <button class="tab-btn" data-tab="dashboard">💹 자산 현황</button>
+    <button class="tab-btn" data-tab="guide">📘 가이드</button>
+  </nav>
+
+  <!-- 탭 1: 배분 계산기 -->
+  <section class="tab-panel" data-tab-panel="allocator">
+    <div class="card">
+      <h2>
+        📊 포트폴리오 구성
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            자산군별 비중(%)을 입력하면 각 자산의 과거 데이터를 기준으로 포트폴리오의 기대수익률과
+            변동성을 계산합니다. 여기서 설정한 비중은 백테스트 탭에서도 그대로 사용됩니다.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short">프리셋을 선택하거나 자산군별 비중을 직접 입력하세요. 합이 100%가 되어야 계산할 수 있습니다.</p>
+
+      <div class="preset-chips" id="preset-chips">
+        <button type="button" class="preset-chip" data-preset="6040">
+          <div class="preset-chip-label">60/40</div>
+          <div class="preset-chip-desc">주식 60% · 중기국채 40%</div>
+        </button>
+        <button type="button" class="preset-chip" data-preset="permanent">
+          <div class="preset-chip-label">영구 포트폴리오</div>
+          <div class="preset-chip-desc">주식·장기채·금·현금 각 25%</div>
+        </button>
+        <button type="button" class="preset-chip" data-preset="allweather">
+          <div class="preset-chip-label">올웨더 (간소화)</div>
+          <div class="preset-chip-desc">주식30·장기채40·중기채15·금7.5·원자재7.5</div>
+        </button>
+        <button type="button" class="preset-chip reset-chip" id="preset-reset">초기화</button>
+      </div>
+
+      <div class="weight-total-bar" id="weight-total-bar">
+        <span>비중 합계</span>
+        <span id="weight-total-value">0%</span>
+      </div>
+
+      <div class="weight-list" id="weight-list">
+        <div class="weight-row">
+          <span class="weight-row-icon">🇺🇸</span>
+          <span class="weight-row-name">미국주식 (SPY)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="SPY" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🌏</span>
+          <span class="weight-row-name">신흥국주식 (EEM)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="EEM" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🏛️</span>
+          <span class="weight-row-name">미국 장기국채 (TLT)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="TLT" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🏦</span>
+          <span class="weight-row-name">미국 중기국채 (IEF)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="IEF" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🥇</span>
+          <span class="weight-row-name">금 (GLD)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="GLD" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🛢️</span>
+          <span class="weight-row-name">원자재 (DBC)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="DBC" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">🏢</span>
+          <span class="weight-row-name">미국 리츠 (VNQ)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="VNQ" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+        <div class="weight-row">
+          <span class="weight-row-icon">💵</span>
+          <span class="weight-row-name">현금성자산 (BIL)</span>
+          <div class="weight-row-input-wrap">
+            <input type="text" inputmode="decimal" class="weight-input" data-ticker="BIL" value="0" />
+            <span class="weight-row-suffix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="calc-btn" id="allocator-calc-btn">🔄 계산하기</button>
+    </div>
+
+    <div class="card">
+      <h2>결과</h2>
+      <div id="allocator-result">
+        <p class="result-placeholder">비중을 입력하고 계산하기를 눌러주세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 탭 2: 백테스트 -->
+  <section class="tab-panel" data-tab-panel="backtest" hidden>
+    <div class="card">
+      <h2>
+        🔁 백테스트 설정
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            배분 계산기 탭에서 설정한 포트폴리오 비중을 그대로 사용해, 매달 리밸런싱한다고 가정하고
+            과거 데이터를 재생합니다. 데이터가 존재하는 공통 구간만 사용되며, 자산 조합에 따라
+            시작 시점이 달라질 수 있습니다.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short">현재 설정된 포트폴리오 비중</p>
+      <div class="weight-summary" id="backtest-weight-summary"></div>
+
+      <div class="field-group">
+        <label for="bt-amount">초기 투자금액</label>
+        <div class="field-input-wrap">
+          <input type="text" inputmode="numeric" id="bt-amount" value="1,000" />
+          <span class="field-suffix">만원</span>
+        </div>
+      </div>
+
+      <button class="calc-btn" id="backtest-run-btn">🔄 백테스트 실행</button>
+    </div>
+
+    <div class="card">
+      <h2>결과</h2>
+      <div id="backtest-result">
+        <p class="result-placeholder">배분 계산기 탭에서 비중을 설정한 뒤 백테스트를 실행해주세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 탭 3: 자산 현황 -->
+  <section class="tab-panel" data-tab-panel="dashboard" hidden>
+    <div class="card">
+      <h2>
+        💹 자산 현황
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            실시간 시세가 아니라, <code>scripts/update-data.ps1</code>을 재실행할 때마다 갱신되는
+            최근 종가 기준 데이터입니다. 상단에 표시된 기준일을 확인하세요.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short" id="dashboard-asof">기준일 확인 중...</p>
+
+      <div class="asset-table-wrap">
+        <table class="asset-table" id="asset-table">
+          <thead>
+            <tr>
+              <th>자산</th>
+              <th>최근 종가</th>
+              <th>1개월</th>
+              <th>1년</th>
+              <th>연평균(CAGR)</th>
+              <th>변동성</th>
+            </tr>
+          </thead>
+          <tbody id="asset-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 탭 4: 가이드 -->
+  <section class="tab-panel" data-tab-panel="guide" hidden>
+    <div class="card">
+      <h2>📘 자산배분 가이드</h2>
+
+      <div class="guide-card">
+        <h3>🥧 분산투자란</h3>
+        <p>
+          한 자산에 자금을 모두 넣지 않고 주식, 채권, 금, 현금성자산 등 서로 다르게 움직이는 자산군에
+          나누어 투자하는 방법입니다. 어느 한 자산군이 하락하는 시기에도 다른 자산군이 이를 상쇄해줄
+          수 있어, 같은 기대수익률이라도 포트폴리오 전체의 변동성을 줄이는 효과가 있습니다.
+        </p>
+      </div>
+
+      <div class="guide-card">
+        <h3>🔁 리밸런싱</h3>
+        <p>
+          시간이 지나면 자산마다 오르내리는 정도가 달라 처음 설정한 비중이 흐트러집니다. 리밸런싱은
+          주기적으로 비중을 원래대로 맞춰주는 작업으로, 오른 자산 일부를 팔고 내린 자산을 사게 되어
+          결과적으로 저점 매수·고점 매도를 기계적으로 반복하는 효과를 냅니다. 이 사이트의 백테스트는
+          매달 리밸런싱한다고 가정합니다.
+        </p>
+      </div>
+
+      <div class="guide-card">
+        <h3>📉 상관관계와 변동성</h3>
+        <p>
+          두 자산이 같은 방향으로 움직이는 정도를 상관관계라고 합니다. 상관관계가 낮거나 반대 방향인
+          자산을 함께 담을수록 포트폴리오 전체의 변동성(가격이 오르내리는 폭)은 각 자산의 변동성을
+          단순 평균한 것보다 작아집니다. 주식과 채권, 주식과 금이 대표적으로 상관관계가 낮은 조합으로
+          꼽힙니다.
+        </p>
+      </div>
+
+      <div class="guide-card">
+        <h3>📐 현대 포트폴리오 이론(MPT)</h3>
+        <p>
+          해리 마코위츠가 제시한 이론으로, 개별 자산의 수익률뿐 아니라 자산 간 상관관계까지 고려해
+          포트폴리오를 구성하면 같은 기대수익률에서 위험을 최소화하거나, 같은 위험에서 기대수익률을
+          최대화할 수 있다는 내용입니다. 이 사이트의 배분 계산기도 각 자산군의 과거 수익률과 변동성을
+          바탕으로 포트폴리오 전체의 기대수익률과 변동성을 계산합니다.
+        </p>
+      </div>
+
+      <div class="guide-card">
+        <h3>🧭 대표 자산배분 전략</h3>
+        <p>
+          <b>60/40</b>은 주식과 채권을 6:4로 나눈 가장 단순한 전통적 배분입니다. <b>영구 포트폴리오</b>는
+          해리 브라운이 제안한 전략으로 주식·장기채·금·현금을 각 25%씩 담아 어떤 경제 국면에서도
+          견디도록 설계되었습니다. <b>올웨더</b>는 레이 달리오가 제안한 전략을 간소화한 버전으로,
+          장기채 비중을 높여 경기 침체 국면에 더 강한 방어력을 목표로 합니다.
+        </p>
+      </div>
+
+      <div class="disclaimer-box">
+        이 사이트의 모든 계산과 백테스트는 미국 상장 ETF(SPY, EEM, TLT, IEF, GLD, DBC, VNQ, BIL)의
+        과거 월간 종가를 기준으로 하며, 환율 변동은 반영하지 않습니다. 과거 수익률은 미래 수익률을
+        보장하지 않으며, 이 사이트는 투자 자문이 아닌 참고용 시뮬레이션입니다. 실제 투자 결정은
+        본인의 판단과 책임 하에 신중히 내리시기 바랍니다.
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    이 사이트의 배분 계산과 백테스트는 과거 데이터를 기반으로 한 참고용 시뮬레이션이며, 실제 투자
+    수익을 보장하지 않습니다. 투자에 대한 최종 결정과 책임은 투자자 본인에게 있습니다.
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="data/asset-data.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
