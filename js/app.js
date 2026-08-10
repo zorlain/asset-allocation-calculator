@@ -120,7 +120,9 @@ const TICKER_COLORS = {
   BIL: "#9aa0a6",
 };
 
-/* ---------- 비중 입력 상태 (0보다 큰 값을 입력한 자산만 자동 반영 - 별도 체크 불필요) ---------- */
+/* ---------- 자산 추가/제거 (자산 추가 버튼을 눌러 목록에서 고른 자산만 행으로 표시) ---------- */
+let addedTickers = [];
+
 function isTickerActive(ticker) {
   const inp = document.querySelector(`.weight-input[data-ticker="${ticker}"]`);
   return !!inp && parsePercent(inp.value) > 0;
@@ -169,12 +171,75 @@ function markPresetAsCustom() {
   clearSavedChipActive();
 }
 
+function renderAssetAddOptions() {
+  const dropdown = document.getElementById("asset-add-dropdown");
+  if (!dropdown) return;
+  const remaining = ASSET_ORDER.filter((t) => !addedTickers.includes(t));
+  if (remaining.length === 0) {
+    dropdown.innerHTML = `<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
+    return;
+  }
+  dropdown.innerHTML = remaining
+    .map(
+      (t) => `
+        <button type="button" class="select-box-option" data-ticker="${t}" role="option">
+          <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
+        </button>
+      `
+    )
+    .join("");
+}
+
+function bindWeightInput(inp) {
+  inp.addEventListener("input", () => {
+    updateRowActiveClass(inp.dataset.ticker);
+    markPresetAsCustom();
+    updateWeightTotal();
+  });
+}
+
+function addAssetRow(ticker, value = 0) {
+  if (!ASSET_DATA.assets[ticker] || addedTickers.includes(ticker)) return;
+  addedTickers.push(ticker);
+
+  const list = document.getElementById("weight-list");
+  const row = document.createElement("div");
+  row.className = "weight-row";
+  row.dataset.ticker = ticker;
+  row.innerHTML = `
+    <span class="weight-row-name">${ASSET_DATA.assets[ticker].name}</span>
+    <div class="weight-row-input-wrap">
+      <input type="text" inputmode="decimal" class="weight-input" data-ticker="${ticker}" value="${value > 0 ? value : 0}" />
+      <span class="weight-row-suffix">%</span>
+    </div>
+    <button type="button" class="weight-row-remove" data-ticker="${ticker}" aria-label="자산 제거">×</button>
+  `;
+  list.appendChild(row);
+
+  bindWeightInput(row.querySelector(".weight-input"));
+  row.querySelector(".weight-row-remove").addEventListener("click", () => {
+    removeAssetRow(ticker);
+    markPresetAsCustom();
+  });
+
+  updateRowActiveClass(ticker);
+  renderAssetAddOptions();
+}
+
+function removeAssetRow(ticker) {
+  const row = document.querySelector(`.weight-row[data-ticker="${ticker}"]`);
+  if (row) row.remove();
+  addedTickers = addedTickers.filter((t) => t !== ticker);
+  renderAssetAddOptions();
+  updateWeightTotal();
+}
+
 function applyWeightsToInputs(weights) {
-  document.querySelectorAll(".weight-input").forEach((inp) => {
-    const t = inp.dataset.ticker;
+  document.getElementById("weight-list").innerHTML = "";
+  addedTickers = [];
+  ASSET_ORDER.forEach((t) => {
     const w = weights[t] || 0;
-    inp.value = w > 0 ? String(+(w * 100).toFixed(2)) : "0";
-    updateRowActiveClass(t);
+    if (w > 0) addAssetRow(t, +(w * 100).toFixed(2));
   });
   updateWeightTotal();
 }
@@ -186,22 +251,37 @@ function applyPreset(key) {
 }
 
 function resetWeights() {
-  document.querySelectorAll(".weight-input").forEach((inp) => {
-    inp.value = "0";
-    updateRowActiveClass(inp.dataset.ticker);
-  });
+  document.getElementById("weight-list").innerHTML = "";
+  addedTickers = [];
+  renderAssetAddOptions();
   updateWeightTotal();
 }
 
-function initWeightInputs() {
-  document.querySelectorAll(".weight-input").forEach((inp) => {
-    updateRowActiveClass(inp.dataset.ticker);
-    inp.addEventListener("input", () => {
-      updateRowActiveClass(inp.dataset.ticker);
-      markPresetAsCustom();
-      updateWeightTotal();
-    });
+function initAssetAddSelect() {
+  const toggle = document.getElementById("asset-add-toggle");
+  const dropdown = document.getElementById("asset-add-dropdown");
+  if (!toggle || !dropdown) return;
+
+  renderAssetAddOptions();
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !dropdown.classList.contains("open");
+    closeAllSelectBoxDropdowns();
+    dropdown.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", String(willOpen));
   });
+
+  dropdown.addEventListener("click", (e) => {
+    const opt = e.target.closest(".select-box-option");
+    if (!opt) return;
+    e.stopPropagation();
+    addAssetRow(opt.dataset.ticker, 0);
+    markPresetAsCustom();
+    closeSelectBoxDropdown("asset-add-select");
+  });
+
+  document.addEventListener("click", () => closeSelectBoxDropdown("asset-add-select"));
 }
 
 /* ---------- 나만의 포트폴리오 저장 (localStorage) ---------- */
@@ -814,7 +894,7 @@ function init() {
   initTabs();
   initInfoTooltips();
   initBacktestSettings();
-  initWeightInputs();
+  initAssetAddSelect();
   initSavedPortfolios();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));
   initSelectBox("preset-select", handlePresetSelect);
