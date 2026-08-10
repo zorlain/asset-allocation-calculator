@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=7" />
+<link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
 <div class="page">
@@ -141,7 +141,7 @@
       </div>
 
       <div class="mode-panel" id="static-mode-panel">
-        <p class="card-desc-short">프리셋을 선택하거나 자산군별 비중을 입력하고 체크박스를 눌러 포함하세요. 체크한 자산의 비중 합이 100%가 되어야 계산할 수 있습니다.</p>
+        <p class="card-desc-short">프리셋을 선택하거나 자산군별로 비중(%)을 입력하세요. 0보다 크게 입력한 자산만 자동으로 포함되며, 합이 100%가 되어야 계산할 수 있습니다.</p>
 
         <div class="field-group">
           <label for="static-rebalance">리밸런싱 주기</label>
@@ -196,7 +196,7 @@
       </div>
 
       <div class="mode-panel" id="dynamic-mode-panel" hidden>
-        <p class="card-desc-short">전략을 선택하세요. 아래 자산 목록에서 체크한 자산이 후보군이 되며, 현금성자산(BIL)은 신호가 부진할 때의 대피처로 자동 사용되어 후보에서 제외됩니다.</p>
+        <p class="card-desc-short">전략을 선택하세요. 아래 자산 목록에서 비중(%)을 입력한 자산이 후보군이 되며, 현금성자산(BIL)은 신호가 부진할 때의 대피처로 자동 사용되어 후보에서 제외됩니다.</p>
 
         <div class="select-box" id="strategy-select">
           <button type="button" class="select-box-toggle" id="strategy-select-toggle" aria-haspopup="listbox" aria-expanded="false">
@@ -259,7 +259,6 @@
 
       <div class="weight-list" id="weight-list">
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="SPY" />
           <span class="weight-row-name">미국주식 (SPY)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="SPY" value="0" />
@@ -267,7 +266,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="QQQ" />
           <span class="weight-row-name">미국 기술주 (QQQ)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="QQQ" value="0" />
@@ -275,7 +273,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="SCHD" />
           <span class="weight-row-name">미국 배당주 (SCHD)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="SCHD" value="0" />
@@ -283,7 +280,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="KOSPI" />
           <span class="weight-row-name">코스피</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="KOSPI" value="0" />
@@ -291,7 +287,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="KOSDAQ" />
           <span class="weight-row-name">코스닥</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="KOSDAQ" value="0" />
@@ -299,7 +294,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="EEM" />
           <span class="weight-row-name">신흥국주식 (EEM)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="EEM" value="0" />
@@ -307,7 +301,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="TLT" />
           <span class="weight-row-name">미국 장기국채 (TLT)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="TLT" value="0" />
@@ -315,7 +308,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="IEF" />
           <span class="weight-row-name">미국 중기국채 (IEF)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="IEF" value="0" />
@@ -323,7 +315,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="GLD" />
           <span class="weight-row-name">금 (GLD)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="GLD" value="0" />
@@ -331,7 +322,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="DBC" />
           <span class="weight-row-name">원자재 (DBC)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="DBC" value="0" />
@@ -339,7 +329,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="VNQ" />
           <span class="weight-row-name">미국 리츠 (VNQ)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="VNQ" value="0" />
@@ -347,7 +336,6 @@
           </div>
         </div>
         <div class="weight-row">
-          <input type="checkbox" class="weight-check" data-ticker="BIL" />
           <span class="weight-row-name">현금성자산 (BIL)</span>
           <div class="weight-row-input-wrap">
             <input type="text" inputmode="decimal" class="weight-input" data-ticker="BIL" value="0" />
@@ -431,6 +419,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>

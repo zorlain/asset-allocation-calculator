@@ -120,28 +120,24 @@ const TICKER_COLORS = {
   BIL: "#9aa0a6",
 };
 
-/* ---------- 비중 입력 상태 (체크박스로 켠 자산만 반영) ---------- */
-function isTickerChecked(ticker) {
-  const cb = document.querySelector(`.weight-check[data-ticker="${ticker}"]`);
-  return !!cb && cb.checked;
+/* ---------- 비중 입력 상태 (0보다 큰 값을 입력한 자산만 자동 반영 - 별도 체크 불필요) ---------- */
+function isTickerActive(ticker) {
+  const inp = document.querySelector(`.weight-input[data-ticker="${ticker}"]`);
+  return !!inp && parsePercent(inp.value) > 0;
 }
 
 function getWeightsFromInputs() {
   const weights = {};
   document.querySelectorAll(".weight-input").forEach((inp) => {
-    const t = inp.dataset.ticker;
-    if (!isTickerChecked(t)) return;
     const v = parsePercent(inp.value);
-    if (v > 0) weights[t] = v / 100;
+    if (v > 0) weights[inp.dataset.ticker] = v / 100;
   });
   return weights;
 }
 
 function weightSum() {
   let sum = 0;
-  document.querySelectorAll(".weight-input").forEach((inp) => {
-    if (isTickerChecked(inp.dataset.ticker)) sum += parsePercent(inp.value);
-  });
+  document.querySelectorAll(".weight-input").forEach((inp) => (sum += parsePercent(inp.value)));
   return sum;
 }
 
@@ -156,19 +152,18 @@ function updateWeightTotal() {
   bar.classList.toggle("bad", !ok);
 }
 
-function setRowChecked(ticker, checked) {
-  const cb = document.querySelector(`.weight-check[data-ticker="${ticker}"]`);
-  if (!cb) return;
-  cb.checked = checked;
-  const row = cb.closest(".weight-row");
-  if (row) row.classList.toggle("inactive", !checked);
+function updateRowActiveClass(ticker) {
+  const inp = document.querySelector(`.weight-input[data-ticker="${ticker}"]`);
+  if (!inp) return;
+  const row = inp.closest(".weight-row");
+  if (row) row.classList.toggle("inactive", parsePercent(inp.value) <= 0);
 }
 
 function clearSavedChipActive() {
   document.querySelectorAll(".saved-chip").forEach((chip) => chip.classList.remove("active"));
 }
 
-/* 사용자가 비중/체크박스를 직접 건드리면 프리셋 상자를 "직접 입력" 상태로 되돌린다 */
+/* 사용자가 비중을 직접 건드리면 프리셋 상자를 "직접 입력" 상태로 되돌린다 */
 function markPresetAsCustom() {
   deactivateSelectBox("preset-select", "직접 입력", "자산별 비중을 직접 설정");
   clearSavedChipActive();
@@ -179,7 +174,7 @@ function applyWeightsToInputs(weights) {
     const t = inp.dataset.ticker;
     const w = weights[t] || 0;
     inp.value = w > 0 ? String(+(w * 100).toFixed(2)) : "0";
-    setRowChecked(t, w > 0);
+    updateRowActiveClass(t);
   });
   updateWeightTotal();
 }
@@ -191,23 +186,18 @@ function applyPreset(key) {
 }
 
 function resetWeights() {
-  document.querySelectorAll(".weight-input").forEach((inp) => (inp.value = "0"));
-  document.querySelectorAll(".weight-check").forEach((cb) => setRowChecked(cb.dataset.ticker, false));
+  document.querySelectorAll(".weight-input").forEach((inp) => {
+    inp.value = "0";
+    updateRowActiveClass(inp.dataset.ticker);
+  });
   updateWeightTotal();
 }
 
 function initWeightInputs() {
   document.querySelectorAll(".weight-input").forEach((inp) => {
+    updateRowActiveClass(inp.dataset.ticker);
     inp.addEventListener("input", () => {
-      markPresetAsCustom();
-      updateWeightTotal();
-    });
-  });
-
-  document.querySelectorAll(".weight-check").forEach((cb) => {
-    setRowChecked(cb.dataset.ticker, cb.checked);
-    cb.addEventListener("change", () => {
-      setRowChecked(cb.dataset.ticker, cb.checked);
+      updateRowActiveClass(inp.dataset.ticker);
       markPresetAsCustom();
       updateWeightTotal();
     });
@@ -718,9 +708,9 @@ function runDynamicCalc(amount, options) {
     resultEl.innerHTML = `<p class="result-placeholder">동적 배분 전략을 선택해주세요.</p>`;
     return null;
   }
-  const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerChecked(t));
+  const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerActive(t));
   if (candidates.length === 0) {
-    resultEl.innerHTML = `<p class="result-placeholder">후보 자산을 1개 이상 체크해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)</p>`;
+    resultEl.innerHTML = `<p class="result-placeholder">후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)</p>`;
     return null;
   }
 

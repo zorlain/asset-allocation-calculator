@@ -739,14 +739,6 @@ footer {
   opacity: 0.5;
 }
 
-.weight-check {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 .weight-row-name {
   flex: 1;
   min-width: 0;
