@@ -1,5 +1,6 @@
-/* 퀀터스(quantus.kr) 느낌의 다크 핀테크 대시보드 언어 — 다크가 기본값, 민트 그린 포인트,
+/* 퀀터스(quantus.kr) 느낌의 다크 핀테크 대시보드 언어 — 다크가 기본값, 파란색 포인트,
    버튼/탭은 알약이 아닌 8~14px 라운드 사각형, 1차 버튼은 캔버스 반대색. 그림자 배제.
+   포인트 컬러(브랜드)와 손익 색상(초록/빨강)은 의미가 달라 서로 독립적으로 관리한다.
    data-theme="light"로 라이트 모드 전환. */
 :root {
   --bg: #151515;
@@ -8,11 +9,11 @@
   --text: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.64);
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #06c47f;
-  --accent-hover: #05a86c;
-  --accent-soft: rgba(6, 196, 127, 0.14);
+  --accent: #3b82f6;
+  --accent-hover: #5b9bf7;
+  --accent-soft: rgba(59, 130, 246, 0.16);
   --accent-on: #ffffff;
-  --chart-fill: #06c47f;
+  --chart-fill: #3b82f6;
   --btn-primary-bg: #ffffff;
   --btn-primary-text: #151515;
   --btn-primary-pressed: #d0d0d0;
@@ -29,10 +30,10 @@
   --text: #0a0a0a;
   --text-muted: rgba(10, 10, 10, 0.62);
   --border: rgba(10, 10, 10, 0.12);
-  --accent: #059669;
-  --accent-hover: #047a54;
-  --accent-soft: rgba(5, 150, 105, 0.1);
-  --chart-fill: #059669;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --chart-fill: #2563eb;
   --btn-primary-bg: #0a0a0a;
   --btn-primary-text: #ffffff;
   --btn-primary-pressed: #2e2e2e;
@@ -400,6 +401,32 @@ header.hero p {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.checkbox-label input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .calc-btn {

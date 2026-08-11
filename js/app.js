@@ -431,6 +431,22 @@ function initBacktestSettings() {
   }
 }
 
+/* ---------- 배당 재투자 / 환율 반영 옵션 ---------- */
+function initDataOptionCheckboxes() {
+  const divCb = document.getElementById("opt-reinvest-div");
+  const fxCb = document.getElementById("opt-reflect-fx");
+  if (!divCb || !fxCb) return;
+
+  const apply = () => {
+    setDataOptions({ useAdjClose: divCb.checked, reflectFx: fxCb.checked });
+    renderDashboard();
+    renderCorrelationTable();
+  };
+
+  divCb.addEventListener("change", apply);
+  fxCb.addEventListener("change", apply);
+}
+
 /* 리밸런싱(정적) / 재평가(동적) 주기는 모드별로 별도 컨트롤을 사용한다 */
 function getBacktestOptions(mode) {
   const feeAnnualPct = toNumber(document.getElementById("bt-fee").value) || 0;
@@ -894,6 +910,7 @@ function init() {
   initTabs();
   initInfoTooltips();
   initBacktestSettings();
+  initDataOptionCheckboxes();
   initAssetAddSelect();
   initSavedPortfolios();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));

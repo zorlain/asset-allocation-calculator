@@ -4,6 +4,38 @@ const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "KOSPI", "KOSDAQ", "EEM", "TLT", "IEF
 /* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 
+/* 달러 표시 자산 (환율 반영 토글의 적용 대상). 코스피/코스닥은 이미 원화라 제외 */
+const USD_ASSETS = new Set(ASSET_ORDER.filter((t) => !INDEX_POINT_ASSETS.has(t)));
+
+/* ---------- 데이터 계산 옵션 (환율 반영 / 배당 재투자) ----------
+   설정 화면의 체크박스로 전역 상태를 바꾸며, 바뀌면 아래 캐시를 모두 비운다. */
+let DATA_OPTIONS = { useAdjClose: false, reflectFx: false };
+const _seriesCache = {};
+const _returnsCache = {};
+
+function setDataOptions(opts) {
+  DATA_OPTIONS = { ...DATA_OPTIONS, ...opts };
+  Object.keys(_seriesCache).forEach((k) => delete _seriesCache[k]);
+  Object.keys(_returnsCache).forEach((k) => delete _returnsCache[k]);
+}
+
+/* 배당재투자(수정종가)·환율반영 옵션을 적용한 가격 시리즈. 원계열은 건드리지 않는다. */
+function getAdjustedSeries(ticker) {
+  const cacheKey = `${ticker}|${DATA_OPTIONS.useAdjClose}|${DATA_OPTIONS.reflectFx}`;
+  if (_seriesCache[cacheKey]) return _seriesCache[cacheKey];
+
+  const raw = ASSET_DATA.assets[ticker].series;
+  let series = raw.map((p) => ({ d: p.d, c: DATA_OPTIONS.useAdjClose && p.ac != null ? p.ac : p.c }));
+
+  if (DATA_OPTIONS.reflectFx && USD_ASSETS.has(ticker)) {
+    const fx = (ASSET_DATA.fx && ASSET_DATA.fx.USDKRW) || [];
+    const fxMap = new Map(fx.map((p) => [p.d, p.c]));
+    series = series.filter((p) => fxMap.has(p.d)).map((p) => ({ d: p.d, c: p.c * fxMap.get(p.d) }));
+  }
+
+  return (_seriesCache[cacheKey] = series);
+}
+
 const PRESETS = {
   "6040": {
     label: "60/40",
@@ -53,17 +85,17 @@ function stdev(arr) {
 }
 
 /* ---------- 자산별 월간 수익률 (종가 시계열 -> 수익률 시계열, 캐시) ---------- */
-const _returnsCache = {};
 function getAssetReturns(ticker) {
-  if (_returnsCache[ticker]) return _returnsCache[ticker];
-  const series = ASSET_DATA.assets[ticker].series;
+  const cacheKey = `${ticker}|${DATA_OPTIONS.useAdjClose}|${DATA_OPTIONS.reflectFx}`;
+  if (_returnsCache[cacheKey]) return _returnsCache[cacheKey];
+  const series = getAdjustedSeries(ticker);
   const dates = [];
   const returns = [];
   for (let i = 1; i < series.length; i++) {
     dates.push(series[i].d);
     returns.push(series[i].c / series[i - 1].c - 1);
   }
-  return (_returnsCache[ticker] = { dates, returns });
+  return (_returnsCache[cacheKey] = { dates, returns });
 }
 
 /* 여러 자산의 수익률을 공통 구간(교집합 날짜)으로 정렬 */
@@ -85,19 +117,20 @@ function alignReturns(tickers) {
 
 /* ---------- 자산 단독 통계 (자산 현황 탭) ---------- */
 function assetStandaloneStats(ticker) {
-  const series = ASSET_DATA.assets[ticker].series;
+  const rawSeries = ASSET_DATA.assets[ticker].series; // 표시용 최근 종가는 항상 원래 통화·비조정 가격
+  const series = getAdjustedSeries(ticker); // 배당재투자/환율반영 옵션이 적용된 시리즈 (수익률 계산용)
   const { returns } = getAssetReturns(ticker);
   const years = (series.length - 1) / 12;
   const cagr = years > 0 ? Math.pow(series[series.length - 1].c / series[0].c, 1 / years) - 1 : 0;
   const annVol = stdev(returns) * Math.sqrt(12);
-  const last = series[series.length - 1];
+  const lastRaw = rawSeries[rawSeries.length - 1];
   const oneMonthReturn = returns.length > 0 ? returns[returns.length - 1] : null;
   const oneYearReturn = series.length > 12 ? series[series.length - 1].c / series[series.length - 13].c - 1 : null;
   return {
     ticker,
     name: ASSET_DATA.assets[ticker].name,
-    lastClose: last.c,
-    lastDate: last.d,
+    lastClose: lastRaw.c,
+    lastDate: lastRaw.d,
     startDate: series[0].d,
     cagr,
     annVol,
@@ -308,7 +341,7 @@ function runBacktest(weights, initialAmount, options = {}) {
 
 /* ---------- 여러 자산의 종가를 공통 구간(교집합 날짜)으로 정렬 (동적 배분 신호 계산용) ---------- */
 function alignSeries(tickers) {
-  const perTicker = tickers.map((t) => ASSET_DATA.assets[t].series);
+  const perTicker = tickers.map((t) => getAdjustedSeries(t));
   let commonDates = perTicker[0].map((p) => p.d);
   for (let i = 1; i < perTicker.length; i++) {
     const set = new Set(perTicker[i].map((p) => p.d));
