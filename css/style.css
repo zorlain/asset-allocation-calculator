@@ -1,41 +1,45 @@
-/* 레볼루트(Revolut) 디자인 언어 — 계산기류 사이트는 라이트가 기본값(로또/연금복권은 다크
-   기본값). 코발트 바이올렛 포인트(버튼 표면 X, 아껴서 사용), 1차 버튼은 캔버스 반대색 알약,
-   그림자 완전 배제. data-theme="dark"로 다크 모드 전환. */
+/* 퀀터스(quantus.kr) 느낌의 다크 핀테크 대시보드 언어 — 다크가 기본값, 민트 그린 포인트,
+   버튼/탭은 알약이 아닌 8~14px 라운드 사각형, 1차 버튼은 캔버스 반대색. 그림자 배제.
+   data-theme="light"로 라이트 모드 전환. */
 :root {
+  --bg: #151515;
+  --card: #1c1c1c;
+  --card-elevated: #262626;
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.64);
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #06c47f;
+  --accent-hover: #05a86c;
+  --accent-soft: rgba(6, 196, 127, 0.14);
+  --accent-on: #ffffff;
+  --chart-fill: #06c47f;
+  --btn-primary-bg: #ffffff;
+  --btn-primary-text: #151515;
+  --btn-primary-pressed: #d0d0d0;
+  --hover-tint: rgba(255, 255, 255, 0.06);
+
+  --positive: #06c47f;
+  --negative: #ff5c5c;
+}
+
+:root[data-theme="light"] {
   --bg: #ffffff;
-  --card: #f7f7f8;
+  --card: #f5f6f6;
   --card-elevated: #ececef;
   --text: #0a0a0a;
   --text-muted: rgba(10, 10, 10, 0.62);
   --border: rgba(10, 10, 10, 0.12);
-  --accent: #494fdf;
-  --accent-hover: #4046c8;
-  --accent-soft: rgba(73, 79, 223, 0.12);
-  --accent-on: #ffffff;
-  --chart-fill: #494fdf;
+  --accent: #059669;
+  --accent-hover: #047a54;
+  --accent-soft: rgba(5, 150, 105, 0.1);
+  --chart-fill: #059669;
   --btn-primary-bg: #0a0a0a;
   --btn-primary-text: #ffffff;
   --btn-primary-pressed: #2e2e2e;
   --hover-tint: rgba(10, 10, 10, 0.06);
 
-  --positive: #2c9e44;
+  --positive: #059669;
   --negative: #d8314f;
-}
-
-:root[data-theme="dark"] {
-  --bg: #000000;
-  --card: #16181a;
-  --card-elevated: #1f2226;
-  --text: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.72);
-  --border: rgba(255, 255, 255, 0.12);
-  --accent-hover: #4f55f1;
-  --accent-soft: rgba(73, 79, 223, 0.16);
-  --chart-fill: #3a40c4;
-  --btn-primary-bg: #ffffff;
-  --btn-primary-text: #000000;
-  --btn-primary-pressed: #c9c9cd;
-  --hover-tint: rgba(255, 255, 255, 0.08);
 }
 
 /* 테마 토글 버튼 */
@@ -206,7 +210,7 @@ header.hero p {
   display: flex;
   gap: 6px;
   background: var(--accent-soft);
-  border-radius: 9999px;
+  border-radius: 14px;
   padding: 8px;
   margin-bottom: 28px;
   flex-wrap: wrap;
@@ -221,7 +225,7 @@ header.hero p {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
-  border-radius: 9999px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
@@ -367,9 +371,9 @@ header.hero p {
 .field-input-wrap input {
   width: 100%;
   padding: 16px 52px 16px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 12px;
-  background: var(--bg);
+  background: var(--card-elevated);
   color: var(--text);
   font-size: 17px;
   font-weight: 600;
@@ -408,7 +412,7 @@ header.hero p {
   color: var(--btn-primary-text);
   background: var(--btn-primary-bg);
   border: none;
-  border-radius: 9999px;
+  border-radius: 12px;
   cursor: pointer;
   margin-top: 24px;
   transition: background 0.15s, transform 0.1s;
@@ -512,33 +516,6 @@ header.hero p {
 .monthly-table td {
   padding: 8px 6px;
   font-size: 11.5px;
-}
-
-.progress-wrap {
-  margin-top: 20px;
-}
-
-.progress-track {
-  width: 100%;
-  height: 12px;
-  border-radius: 9999px;
-  background: var(--card-elevated);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 9999px;
-  transition: width 0.3s;
-}
-
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12.5px;
-  color: var(--text-muted);
-  margin-top: 8px;
 }
 
 footer {
@@ -702,9 +679,9 @@ footer {
 .select-input {
   width: 100%;
   padding: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 12px;
-  background: var(--bg);
+  background: var(--card-elevated);
   color: var(--text);
   font-size: 15px;
   font-weight: 600;
@@ -809,7 +786,6 @@ footer {
 
 .asset-add-toggle {
   justify-content: center;
-  border-style: dashed;
   color: var(--accent);
 }
 
@@ -1005,9 +981,9 @@ footer {
   justify-content: space-between;
   gap: 10px;
   text-align: left;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  border-radius: 16px;
+  border: 1px solid transparent;
+  background: var(--card-elevated);
+  border-radius: 14px;
   padding: 14px 16px;
   cursor: pointer;
   font-family: inherit;

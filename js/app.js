@@ -42,7 +42,7 @@ function initThemeToggle() {
   const btn = document.getElementById("theme-toggle");
   if (!btn) return;
 
-  const getTheme = () => document.documentElement.getAttribute("data-theme") || "light";
+  const getTheme = () => document.documentElement.getAttribute("data-theme") || "dark";
   const applyIcon = () => {
     btn.textContent = getTheme() === "dark" ? "☀️" : "🌙";
   };
