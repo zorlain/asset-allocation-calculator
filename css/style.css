@@ -90,9 +90,29 @@ body {
 }
 
 .page {
-  max-width: 840px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 56px 24px 110px;
+  padding: 56px 32px 110px;
+}
+
+/* 배분·백테스트 탭: 넓은 화면에서는 설정/입력을 왼쪽, 결과를 오른쪽에 나란히 배치
+   (해외 거래소 대시보드처럼 좌우를 넓게 쓰고, 스크롤해도 결과가 옆에 고정되도록) */
+.allocator-grid {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .allocator-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .allocator-col-side {
+    position: sticky;
+    top: 24px;
+  }
 }
 
 header.hero {
@@ -123,6 +143,22 @@ header.hero p {
   gap: 10px;
   margin-top: 18px;
   position: relative;
+}
+
+/* 넓은 화면에서는 가운데 정렬 히어로 대신, 좌측 타이틀 + 우측 액션의 거래소풍 상단 바로 전환 */
+@media (min-width: 768px) {
+  header.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    text-align: left;
+  }
+
+  .hero-actions {
+    margin-top: 0;
+    flex-shrink: 0;
+  }
 }
 
 /* 헤더 햄버거 메뉴 — 누르면 다른 도구 목록이 드롭다운으로 표시 */
@@ -478,6 +514,7 @@ header.hero p {
   color: var(--accent);
   letter-spacing: -0.02em;
   word-break: break-all;
+  font-variant-numeric: tabular-nums;
 }
 
 .result-hero-sub {
@@ -518,6 +555,7 @@ header.hero p {
   font-size: 17px;
   font-weight: 700;
   word-break: break-all;
+  font-variant-numeric: tabular-nums;
 }
 
 .result-stat-value.positive { color: var(--positive); }
@@ -954,6 +992,7 @@ footer {
   text-align: right;
   white-space: nowrap;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .asset-table td.asset-name-cell {

@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=11" />
+<link rel="stylesheet" href="css/style.css?v=12" />
 </head>
 <body>
 <div class="page">
@@ -66,6 +66,8 @@
 
   <!-- 탭 1: 배분 계산기 + 백테스트 -->
   <section class="tab-panel" data-tab-panel="allocator">
+   <div class="allocator-grid">
+    <div class="allocator-col-main">
     <div class="card">
       <h2>
         백테스트 설정
@@ -279,13 +281,17 @@
 
       <button class="calc-btn" id="allocator-calc-btn">계산하기</button>
     </div>
+    </div>
 
+    <div class="allocator-col-side">
     <div class="card">
       <h2>결과</h2>
       <div id="allocator-result">
         <p class="result-placeholder">비중과 투자금액을 입력하고 계산하기를 눌러주세요.</p>
       </div>
     </div>
+    </div>
+   </div>
   </section>
 
   <!-- 탭 2: 자산 현황 + 가이드 -->
