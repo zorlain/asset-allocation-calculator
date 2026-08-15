@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=16" />
+<link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
 <div class="page">
@@ -66,8 +66,6 @@
 
   <!-- 탭 1: 배분 계산기 + 백테스트 -->
   <section class="tab-panel" data-tab-panel="allocator">
-   <div class="allocator-grid">
-    <div class="allocator-col-main">
     <div class="card">
       <h2>
         백테스트 설정
@@ -391,20 +389,9 @@
         <div class="select-box-dropdown" id="asset-add-dropdown" role="listbox"></div>
       </div>
 
-      <button class="calc-btn" id="allocator-calc-btn">계산하기</button>
+      <p class="calc-error-msg" id="calc-error-msg" hidden></p>
+      <button class="calc-btn" id="allocator-calc-btn">새 창에서 결과 보기 ↗</button>
     </div>
-    </div>
-
-    <div class="allocator-col-side">
-    <div class="card">
-      <h2>결과</h2>
-      <div id="allocator-result">
-        <p class="result-placeholder">비중과 투자금액을 입력하고 계산하기를 눌러주세요.</p>
-      </div>
-      <button type="button" class="calc-btn calc-btn-secondary" id="open-result-window-btn" hidden>새 창에서 자세히 보기 ↗</button>
-    </div>
-    </div>
-   </div>
   </section>
 
   <!-- 탭 2: 자산 현황 + 가이드 -->
@@ -469,10 +456,8 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/render.js?v=1"></script>
-<script src="js/app.js?v=16"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>

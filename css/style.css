@@ -95,24 +95,12 @@ body {
   padding: 56px 32px 110px;
 }
 
-/* 배분·백테스트 탭: 넓은 화면에서는 설정/입력을 왼쪽, 결과를 오른쪽에 나란히 배치
-   (해외 거래소 대시보드처럼 좌우를 넓게 쓰고, 스크롤해도 결과가 옆에 고정되도록) */
-.allocator-grid {
-  display: block;
-}
-
-@media (min-width: 1024px) {
-  .allocator-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    align-items: start;
-    gap: 24px;
-  }
-
-  .allocator-col-side {
-    position: sticky;
-    top: 24px;
-  }
+.calc-error-msg {
+  color: var(--negative);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  margin: 16px 0 0;
 }
 
 header.hero {
@@ -786,6 +774,14 @@ footer {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+/* 결과 카드가 사라지고 카드가 페이지 폭을 그대로 쓰게 되어, 넓은 화면에서는 자산 목록을
+   3열로 늘려 세로 스크롤을 줄인다 */
+@media (min-width: 1024px) {
+  .weight-list {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 .weight-row {

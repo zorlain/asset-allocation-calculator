@@ -22,7 +22,7 @@ function bindThousandsInput(id) {
 }
 
 /* ---------- 정보 툴팁 ---------- */
-/* 이벤트 위임 사용 - renderResult()가 나중에 동적으로 추가하는 info-btn(지표 설명)도 자동으로 동작한다 */
+/* 이벤트 위임 사용 - 나중에 동적으로 추가되는 info-btn에도 자동으로 동작한다 */
 function initInfoTooltips() {
   document.addEventListener("click", (e) => {
     const btn = e.target.closest(".info-btn");
@@ -53,7 +53,6 @@ function initThemeToggle() {
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("theme", next);
     applyIcon();
-    refreshChartsForTheme();
   });
 }
 
@@ -413,21 +412,6 @@ function initDataOptionCheckboxes() {
   fxCb.addEventListener("change", apply);
 }
 
-/* 리밸런싱(정적) / 재평가(동적) 주기는 모드별로 별도 컨트롤을 사용한다 */
-function getBacktestOptions(mode) {
-  const feeAnnualPct = toNumber(document.getElementById("bt-fee").value) || 0;
-  const rebalanceSelectId = mode === "dynamic" ? "dynamic-rebalance" : "static-rebalance";
-  const rebalanceMonths = Number(document.getElementById(rebalanceSelectId).value);
-  const startYear = document.getElementById("bt-start-year").value;
-  const endYear = document.getElementById("bt-end-year").value;
-  return {
-    feeAnnualPct,
-    rebalanceMonths,
-    startDate: startYear ? `${startYear}-01` : null,
-    endDate: endYear ? `${endYear}-12` : null,
-  };
-}
-
 /* ---------- 상자 드롭다운 선택 공통 로직 (모드 / 프리셋 / 동적전략에서 재사용) ---------- */
 function activateSelectBoxOption(rootId, optionEl) {
   const root = document.getElementById(rootId);
@@ -561,63 +545,7 @@ function selectDynamicStrategy(key) {
   updateWeightInputVisibility();
 }
 
-/* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
-let lastResult = null; // bt (finalWeights 포함)
-
-function runStaticCalc(amount, options) {
-  const resultEl = document.getElementById("allocator-result");
-  const total = weightSum();
-  if (Math.abs(total - 100) > 0.05) {
-    resultEl.innerHTML = `<p class="result-placeholder">비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)</p>`;
-    return null;
-  }
-  const weights = getWeightsFromInputs();
-  const bt = runBacktest(weights, amount, options);
-  if (!bt) {
-    resultEl.innerHTML = `<p class="result-placeholder">선택한 자산 조합·기간의 공통 데이터 구간을 찾을 수 없습니다.</p>`;
-    return null;
-  }
-  return bt;
-}
-
-function runDynamicCalc(amount, options) {
-  const resultEl = document.getElementById("allocator-result");
-  if (!selectedDynamicStrategy) {
-    resultEl.innerHTML = `<p class="result-placeholder">동적 배분 전략을 선택해주세요.</p>`;
-    return null;
-  }
-  const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerActive(t));
-  if (candidates.length === 0) {
-    resultEl.innerHTML = `<p class="result-placeholder">후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)</p>`;
-    return null;
-  }
-
-  const lookback = Math.max(1, Math.round(toNumber(document.getElementById("dynamic-lookback").value)) || 12);
-  const params = { lookback };
-  let finalOptions = options;
-
-  if (selectedDynamicStrategy === "momentum") {
-    const topN = Math.round(toNumber(document.getElementById("dynamic-topn").value)) || 1;
-    params.topN = Math.min(Math.max(1, topN), candidates.length);
-  } else if (selectedDynamicStrategy === "trend") {
-    params.baseWeights = buildNormalizedBaseWeights(candidates);
-  } else if (selectedDynamicStrategy === "seasonal") {
-    params.baseWeights = buildNormalizedBaseWeights(candidates);
-    params.seasonStart = Math.round(toNumber(document.getElementById("dynamic-season-start").value)) || 11;
-    params.seasonEnd = Math.round(toNumber(document.getElementById("dynamic-season-end").value)) || 4;
-    params.seasonInPct = clampPct(document.getElementById("dynamic-season-in-pct").value, 1);
-    params.seasonOutPct = clampPct(document.getElementById("dynamic-season-out-pct").value, 0);
-    // 계절 전환을 매달 정확히 반영해야 하므로 재평가 주기는 항상 매달로 고정한다
-    finalOptions = { ...options, rebalanceMonths: 1 };
-  }
-
-  const bt = runDynamicBacktest(selectedDynamicStrategy, params, candidates, "BIL", amount, finalOptions);
-  if (!bt) {
-    resultEl.innerHTML = `<p class="result-placeholder">선택한 조건으로는 충분한 과거 데이터를 찾을 수 없습니다. 기준 기간을 줄이거나 백테스트 기간을 조정해보세요.</p>`;
-    return null;
-  }
-  return bt;
-}
+/* ---------- 탭 1: 배분 계산기 + 백테스트 (계산은 result.html에서 수행, 여기서는 검증 후 새 창을 연다) ---------- */
 
 /* "0"~"100" 문자열을 0~1 사이 비율로 변환. 비어있거나 숫자가 아니면 defaultFraction 사용 */
 function clampPct(str, defaultFraction) {
@@ -626,18 +554,16 @@ function clampPct(str, defaultFraction) {
   return Math.min(Math.max(v, 0), 100) / 100;
 }
 
-/* 후보 자산의 입력 비중을 합 1이 되도록 정규화 (입력이 전부 0이면 동일 비중) */
-function buildNormalizedBaseWeights(candidates) {
-  const rawWeights = getWeightsFromInputs();
-  const totalW = candidates.reduce((sum, t) => sum + (rawWeights[t] || 0), 0);
-  const baseWeights = {};
-  if (totalW > 0) {
-    candidates.forEach((t) => (baseWeights[t] = (rawWeights[t] || 0) / totalW));
-  } else {
-    const eq = 1 / candidates.length;
-    candidates.forEach((t) => (baseWeights[t] = eq));
-  }
-  return baseWeights;
+function showCalcError(msg) {
+  const el = document.getElementById("calc-error-msg");
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+function clearCalcError() {
+  const el = document.getElementById("calc-error-msg");
+  if (el) el.hidden = true;
 }
 
 /* 현재 입력 상태를 쿼리스트링으로 직렬화 - result.html이 같은 설정으로 다시 계산할 때 사용 */
@@ -683,29 +609,29 @@ function buildResultUrl() {
 }
 
 function setupAllocator() {
-  const openBtn = document.getElementById("open-result-window-btn");
-
   document.getElementById("allocator-calc-btn").addEventListener("click", () => {
-    const amount = toNumber(document.getElementById("bt-amount").value) || 10000;
-    const options = getBacktestOptions(allocationMode);
-    const bt = allocationMode === "static" ? runStaticCalc(amount, options) : runDynamicCalc(amount, options);
-    lastResult = bt;
-    if (bt) renderResult(bt);
-    if (openBtn) openBtn.hidden = !bt;
+    clearCalcError();
+
+    if (allocationMode === "static") {
+      const total = weightSum();
+      if (Math.abs(total - 100) > 0.05) {
+        showCalcError(`비중 합계가 100%가 되어야 계산할 수 있습니다. (현재 ${total.toFixed(1)}%)`);
+        return;
+      }
+    } else {
+      if (!selectedDynamicStrategy) {
+        showCalcError("동적 배분 전략을 선택해주세요.");
+        return;
+      }
+      const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerActive(t));
+      if (candidates.length === 0) {
+        showCalcError("후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)");
+        return;
+      }
+    }
+
+    window.open(buildResultUrl(), "_blank");
   });
-
-  if (openBtn) {
-    openBtn.addEventListener("click", () => {
-      window.open(buildResultUrl(), "_blank");
-    });
-  }
-}
-
-/* 테마 전환 시 이미 그려진 차트가 있으면 새 테마 색상으로 다시 그린다 */
-function refreshChartsForTheme() {
-  if (!lastResult) return;
-  renderPieChart(lastResult.finalWeights || {});
-  renderLineChart(lastResult);
 }
 
 /* ---------- 탭 2: 자산 현황 ---------- */
