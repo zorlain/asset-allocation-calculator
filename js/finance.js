@@ -75,7 +75,7 @@ const DYNAMIC_STRATEGIES = {
   },
   seasonal: {
     label: "계절성 (Sell in May)",
-    tip: "설정한 투자 기간(기본 11월~4월)에는 후보로 추가한 자산에 입력한 비중대로 투자하고, 그 외 기간에는 전액 현금성자산(BIL)으로 이동합니다. '11월~4월 강세, 5월~10월 약세'로 알려진 계절성 패턴을 활용합니다.",
+    tip: "설정한 투자 기간(기본 11월~4월)과 그 외 기간에 각각 목표 비중의 몇 %를 투자할지 정합니다. 나머지는 현금성자산(BIL)으로 둡니다. '11월~4월 강세, 5월~10월 약세'로 알려진 계절성 패턴을 활용하는 전략으로, 기본값은 성수기 100%·비수기 0%(전액 현금)입니다.",
     showTopN: false,
     usesWeightNumber: true,
     isSeasonal: true,
@@ -393,12 +393,22 @@ function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx
     if (!date) return null;
     const month = Number(date.slice(5, 7));
     const inSeason = isMonthInSeason(month, params.seasonStart || 11, params.seasonEnd || 4);
-    if (inSeason) {
-      const baseWeights = params.baseWeights || {};
-      candidates.forEach((t) => (weights[t] = baseWeights[t] || 0));
-    } else {
-      weights[safeAsset] = 1;
-    }
+    const pct = inSeason
+      ? params.seasonInPct != null
+        ? params.seasonInPct
+        : 1
+      : params.seasonOutPct != null
+      ? params.seasonOutPct
+      : 0;
+    const baseWeights = params.baseWeights || {};
+    let invested = 0;
+    candidates.forEach((t) => {
+      const w = (baseWeights[t] || 0) * pct;
+      weights[t] = w;
+      invested += w;
+    });
+    const remainder = 1 - invested;
+    if (remainder > 0) weights[safeAsset] = (weights[safeAsset] || 0) + remainder;
     return weights;
   }
 

@@ -864,6 +864,8 @@ function runDynamicCalc(amount, options) {
     params.baseWeights = buildNormalizedBaseWeights(candidates);
     params.seasonStart = Math.round(toNumber(document.getElementById("dynamic-season-start").value)) || 11;
     params.seasonEnd = Math.round(toNumber(document.getElementById("dynamic-season-end").value)) || 4;
+    params.seasonInPct = clampPct(document.getElementById("dynamic-season-in-pct").value, 1);
+    params.seasonOutPct = clampPct(document.getElementById("dynamic-season-out-pct").value, 0);
     // 계절 전환을 매달 정확히 반영해야 하므로 재평가 주기는 항상 매달로 고정한다
     finalOptions = { ...options, rebalanceMonths: 1 };
   }
@@ -874,6 +876,13 @@ function runDynamicCalc(amount, options) {
     return null;
   }
   return bt;
+}
+
+/* "0"~"100" 문자열을 0~1 사이 비율로 변환. 비어있거나 숫자가 아니면 defaultFraction 사용 */
+function clampPct(str, defaultFraction) {
+  const v = toNumber(str);
+  if (!Number.isFinite(v)) return defaultFraction;
+  return Math.min(Math.max(v, 0), 100) / 100;
 }
 
 /* 후보 자산의 입력 비중을 합 1이 되도록 정규화 (입력이 전부 0이면 동일 비중) */
