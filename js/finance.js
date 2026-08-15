@@ -73,7 +73,20 @@ const DYNAMIC_STRATEGIES = {
     showTopN: false,
     usesWeightNumber: false,
   },
+  seasonal: {
+    label: "계절성 (Sell in May)",
+    tip: "설정한 투자 기간(기본 11월~4월)에는 후보로 추가한 자산에 입력한 비중대로 투자하고, 그 외 기간에는 전액 현금성자산(BIL)으로 이동합니다. '11월~4월 강세, 5월~10월 약세'로 알려진 계절성 패턴을 활용합니다.",
+    showTopN: false,
+    usesWeightNumber: true,
+    isSeasonal: true,
+  },
 };
+
+/* 계절성 전략: month(1~12)가 시작월~종료월 구간에 포함되는지 (11→4처럼 연말을 넘어가는 구간도 처리) */
+function isMonthInSeason(month, startMonth, endMonth) {
+  if (startMonth <= endMonth) return month >= startMonth && month <= endMonth;
+  return month >= startMonth || month <= endMonth;
+}
 
 /* ---------- 통계 유틸 ---------- */
 function mean(arr) {
@@ -371,11 +384,26 @@ function alignSeries(tickers) {
 
 /* ---------- 동적 배분 전략별 목표 비중 계산 ----------
    idx: closesByTicker의 기준 시점 인덱스 (idx까지의 데이터만 사용 - 미래 데이터 참조 없음)
+   date: idx 시점의 "YYYY-MM" 날짜 (계절성 전략에서 달을 판단할 때 사용)
    반환값이 null이면 해당 시점엔 신호를 계산할 과거 데이터가 부족하다는 뜻 */
-function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
+function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset, date) {
+  const weights = {};
+
+  if (strategy === "seasonal") {
+    if (!date) return null;
+    const month = Number(date.slice(5, 7));
+    const inSeason = isMonthInSeason(month, params.seasonStart || 11, params.seasonEnd || 4);
+    if (inSeason) {
+      const baseWeights = params.baseWeights || {};
+      candidates.forEach((t) => (weights[t] = baseWeights[t] || 0));
+    } else {
+      weights[safeAsset] = 1;
+    }
+    return weights;
+  }
+
   const lookback = Math.max(1, params.lookback || 12);
   if (idx < lookback) return null;
-  const weights = {};
 
   if (strategy === "momentum") {
     const topN = Math.max(1, params.topN || 1);
@@ -453,7 +481,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     }
   });
 
-  const lookback = Math.max(1, params.lookback || 12);
+  const lookback = strategy === "seasonal" ? 0 : Math.max(1, params.lookback || 12);
 
   let simStart = lookback;
   if (startDate) {
@@ -472,7 +500,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   }
   if (simStart >= simEndExclusive) return null;
 
-  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset);
+  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset, closeDates[simStart]);
   if (!currentTargets) return null;
 
   const monthlyFee = feeAnnualPct / 100 / 12;
@@ -495,7 +523,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
     const stepCount = i - simStart + 1;
     if (rebalanceMonths > 0 && stepCount % rebalanceMonths === 0 && i + 1 < simEndExclusive) {
-      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset);
+      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset, closeDates[i + 1]);
       if (nextTargets) {
         currentTargets = nextTargets;
         allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));

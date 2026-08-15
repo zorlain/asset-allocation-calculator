@@ -232,12 +232,16 @@
               <div class="select-box-option-title">변동성 타겟팅</div>
               <div class="select-box-option-desc">변동성이 낮은 자산일수록 비중을 높게 자동 배분</div>
             </button>
+            <button type="button" class="select-box-option" data-strategy="seasonal" role="option" aria-selected="false">
+              <div class="select-box-option-title">계절성 (Sell in May)</div>
+              <div class="select-box-option-desc">11월~4월(설정 가능)에만 투자, 나머지 기간은 현금성자산으로 대피</div>
+            </button>
           </div>
         </div>
 
         <p class="tip-text" id="dynamic-strategy-tip">위에서 전략을 선택하면 설명이 여기에 표시됩니다.</p>
 
-        <div class="field-row">
+        <div class="field-row" id="dynamic-lookback-row">
           <div class="field-group">
             <label for="dynamic-lookback">
               기준 기간
@@ -270,6 +274,43 @@
               <option value="3">분기 (3개월)</option>
               <option value="6">반기 (6개월)</option>
               <option value="12">매년</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row" id="dynamic-season-row" hidden>
+          <div class="field-group">
+            <label for="dynamic-season-start">투자 시작월</label>
+            <select id="dynamic-season-start" class="select-input">
+              <option value="1">1월</option>
+              <option value="2">2월</option>
+              <option value="3">3월</option>
+              <option value="4">4월</option>
+              <option value="5">5월</option>
+              <option value="6">6월</option>
+              <option value="7">7월</option>
+              <option value="8">8월</option>
+              <option value="9">9월</option>
+              <option value="10">10월</option>
+              <option value="11" selected>11월</option>
+              <option value="12">12월</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="dynamic-season-end">투자 종료월</label>
+            <select id="dynamic-season-end" class="select-input">
+              <option value="1">1월</option>
+              <option value="2">2월</option>
+              <option value="3">3월</option>
+              <option value="4" selected>4월</option>
+              <option value="5">5월</option>
+              <option value="6">6월</option>
+              <option value="7">7월</option>
+              <option value="8">8월</option>
+              <option value="9">9월</option>
+              <option value="10">10월</option>
+              <option value="11">11월</option>
+              <option value="12">12월</option>
             </select>
           </div>
         </div>
@@ -392,6 +433,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=13"></script>
+<script src="js/app.js?v=14"></script>
 </body>
 </html>

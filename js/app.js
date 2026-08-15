@@ -603,6 +603,13 @@ function selectDynamicStrategy(key) {
   if (tipEl && meta) tipEl.textContent = meta.tip;
   const topNGroup = document.getElementById("dynamic-topn-group");
   if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
+
+  const isSeasonal = !!(meta && meta.isSeasonal);
+  const lookbackRow = document.getElementById("dynamic-lookback-row");
+  const seasonRow = document.getElementById("dynamic-season-row");
+  if (lookbackRow) lookbackRow.hidden = isSeasonal;
+  if (seasonRow) seasonRow.hidden = !isSeasonal;
+
   updateWeightInputVisibility();
 }
 
@@ -846,29 +853,41 @@ function runDynamicCalc(amount, options) {
 
   const lookback = Math.max(1, Math.round(toNumber(document.getElementById("dynamic-lookback").value)) || 12);
   const params = { lookback };
+  let finalOptions = options;
 
   if (selectedDynamicStrategy === "momentum") {
     const topN = Math.round(toNumber(document.getElementById("dynamic-topn").value)) || 1;
     params.topN = Math.min(Math.max(1, topN), candidates.length);
   } else if (selectedDynamicStrategy === "trend") {
-    const rawWeights = getWeightsFromInputs();
-    const totalW = candidates.reduce((sum, t) => sum + (rawWeights[t] || 0), 0);
-    const baseWeights = {};
-    if (totalW > 0) {
-      candidates.forEach((t) => (baseWeights[t] = (rawWeights[t] || 0) / totalW));
-    } else {
-      const eq = 1 / candidates.length;
-      candidates.forEach((t) => (baseWeights[t] = eq));
-    }
-    params.baseWeights = baseWeights;
+    params.baseWeights = buildNormalizedBaseWeights(candidates);
+  } else if (selectedDynamicStrategy === "seasonal") {
+    params.baseWeights = buildNormalizedBaseWeights(candidates);
+    params.seasonStart = Math.round(toNumber(document.getElementById("dynamic-season-start").value)) || 11;
+    params.seasonEnd = Math.round(toNumber(document.getElementById("dynamic-season-end").value)) || 4;
+    // 계절 전환을 매달 정확히 반영해야 하므로 재평가 주기는 항상 매달로 고정한다
+    finalOptions = { ...options, rebalanceMonths: 1 };
   }
 
-  const bt = runDynamicBacktest(selectedDynamicStrategy, params, candidates, "BIL", amount, options);
+  const bt = runDynamicBacktest(selectedDynamicStrategy, params, candidates, "BIL", amount, finalOptions);
   if (!bt) {
     resultEl.innerHTML = `<p class="result-placeholder">선택한 조건으로는 충분한 과거 데이터를 찾을 수 없습니다. 기준 기간을 줄이거나 백테스트 기간을 조정해보세요.</p>`;
     return null;
   }
   return bt;
+}
+
+/* 후보 자산의 입력 비중을 합 1이 되도록 정규화 (입력이 전부 0이면 동일 비중) */
+function buildNormalizedBaseWeights(candidates) {
+  const rawWeights = getWeightsFromInputs();
+  const totalW = candidates.reduce((sum, t) => sum + (rawWeights[t] || 0), 0);
+  const baseWeights = {};
+  if (totalW > 0) {
+    candidates.forEach((t) => (baseWeights[t] = (rawWeights[t] || 0) / totalW));
+  } else {
+    const eq = 1 / candidates.length;
+    candidates.forEach((t) => (baseWeights[t] = eq));
+  }
+  return baseWeights;
 }
 
 function setupAllocator() {
