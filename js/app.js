@@ -802,7 +802,18 @@ function buildMonthlyTable(bt) {
       return `<tr><td class="asset-name-cell">${row.year}</td>${cells}<td class="${annualCls}" style="font-weight:800">${formatSignedPct(row.annual, 1)}</td></tr>`;
     })
     .join("");
-  return `<thead>${headerRow}</thead><tbody>${bodyRows}</tbody>`;
+
+  const { monthAverages, annualAverage } = monthlySeasonalAverages(rows);
+  const avgCells = monthAverages
+    .map((r) => (r === null ? `<td>-</td>` : `<td class="${r >= 0 ? "positive" : "negative"}">${formatSignedPct(r, 1)}</td>`))
+    .join("");
+  const annualAvgCls = annualAverage !== null && annualAverage >= 0 ? "positive" : "negative";
+  const avgRow = `<tr class="monthly-avg-row"><td class="asset-name-cell">평균</td>${avgCells}<td class="${annualAvgCls}" style="font-weight:800">${formatSignedPct(
+    annualAverage,
+    1
+  )}</td></tr>`;
+
+  return `<thead>${headerRow}</thead><tbody>${bodyRows}${avgRow}</tbody>`;
 }
 
 function runStaticCalc(amount, options) {

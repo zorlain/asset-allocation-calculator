@@ -585,6 +585,11 @@ header.hero p {
   font-size: 11.5px;
 }
 
+.monthly-avg-row td {
+  border-top: 2px solid var(--border);
+  background: var(--card-elevated);
+}
+
 footer {
   text-align: center;
   color: var(--text-muted);

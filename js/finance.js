@@ -225,6 +225,17 @@ function monthlyReturnsTable(dates, monthlyReturns) {
     }));
 }
 
+/* 연도x월 표에서 각 월(1~12월)의 평균 수익률을 계산 (계절성 요약행에 사용) */
+function monthlySeasonalAverages(rows) {
+  const monthAverages = Array.from({ length: 12 }, (_, i) => {
+    const vals = rows.map((r) => r.months[i]).filter((v) => v !== null && v !== undefined);
+    return vals.length ? mean(vals) : null;
+  });
+  const annualVals = rows.map((r) => r.annual).filter((v) => v !== null && v !== undefined);
+  const annualAverage = annualVals.length ? mean(annualVals) : null;
+  return { monthAverages, annualAverage };
+}
+
 function downsideDeviation(monthlyReturns, mar = 0) {
   if (monthlyReturns.length === 0) return 0;
   const sqDevs = monthlyReturns.map((r) => (r < mar ? (r - mar) ** 2 : 0));
