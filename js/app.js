@@ -697,7 +697,7 @@ function init() {
   initSelectBox("preset-select", handlePresetSelect);
   initSelectBox("strategy-select", (data) => selectDynamicStrategy(data.strategy));
   setupAllocator();
-  applyPreset("6040");
+  updateWeightTotal();
   renderDashboard();
   renderCorrelationTable();
 }

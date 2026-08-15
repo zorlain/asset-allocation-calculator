@@ -89,7 +89,7 @@
         <div class="field-group">
           <label for="bt-fee">연 수수료</label>
           <div class="field-input-wrap">
-            <input type="text" inputmode="decimal" id="bt-fee" value="0" />
+            <input type="text" inputmode="decimal" id="bt-fee" value="0.05" />
             <span class="field-suffix">%</span>
           </div>
         </div>
@@ -165,16 +165,28 @@
           </select>
         </div>
 
+        <div class="saved-portfolios">
+          <div class="saved-portfolios-label">나만의 포트폴리오</div>
+          <div class="preset-chips" id="saved-portfolio-list">
+            <span class="saved-empty-hint" id="saved-empty-hint">저장된 포트폴리오가 없습니다.</span>
+          </div>
+          <div class="save-portfolio-form">
+            <input type="text" id="save-portfolio-name" placeholder="포트폴리오 이름 (예: 내 올웨더)" maxlength="20" />
+            <button type="button" class="save-portfolio-btn" id="save-portfolio-btn">현재 비중 저장</button>
+          </div>
+          <p class="save-portfolio-msg" id="save-portfolio-msg"></p>
+        </div>
+
         <div class="select-box" id="preset-select">
           <button type="button" class="select-box-toggle" id="preset-select-toggle" aria-haspopup="listbox" aria-expanded="false">
             <span class="select-box-toggle-text">
-              <span class="select-box-title" id="preset-select-title">60/40</span>
-              <span class="select-box-desc" id="preset-select-desc">주식 60% · 중기국채 40%</span>
+              <span class="select-box-title" id="preset-select-title">직접 입력</span>
+              <span class="select-box-desc" id="preset-select-desc">자산별 비중을 직접 설정</span>
             </span>
             <span class="select-box-caret" aria-hidden="true">▾</span>
           </button>
           <div class="select-box-dropdown" id="preset-select-dropdown" role="listbox">
-            <button type="button" class="select-box-option active" data-preset="6040" role="option" aria-selected="true">
+            <button type="button" class="select-box-option" data-preset="6040" role="option" aria-selected="false">
               <div class="select-box-option-title">60/40</div>
               <div class="select-box-option-desc">주식 60% · 중기국채 40%</div>
             </button>
@@ -186,23 +198,11 @@
               <div class="select-box-option-title">올웨더 (간소화)</div>
               <div class="select-box-option-desc">주식30·장기채40·중기채15·금7.5·원자재7.5</div>
             </button>
-            <button type="button" class="select-box-option" data-action="reset" role="option" aria-selected="false">
+            <button type="button" class="select-box-option active" data-action="reset" role="option" aria-selected="true">
               <div class="select-box-option-title">직접 입력</div>
               <div class="select-box-option-desc">비중을 모두 초기화하고 직접 설정</div>
             </button>
           </div>
-        </div>
-
-        <div class="saved-portfolios">
-          <div class="saved-portfolios-label">나만의 포트폴리오</div>
-          <div class="preset-chips" id="saved-portfolio-list">
-            <span class="saved-empty-hint" id="saved-empty-hint">저장된 포트폴리오가 없습니다.</span>
-          </div>
-          <div class="save-portfolio-form">
-            <input type="text" id="save-portfolio-name" placeholder="포트폴리오 이름 (예: 내 올웨더)" maxlength="20" />
-            <button type="button" class="save-portfolio-btn" id="save-portfolio-btn">현재 비중 저장</button>
-          </div>
-          <p class="save-portfolio-msg" id="save-portfolio-msg"></p>
         </div>
       </div>
 
@@ -458,6 +458,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=17"></script>
+<script src="js/app.js?v=18"></script>
 </body>
 </html>
