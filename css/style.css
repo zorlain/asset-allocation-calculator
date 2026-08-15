@@ -801,6 +801,11 @@ footer {
   gap: 3px;
 }
 
+/* 동적 배분 중 비중 숫자를 쓰지 않는 전략(듀얼 모멘텀/변동성 타겟팅)에서는 후보 이름만 보여준다 */
+.weight-list.candidates-only .weight-row-input-wrap {
+  display: none;
+}
+
 .weight-row input.weight-input {
   width: 48px;
   padding: 6px 4px;

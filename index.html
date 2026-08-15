@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=13" />
+<link rel="stylesheet" href="css/style.css?v=14" />
 </head>
 <body>
 <div class="page">
@@ -293,6 +293,11 @@
         </div>
       </div>
 
+      <p class="tip-text" id="candidates-only-hint" hidden>
+        이 전략은 입력한 숫자를 쓰지 않고 자산이 후보로 있는지만 봅니다. 실제 비중은 전략이 매
+        재평가 시점마다 자동으로 정하므로, 후보로 쓰고 싶은 자산만 추가/제거해주세요.
+      </p>
+
       <div class="weight-total-bar" id="weight-total-bar">
         <span>비중 합계</span>
         <span id="weight-total-value">0%</span>
@@ -387,6 +392,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=11"></script>
+<script src="js/app.js?v=12"></script>
 </body>
 </html>

@@ -203,13 +203,16 @@ function addAssetRow(ticker, value = 0) {
   addedTickers.push(ticker);
 
   const list = document.getElementById("weight-list");
+  // 비중 숫자를 안 쓰는 동적 전략(모멘텀/변동성 타겟팅) 중에는 후보 자격 유지를 위해 기본값을 1로 채운다
+  const candidatesOnly = list.classList.contains("candidates-only");
+  const initialValue = value > 0 ? value : candidatesOnly ? 1 : 0;
   const row = document.createElement("div");
   row.className = "weight-row";
   row.dataset.ticker = ticker;
   row.innerHTML = `
     <span class="weight-row-name">${ASSET_DATA.assets[ticker].name}</span>
     <div class="weight-row-input-wrap">
-      <input type="text" inputmode="decimal" class="weight-input" data-ticker="${ticker}" value="${value > 0 ? value : 0}" />
+      <input type="text" inputmode="decimal" class="weight-input" data-ticker="${ticker}" value="${initialValue}" />
       <span class="weight-row-suffix">%</span>
     </div>
     <button type="button" class="weight-row-remove" data-ticker="${ticker}" aria-label="자산 제거">×</button>
@@ -553,6 +556,24 @@ function initSelectBox(rootId, onSelect) {
 let allocationMode = "static";
 let selectedDynamicStrategy = null;
 
+/* 전략에 따라 입력한 비중 숫자를 실제로 쓰는지 여부가 달라 자산 목록 UI를 맞춰 바꾼다
+   (듀얼 모멘텀/변동성 타겟팅은 숫자를 안 쓰므로 입력칸을 아예 숨기고 후보 이름만 보여준다) */
+function updateWeightInputVisibility() {
+  const list = document.getElementById("weight-list");
+  const hint = document.getElementById("candidates-only-hint");
+  const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
+  const hideNumbers = allocationMode === "dynamic" && meta && !meta.usesWeightNumber;
+  if (list) list.classList.toggle("candidates-only", hideNumbers);
+  if (hint) hint.hidden = !hideNumbers;
+
+  if (hideNumbers) {
+    // 후보 판정은 "입력값 > 0"으로 하므로, 숫자를 숨긴 동안에도 후보 자격이 유지되도록 채워둔다
+    document.querySelectorAll(".weight-input").forEach((inp) => {
+      if (parsePercent(inp.value) <= 0) inp.value = "1";
+    });
+  }
+}
+
 function setAllocationMode(mode) {
   allocationMode = mode;
   const staticPanel = document.getElementById("static-mode-panel");
@@ -562,6 +583,7 @@ function setAllocationMode(mode) {
 
   const bar = document.getElementById("weight-total-bar");
   if (bar) bar.hidden = mode === "dynamic";
+  updateWeightInputVisibility();
 }
 
 /* ---------- 프리셋 상자 (60/40, 영구, 올웨더, 직접 입력) ---------- */
@@ -581,6 +603,7 @@ function selectDynamicStrategy(key) {
   if (tipEl && meta) tipEl.textContent = meta.tip;
   const topNGroup = document.getElementById("dynamic-topn-group");
   if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
+  updateWeightInputVisibility();
 }
 
 /* ---------- 탭 1: 배분 계산기 + 백테스트 ---------- */
