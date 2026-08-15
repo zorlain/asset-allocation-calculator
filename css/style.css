@@ -497,6 +497,20 @@ header.hero p {
   cursor: not-allowed;
 }
 
+.calc-btn-secondary {
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  margin-top: 14px;
+}
+
+.calc-btn-secondary:hover,
+.calc-btn-secondary:active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  transform: none;
+}
+
 /* 결과 영역 */
 .result-hero {
   text-align: center;
