@@ -392,20 +392,6 @@
             <span class="field-suffix">개</span>
           </div>
         </div>
-
-        <div class="field-group" id="dynamic-safe-asset-group" hidden>
-          <label for="dynamic-safe-asset">
-            안전자산 (신호 부진 시 대피할 자산)
-            <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
-              <span aria-hidden="true">ⓘ</span>
-              <span class="info-tooltip">
-                후보 자산의 신호(수익률·추세)가 부진할 때 대신 담을 자산입니다. 후보 목록에서는
-                자동으로 제외됩니다. 기본값은 현금성자산(BIL)입니다.
-              </span>
-            </button>
-          </label>
-          <select id="dynamic-safe-asset" class="select-input"></select>
-        </div>
       </div>
 
       <p class="tip-text" id="candidates-only-hint" hidden>
@@ -425,6 +411,20 @@
           <span class="select-box-title">+ 자산 추가</span>
         </button>
         <div class="select-box-dropdown" id="asset-add-dropdown" role="listbox"></div>
+      </div>
+
+      <div class="field-group" id="dynamic-safe-asset-group" hidden>
+        <label for="dynamic-safe-asset">
+          안전자산 (신호 부진 시 대피할 자산)
+          <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+            <span aria-hidden="true">ⓘ</span>
+            <span class="info-tooltip">
+              후보 자산의 신호(수익률·추세)가 부진할 때 대신 담을 자산입니다. 후보 목록에서는
+              자동으로 제외됩니다. 기본값은 현금성자산(BIL)입니다.
+            </span>
+          </button>
+        </label>
+        <select id="dynamic-safe-asset" class="select-input"></select>
       </div>
 
       <p class="calc-error-msg" id="calc-error-msg" hidden></p>
@@ -497,6 +497,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=26"></script>
+<script src="js/app.js?v=27"></script>
 </body>
 </html>

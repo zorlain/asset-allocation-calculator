@@ -589,6 +589,14 @@ function setAllocationMode(mode) {
 
   const bar = document.getElementById("weight-total-bar");
   if (bar) bar.hidden = mode === "dynamic";
+
+  // 안전자산 선택지는 자산 목록 아래(패널 밖)에 있어 배분 방식 전환 시 별도로 갱신해야 한다
+  const safeAssetGroup = document.getElementById("dynamic-safe-asset-group");
+  if (safeAssetGroup) {
+    const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
+    safeAssetGroup.hidden = mode !== "dynamic" || !(meta && meta.usesSafeAsset);
+  }
+
   updateWeightInputVisibility();
 }
 
