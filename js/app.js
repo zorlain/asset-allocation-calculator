@@ -618,12 +618,6 @@ function selectDynamicStrategy(key) {
   const topNGroup = document.getElementById("dynamic-topn-group");
   if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
 
-  const isSeasonal = !!(meta && meta.isSeasonal);
-  const lookbackRow = document.getElementById("dynamic-lookback-row");
-  const seasonRow = document.getElementById("dynamic-season-row");
-  if (lookbackRow) lookbackRow.hidden = isSeasonal;
-  if (seasonRow) seasonRow.hidden = !isSeasonal;
-
   const safeAssetGroup = document.getElementById("dynamic-safe-asset-group");
   if (safeAssetGroup) safeAssetGroup.hidden = !(meta && meta.usesSafeAsset);
 
@@ -631,8 +625,8 @@ function selectDynamicStrategy(key) {
 }
 
 /* ---------- 동적 배분 안전자산(신호 부진 시 대피 자산) 선택 ---------- */
-function initDynamicSafeAssetSelect() {
-  const sel = document.getElementById("dynamic-safe-asset");
+function populateSafeAssetSelect(selectId) {
+  const sel = document.getElementById(selectId);
   if (!sel) return;
   sel.innerHTML = ASSET_GROUP_ORDER.map((group) => {
     const tickers = ASSET_ORDER.filter((t) => ASSET_GROUP[t] === group);
@@ -643,9 +637,23 @@ function initDynamicSafeAssetSelect() {
   sel.value = "BIL";
 }
 
-function getDynamicSafeAsset() {
-  const sel = document.getElementById("dynamic-safe-asset");
+function getSafeAssetValue(selectId) {
+  const sel = document.getElementById(selectId);
   return (sel && sel.value) || "BIL";
+}
+
+function getDynamicSafeAsset() {
+  return getSafeAssetValue("dynamic-safe-asset");
+}
+
+/* ---------- 정적 배분 계절성 옵션 (특정 기간에만 투자, 나머지는 안전자산) ---------- */
+function initStaticSeasonalToggle() {
+  const cb = document.getElementById("opt-seasonal");
+  const panel = document.getElementById("static-seasonal-panel");
+  if (!cb || !panel) return;
+  cb.addEventListener("change", () => {
+    panel.hidden = !cb.checked;
+  });
 }
 
 /* ---------- 탭 1: 배분 계산기 + 백테스트 (계산은 result.html에서 수행, 여기서는 검증 후 새 창을 연다) ---------- */
@@ -705,14 +713,19 @@ function buildResultUrl() {
     params.set("dynRebalance", document.getElementById("dynamic-rebalance").value || "1");
     if (selectedDynamicStrategy === "momentum") {
       params.set("topn", document.getElementById("dynamic-topn").value || "1");
-    } else if (selectedDynamicStrategy === "seasonal") {
-      params.set("seasonStart", document.getElementById("dynamic-season-start").value || "11");
-      params.set("seasonEnd", document.getElementById("dynamic-season-end").value || "4");
-      params.set("seasonInPct", document.getElementById("dynamic-season-in-pct").value || "100");
-      params.set("seasonOutPct", document.getElementById("dynamic-season-out-pct").value || "0");
     }
   } else {
     params.set("rebalance", document.getElementById("static-rebalance").value || "1");
+
+    const seasonalCb = document.getElementById("opt-seasonal");
+    if (seasonalCb && seasonalCb.checked) {
+      params.set("seasonal", "1");
+      params.set("seasonStart", document.getElementById("static-season-start").value || "11");
+      params.set("seasonEnd", document.getElementById("static-season-end").value || "4");
+      params.set("seasonInPct", document.getElementById("static-season-in-pct").value || "100");
+      params.set("seasonOutPct", document.getElementById("static-season-out-pct").value || "0");
+      params.set("staticSafeAsset", getSafeAssetValue("static-safe-asset"));
+    }
   }
 
   return `result.html?${params.toString()}`;
@@ -821,7 +834,9 @@ function init() {
   initDcaToggle();
   initAssetAddSelect();
   initSavedPortfolios();
-  initDynamicSafeAssetSelect();
+  populateSafeAssetSelect("dynamic-safe-asset");
+  populateSafeAssetSelect("static-safe-asset");
+  initStaticSeasonalToggle();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));
   initSelectBox("preset-select", handlePresetSelect);
   initSelectBox("strategy-select", (data) => selectDynamicStrategy(data.strategy));

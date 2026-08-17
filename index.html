@@ -184,6 +184,102 @@
           </select>
         </div>
 
+        <div class="checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="opt-seasonal" />
+            <span>계절성 적용 (특정 기간에만 비중대로 투자, 나머지 기간은 안전자산으로)</span>
+          </label>
+        </div>
+
+        <div id="static-seasonal-panel" hidden>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="static-season-start">투자 시작월</label>
+              <select id="static-season-start" class="select-input">
+                <option value="1">1월</option>
+                <option value="2">2월</option>
+                <option value="3">3월</option>
+                <option value="4">4월</option>
+                <option value="5">5월</option>
+                <option value="6">6월</option>
+                <option value="7">7월</option>
+                <option value="8">8월</option>
+                <option value="9">9월</option>
+                <option value="10">10월</option>
+                <option value="11" selected>11월</option>
+                <option value="12">12월</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="static-season-end">투자 종료월</label>
+              <select id="static-season-end" class="select-input">
+                <option value="1">1월</option>
+                <option value="2">2월</option>
+                <option value="3">3월</option>
+                <option value="4" selected>4월</option>
+                <option value="5">5월</option>
+                <option value="6">6월</option>
+                <option value="7">7월</option>
+                <option value="8">8월</option>
+                <option value="9">9월</option>
+                <option value="10">10월</option>
+                <option value="11">11월</option>
+                <option value="12">12월</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="static-season-in-pct">
+                성수기 투자 비중
+                <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+                  <span aria-hidden="true">ⓘ</span>
+                  <span class="info-tooltip">
+                    투자 기간(성수기) 동안 목표 비중의 몇 %를 투자할지 정합니다. 나머지는
+                    안전자산으로 둡니다. 기본값 100%는 성수기 내내 전액 투자한다는 뜻입니다.
+                  </span>
+                </button>
+              </label>
+              <div class="field-input-wrap">
+                <input type="text" inputmode="numeric" id="static-season-in-pct" value="100" />
+                <span class="field-suffix">%</span>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="static-season-out-pct">
+                비수기 투자 비중
+                <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+                  <span aria-hidden="true">ⓘ</span>
+                  <span class="info-tooltip">
+                    투자 기간이 아닌 동안(비수기) 목표 비중의 몇 %를 투자할지 정합니다. 나머지는
+                    안전자산으로 둡니다. 기본값 0%는 비수기에 안전자산으로 전액 이동한다는 뜻이며,
+                    숫자를 올릴수록 비수기에도 일부 계속 투자 상태를 유지합니다.
+                  </span>
+                </button>
+              </label>
+              <div class="field-input-wrap">
+                <input type="text" inputmode="numeric" id="static-season-out-pct" value="0" />
+                <span class="field-suffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="static-safe-asset">
+              안전자산 (비수기에 대신 담을 자산)
+              <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+                <span aria-hidden="true">ⓘ</span>
+                <span class="info-tooltip">
+                  비수기(또는 성수기 비중을 100%로 채우지 않았을 때 남는 몫)에 대신 담을 자산입니다.
+                  기본값은 현금성자산(BIL)입니다.
+                </span>
+              </button>
+            </label>
+            <select id="static-safe-asset" class="select-input"></select>
+          </div>
+        </div>
+
         <div class="saved-portfolios">
           <div class="saved-portfolios-label">나만의 포트폴리오</div>
           <div class="preset-chips" id="saved-portfolio-list">
@@ -253,10 +349,6 @@
               <div class="select-box-option-title">리스크 패리티</div>
               <div class="select-box-option-desc">상관관계까지 고려해 자산별 위험 기여도가 같아지도록 비중을 자동 배분</div>
             </button>
-            <button type="button" class="select-box-option" data-strategy="seasonal" role="option" aria-selected="false">
-              <div class="select-box-option-title">계절성 (Sell in May)</div>
-              <div class="select-box-option-desc">11월~4월(설정 가능)에만 투자, 나머지 기간은 안전자산으로 대피</div>
-            </button>
           </div>
         </div>
 
@@ -297,81 +389,6 @@
               <option value="12">매년</option>
             </select>
           </div>
-        </div>
-
-        <div id="dynamic-season-row" hidden>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="dynamic-season-start">투자 시작월</label>
-            <select id="dynamic-season-start" class="select-input">
-              <option value="1">1월</option>
-              <option value="2">2월</option>
-              <option value="3">3월</option>
-              <option value="4">4월</option>
-              <option value="5">5월</option>
-              <option value="6">6월</option>
-              <option value="7">7월</option>
-              <option value="8">8월</option>
-              <option value="9">9월</option>
-              <option value="10">10월</option>
-              <option value="11" selected>11월</option>
-              <option value="12">12월</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label for="dynamic-season-end">투자 종료월</label>
-            <select id="dynamic-season-end" class="select-input">
-              <option value="1">1월</option>
-              <option value="2">2월</option>
-              <option value="3">3월</option>
-              <option value="4" selected>4월</option>
-              <option value="5">5월</option>
-              <option value="6">6월</option>
-              <option value="7">7월</option>
-              <option value="8">8월</option>
-              <option value="9">9월</option>
-              <option value="10">10월</option>
-              <option value="11">11월</option>
-              <option value="12">12월</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field-group">
-            <label for="dynamic-season-in-pct">
-              성수기 투자 비중
-              <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
-                <span aria-hidden="true">ⓘ</span>
-                <span class="info-tooltip">
-                  투자 기간(성수기) 동안 목표 비중의 몇 %를 투자할지 정합니다. 나머지는
-                  안전자산으로 둡니다. 기본값 100%는 성수기 내내 전액 투자한다는 뜻입니다.
-                </span>
-              </button>
-            </label>
-            <div class="field-input-wrap">
-              <input type="text" inputmode="numeric" id="dynamic-season-in-pct" value="100" />
-              <span class="field-suffix">%</span>
-            </div>
-          </div>
-          <div class="field-group">
-            <label for="dynamic-season-out-pct">
-              비수기 투자 비중
-              <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
-                <span aria-hidden="true">ⓘ</span>
-                <span class="info-tooltip">
-                  투자 기간이 아닌 동안(비수기) 목표 비중의 몇 %를 투자할지 정합니다. 나머지는
-                  안전자산으로 둡니다. 기본값 0%는 비수기에 안전자산으로 전액 이동한다는 뜻이며,
-                  숫자를 올릴수록 비수기에도 일부 계속 투자 상태를 유지합니다.
-                </span>
-              </button>
-            </label>
-            <div class="field-input-wrap">
-              <input type="text" inputmode="numeric" id="dynamic-season-out-pct" value="0" />
-              <span class="field-suffix">%</span>
-            </div>
-          </div>
-        </div>
         </div>
 
         <div class="field-group" id="dynamic-topn-group" hidden>
@@ -498,6 +515,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=27"></script>
+<script src="js/app.js?v=28"></script>
 </body>
 </html>

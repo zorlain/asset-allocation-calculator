@@ -199,10 +199,16 @@ function renderResult(bt) {
       ? DYNAMIC_REBALANCE_LABEL[bt.rebalanceMonths] || "매달 재평가"
       : REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
   const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
-  const strategyNote = bt.mode === "dynamic" ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""} · ` : "";
+  const strategyNote =
+    bt.mode === "dynamic"
+      ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""} · `
+      : bt.seasonal
+      ? `계절성 (${bt.seasonal.seasonStart}월~${bt.seasonal.seasonEnd}월) · `
+      : "";
   const bestYearText = bt.bestYear ? `${bt.bestYear.year}년 ${formatSignedPct(bt.bestYear.return, 1)}` : "-";
   const worstYearText = bt.worstYear ? `${bt.worstYear.year}년 ${formatSignedPct(bt.worstYear.return, 1)}` : "-";
-  const pieCaption = bt.mode === "dynamic" ? `<div class="chart-note">마지막 리밸런싱 시점 기준 비중</div>` : "";
+  const pieCaption =
+    bt.mode === "dynamic" || bt.seasonal ? `<div class="chart-note">마지막 리밸런싱 시점 기준 비중</div>` : "";
   const investNote = bt.dcaMode
     ? `매달 적립 ${formatManwon(bt.monthlyContribution)} · 총 납입액 ${formatManwon(bt.totalContributed)}`
     : `초기 투자금 ${formatManwon(bt.initialAmount)}`;

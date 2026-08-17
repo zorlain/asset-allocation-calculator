@@ -191,14 +191,6 @@ const DYNAMIC_STRATEGIES = {
     showTopN: false,
     usesWeightNumber: false,
   },
-  seasonal: {
-    label: "계절성 (Sell in May)",
-    tip: "설정한 투자 기간(기본 11월~4월)과 그 외 기간에 각각 목표 비중의 몇 %를 투자할지 정합니다. 나머지는 안전자산으로 둡니다. '11월~4월 강세, 5월~10월 약세'로 알려진 계절성 패턴을 활용하는 전략으로, 기본값은 성수기 100%·비수기 0%(전액 안전자산)입니다.",
-    showTopN: false,
-    usesWeightNumber: true,
-    isSeasonal: true,
-    usesSafeAsset: true,
-  },
 };
 
 /* 계절성 전략: month(1~12)가 시작월~종료월 구간에 포함되는지 (11→4처럼 연말을 넘어가는 구간도 처리) */
@@ -475,6 +467,9 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, op
      rebalanceMonths: 리밸런싱 주기(개월). 0이면 리밸런싱 없음(최초 매수 후 보유). 기본 1(매달)
      feeAnnualPct: 연 운용 수수료(%, ETF 자체 보수 외 추가로 반영). 기본 0
      startDate / endDate: "YYYY-MM" 형식, 백테스트 구간 제한. 기본 전체 구간
+     seasonal: { seasonStart, seasonEnd, seasonInPct, seasonOutPct, safeAsset } - 지정하면
+       매달 현재 월이 성수기/비수기인지에 따라 목표 비중을 조정하는 계절성 옵션을 켠다
+       (이때는 rebalanceMonths 설정과 무관하게 매달 재평가한다)
    } */
 function runBacktest(weights, initialAmount, options = {}) {
   const {
@@ -484,11 +479,14 @@ function runBacktest(weights, initialAmount, options = {}) {
     endDate = null,
     dcaMode = false,
     monthlyContribution = 0,
+    seasonal = null,
   } = options;
   const tickers = Object.keys(weights).filter((t) => weights[t] > 0);
   if (tickers.length === 0) return null;
 
-  let { dates, returnsByTicker } = alignReturns(tickers);
+  const allTickers = seasonal && !tickers.includes(seasonal.safeAsset) ? [...tickers, seasonal.safeAsset] : tickers;
+
+  let { dates, returnsByTicker } = alignReturns(allTickers);
   if (startDate || endDate) {
     const keepIdx = [];
     dates.forEach((d, i) => {
@@ -498,43 +496,70 @@ function runBacktest(weights, initialAmount, options = {}) {
     });
     dates = keepIdx.map((i) => dates[i]);
     const filtered = {};
-    tickers.forEach((t) => (filtered[t] = keepIdx.map((i) => returnsByTicker[t][i])));
+    allTickers.forEach((t) => (filtered[t] = keepIdx.map((i) => returnsByTicker[t][i])));
     returnsByTicker = filtered;
   }
   if (dates.length === 0) return null;
 
   const monthlyFee = feeAnnualPct / 100 / 12;
 
+  // 계절성이 켜져 있으면 해당 월이 성수기/비수기인지에 따라 기준 비중에서 목표 비중을 다시 계산하고,
+  // 투자하지 않는 몫은 안전자산으로 돌린다
+  function targetWeightsFor(date) {
+    if (!seasonal) return weights;
+    const month = Number(date.slice(5, 7));
+    const inSeason = isMonthInSeason(month, seasonal.seasonStart, seasonal.seasonEnd);
+    const pct = inSeason ? seasonal.seasonInPct : seasonal.seasonOutPct;
+    const tw = {};
+    let invested = 0;
+    tickers.forEach((t) => {
+      const w = weights[t] * pct;
+      tw[t] = w;
+      invested += w;
+    });
+    const remainder = 1 - invested;
+    if (remainder > 0) tw[seasonal.safeAsset] = (tw[seasonal.safeAsset] || 0) + remainder;
+    return tw;
+  }
+
+  let currentTargets = targetWeightsFor(dates[0]);
   const holdings = {};
-  tickers.forEach((t) => (holdings[t] = weights[t] * initialAmount));
+  allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * initialAmount));
 
   const values = [initialAmount];
   const monthlyReturns = [];
   for (let i = 0; i < dates.length; i++) {
     if (dcaMode) {
-      tickers.forEach((t) => {
-        holdings[t] += weights[t] * monthlyContribution;
+      allTickers.forEach((t) => {
+        holdings[t] += (currentTargets[t] || 0) * monthlyContribution;
       });
     }
-    const before = tickers.reduce((sum, t) => sum + holdings[t], 0);
-    tickers.forEach((t) => {
-      holdings[t] = holdings[t] * (1 + returnsByTicker[t][i]) * (1 - monthlyFee);
+    const before = allTickers.reduce((sum, t) => sum + holdings[t], 0);
+    allTickers.forEach((t) => {
+      holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
-    const after = tickers.reduce((sum, t) => sum + holdings[t], 0);
+    const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     monthlyReturns.push(before > 0 ? after / before - 1 : 0);
     values.push(after);
 
     const monthIndex = i + 1;
-    if (rebalanceMonths > 0 && monthIndex % rebalanceMonths === 0) {
+    if (seasonal) {
+      // 계절 전환은 사용자가 정한 리밸런싱 주기와 무관하게 항상 매달 확인한다
+      if (monthIndex < dates.length) {
+        currentTargets = targetWeightsFor(dates[monthIndex]);
+        allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));
+      }
+    } else if (rebalanceMonths > 0 && monthIndex % rebalanceMonths === 0) {
       tickers.forEach((t) => (holdings[t] = weights[t] * after));
     }
   }
 
   const result = computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, { dcaMode, monthlyContribution });
-  result.rebalanceMonths = rebalanceMonths;
+  result.rebalanceMonths = seasonal ? 1 : rebalanceMonths;
   result.feeAnnualPct = feeAnnualPct;
   result.mode = "static";
-  result.finalWeights = weights;
+  result.finalWeights = currentTargets;
+  result.seasonal = seasonal;
   return result;
 }
 
@@ -580,33 +605,9 @@ function solveRiskParityWeights(cov) {
 
 /* ---------- 동적 배분 전략별 목표 비중 계산 ----------
    idx: closesByTicker의 기준 시점 인덱스 (idx까지의 데이터만 사용 - 미래 데이터 참조 없음)
-   date: idx 시점의 "YYYY-MM" 날짜 (계절성 전략에서 달을 판단할 때 사용)
    반환값이 null이면 해당 시점엔 신호를 계산할 과거 데이터가 부족하다는 뜻 */
-function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset, date) {
+function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
   const weights = {};
-
-  if (strategy === "seasonal") {
-    if (!date) return null;
-    const month = Number(date.slice(5, 7));
-    const inSeason = isMonthInSeason(month, params.seasonStart || 11, params.seasonEnd || 4);
-    const pct = inSeason
-      ? params.seasonInPct != null
-        ? params.seasonInPct
-        : 1
-      : params.seasonOutPct != null
-      ? params.seasonOutPct
-      : 0;
-    const baseWeights = params.baseWeights || {};
-    let invested = 0;
-    candidates.forEach((t) => {
-      const w = (baseWeights[t] || 0) * pct;
-      weights[t] = w;
-      invested += w;
-    });
-    const remainder = 1 - invested;
-    if (remainder > 0) weights[safeAsset] = (weights[safeAsset] || 0) + remainder;
-    return weights;
-  }
 
   const lookback = Math.max(1, params.lookback || 12);
   if (idx < lookback) return null;
@@ -730,7 +731,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     }
   });
 
-  const lookback = strategy === "seasonal" ? 0 : Math.max(1, params.lookback || 12);
+  const lookback = Math.max(1, params.lookback || 12);
 
   let simStart = lookback;
   if (startDate) {
@@ -749,7 +750,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   }
   if (simStart >= simEndExclusive) return null;
 
-  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset, closeDates[simStart]);
+  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset);
   if (!currentTargets) return null;
 
   const monthlyFee = feeAnnualPct / 100 / 12;
@@ -777,7 +778,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
     const stepCount = i - simStart + 1;
     if (rebalanceMonths > 0 && stepCount % rebalanceMonths === 0 && i + 1 < simEndExclusive) {
-      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset, closeDates[i + 1]);
+      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset);
       if (nextTargets) {
         currentTargets = nextTargets;
         allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));

@@ -89,19 +89,23 @@ function runFromParams() {
       p.baseWeights = normalizeWeights(weights, candidates);
     } else if (strategy === "trend") {
       p.baseWeights = normalizeWeights(weights, candidates);
-    } else if (strategy === "seasonal") {
-      p.baseWeights = normalizeWeights(weights, candidates);
-      p.seasonStart = Number(params.get("seasonStart")) || 11;
-      p.seasonEnd = Number(params.get("seasonEnd")) || 4;
-      p.seasonInPct = params.has("seasonInPct") ? Number(params.get("seasonInPct")) / 100 : 1;
-      p.seasonOutPct = params.has("seasonOutPct") ? Number(params.get("seasonOutPct")) / 100 : 0;
-      options.rebalanceMonths = 1;
     }
     const safeAsset = params.get("safeAsset") || "BIL";
     bt = runDynamicBacktest(strategy, p, candidates, safeAsset, amount, options);
   } else {
     const rebalanceMonths = Number(params.get("rebalance"));
     baseOptions.rebalanceMonths = Number.isFinite(rebalanceMonths) ? rebalanceMonths : 1;
+
+    if (params.get("seasonal") === "1") {
+      baseOptions.seasonal = {
+        seasonStart: Number(params.get("seasonStart")) || 11,
+        seasonEnd: Number(params.get("seasonEnd")) || 4,
+        seasonInPct: params.has("seasonInPct") ? Number(params.get("seasonInPct")) / 100 : 1,
+        seasonOutPct: params.has("seasonOutPct") ? Number(params.get("seasonOutPct")) / 100 : 0,
+        safeAsset: params.get("staticSafeAsset") || "BIL",
+      };
+    }
+
     bt = runBacktest(weights, amount, baseOptions);
   }
 
