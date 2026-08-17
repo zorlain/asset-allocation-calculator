@@ -167,9 +167,9 @@ const PRESETS = {
 const DYNAMIC_STRATEGIES = {
   momentum: {
     label: "듀얼 모멘텀",
-    tip: "매 재평가 시점마다 후보로 추가한 자산 중 최근 [기준 기간] 수익률이 가장 높은 상위 [동시 보유 자산 수]개에 동일 비중으로 투자합니다. 선택된 자산의 수익률이 0% 이하면(절대모멘텀 미충족) 전액 안전자산으로 대피합니다. 입력한 비중 숫자는 사용하지 않습니다.",
+    tip: "매 재평가 시점마다 후보로 추가한 자산 중 최근 [기준 기간] 수익률이 가장 높은 상위 [동시 보유 자산 수]개를 골라, 그 안에서 입력한 비중 비율대로 나눠 투자합니다(예: 두 자산이 선택되고 비중을 60/40으로 입력했다면 60:40으로 배분). 선택된 자산의 수익률이 0% 이하면(절대모멘텀 미충족) 전액 안전자산으로 대피합니다.",
     showTopN: true,
-    usesWeightNumber: false,
+    usesWeightNumber: true,
     usesSafeAsset: true,
   },
   trend: {
@@ -612,7 +612,8 @@ function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx
   if (idx < lookback) return null;
 
   if (strategy === "momentum") {
-    const topN = Math.max(1, params.topN || 1);
+    const topN = Math.max(1, params.topN || 2);
+    const baseWeights = params.baseWeights || {};
     const scores = candidates.map((t) => ({
       t,
       ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
@@ -622,8 +623,14 @@ function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx
     if (picked.length === 0) {
       weights[safeAsset] = 1;
     } else {
-      const w = 1 / picked.length;
-      picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+      // 선택된 자산끼리 입력한 비중 비율대로 재분배(정규화). 비중을 입력하지 않았다면 동일 비중으로 대체
+      const total = picked.reduce((sum, s) => sum + (baseWeights[s.t] || 0), 0);
+      if (total > 0) {
+        picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + (baseWeights[s.t] || 0) / total));
+      } else {
+        const w = 1 / picked.length;
+        picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+      }
     }
     return weights;
   }

@@ -85,7 +85,8 @@ function runFromParams() {
     const options = { ...baseOptions, rebalanceMonths: Number(params.get("dynRebalance")) || 1 };
 
     if (strategy === "momentum") {
-      p.topN = Number(params.get("topn")) || 1;
+      p.topN = Number(params.get("topn")) || 2;
+      p.baseWeights = normalizeWeights(weights, candidates);
     } else if (strategy === "trend") {
       p.baseWeights = normalizeWeights(weights, candidates);
     } else if (strategy === "seasonal") {
