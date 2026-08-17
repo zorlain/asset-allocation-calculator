@@ -53,7 +53,9 @@ const TICKER_COLORS = {
   IEF: "#f2a341",
   TLT: "#f2665e",
   TIP: "#e88a5c",
+  AGG: "#d9955a",
   HYG: "#c96a6a",
+  LQD: "#b57a8a",
   GLD: "#d4af37",
   SLV: "#b8bcc4",
   DBC: "#8d6a4f",
@@ -199,9 +201,10 @@ function renderResult(bt) {
       ? DYNAMIC_REBALANCE_LABEL[bt.rebalanceMonths] || "매달 재평가"
       : REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
   const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
+  const riskModeLabel = { invVol: "역변동성 가중", riskParity: "리스크 패리티", volTarget: "변동성 타겟팅" }[bt.riskMode] || "";
   const strategyNote =
     bt.mode === "dynamic"
-      ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""} · `
+      ? `${(DYNAMIC_STRATEGIES[bt.strategy] || {}).label || ""}${riskModeLabel ? " + " + riskModeLabel : ""} · `
       : bt.seasonal
       ? `계절성 (${bt.seasonal.seasonStart}월~${bt.seasonal.seasonEnd}월) · `
       : "";

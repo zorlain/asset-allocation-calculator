@@ -590,12 +590,13 @@ function setAllocationMode(mode) {
   const bar = document.getElementById("weight-total-bar");
   if (bar) bar.hidden = mode === "dynamic";
 
-  // 안전자산 선택지는 자산 목록 아래(패널 밖)에 있어 배분 방식 전환 시 별도로 갱신해야 한다
+  // 안전자산 선택지·리스크 관리 섹션은 자산 목록 아래(패널 밖)에 있어 배분 방식 전환 시
+  // 별도로 갱신해야 한다. 전략과 무관하게 동적 배분에서는 항상 노출(리스크 관리가 안전자산을
+  // 쓸 수 있어 전략 자체가 안전자산을 안 쓰더라도 숨기지 않는다).
   const safeAssetGroup = document.getElementById("dynamic-safe-asset-group");
-  if (safeAssetGroup) {
-    const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
-    safeAssetGroup.hidden = mode !== "dynamic" || !(meta && meta.usesSafeAsset);
-  }
+  if (safeAssetGroup) safeAssetGroup.hidden = mode !== "dynamic";
+  const riskSection = document.getElementById("risk-management-section");
+  if (riskSection) riskSection.hidden = mode !== "dynamic";
 
   updateWeightInputVisibility();
 }
@@ -609,17 +610,39 @@ function handlePresetSelect(data) {
   }
 }
 
+/* 이름있는 전략(자산 구성이 고정된 프리셋)을 고르면 후보 목록을 자동으로 채우고, 신호 계산에
+   필요한 최소 개월 수(lookback)를 숨겨진 필드에 심어둔다 - buildResultUrl이 그대로 읽어간다 */
+const NAMED_PRESET_LOOKBACK = { gem: 12, gtaa: 10, vaa: 12, daa: 12, baa: 12, paa: 12, laa: 10 };
+
+function applyDynamicStrategyPreset(key) {
+  const preset = NAMED_STRATEGY_PRESETS[key];
+  if (!preset) return;
+  document.getElementById("weight-list").innerHTML = "";
+  addedTickers = [];
+  const tickers = preset.offensive || preset.core || [];
+  tickers.forEach((t) => addAssetRow(t, 1));
+  renderAssetAddOptions();
+
+  const lookbackInput = document.getElementById("dynamic-lookback");
+  if (lookbackInput) lookbackInput.value = String(NAMED_PRESET_LOOKBACK[key] || 12);
+}
+
 /* ---------- 동적 전략 상자 ---------- */
 function selectDynamicStrategy(key) {
   selectedDynamicStrategy = key;
   const meta = DYNAMIC_STRATEGIES[key];
   const tipEl = document.getElementById("dynamic-strategy-tip");
   if (tipEl && meta) tipEl.textContent = meta.tip;
-  const topNGroup = document.getElementById("dynamic-topn-group");
-  if (topNGroup) topNGroup.hidden = !(meta && meta.showTopN);
 
-  const safeAssetGroup = document.getElementById("dynamic-safe-asset-group");
-  if (safeAssetGroup) safeAssetGroup.hidden = !(meta && meta.usesSafeAsset);
+  const isNamedPreset = !!(meta && meta.isNamedPreset);
+  const topNGroup = document.getElementById("dynamic-topn-group");
+  if (topNGroup) topNGroup.hidden = isNamedPreset || !(meta && meta.showTopN);
+  const lookbackRow = document.getElementById("dynamic-lookback-row");
+  if (lookbackRow) lookbackRow.hidden = isNamedPreset || !(meta && meta.showLookback);
+  const namedHint = document.getElementById("named-preset-hint");
+  if (namedHint) namedHint.hidden = !isNamedPreset;
+
+  if (isNamedPreset) applyDynamicStrategyPreset(key);
 
   updateWeightInputVisibility();
 }
@@ -644,6 +667,34 @@ function getSafeAssetValue(selectId) {
 
 function getDynamicSafeAsset() {
   return getSafeAssetValue("dynamic-safe-asset");
+}
+
+/* ---------- 동적 배분 리스크 관리 (전략이 정한 비중을 재조정) ---------- */
+let selectedRiskMode = "none";
+
+function selectRiskMode(mode) {
+  selectedRiskMode = mode;
+  const volGroup = document.getElementById("risk-target-vol-group");
+  if (volGroup) volGroup.hidden = mode !== "volTarget";
+}
+
+function initRiskModeSelect() {
+  initSelectBox("risk-mode-select", (data) => selectRiskMode(data.risk));
+}
+
+function initTargetVolChips() {
+  const wrap = document.getElementById("target-vol-presets");
+  const input = document.getElementById("risk-target-vol");
+  if (!wrap || !input) return;
+  wrap.addEventListener("click", (e) => {
+    const chip = e.target.closest(".target-vol-chip");
+    if (!chip) return;
+    input.value = chip.dataset.vol;
+    wrap.querySelectorAll(".target-vol-chip").forEach((c) => c.classList.toggle("active", c === chip));
+  });
+  input.addEventListener("input", () => {
+    wrap.querySelectorAll(".target-vol-chip").forEach((c) => c.classList.toggle("active", c.dataset.vol === input.value));
+  });
 }
 
 /* ---------- 정적 배분 계절성 옵션 (특정 기간에만 투자, 나머지는 안전자산) ---------- */
@@ -711,9 +762,18 @@ function buildResultUrl() {
     params.set("safeAsset", getDynamicSafeAsset());
     params.set("lookback", document.getElementById("dynamic-lookback").value || "12");
     params.set("dynRebalance", document.getElementById("dynamic-rebalance").value || "1");
-    if (selectedDynamicStrategy === "momentum") {
-      params.set("topn", document.getElementById("dynamic-topn").value || "1");
+    if (selectedDynamicStrategy === "momentum" || selectedDynamicStrategy === "relMomentum") {
+      params.set("topn", document.getElementById("dynamic-topn").value || "2");
     }
+
+    params.set("riskMode", selectedRiskMode || "none");
+    if (selectedRiskMode === "volTarget") {
+      params.set("targetVol", document.getElementById("risk-target-vol").value || "10");
+    }
+    const maxWeight = document.getElementById("risk-max-weight").value;
+    if (maxWeight) params.set("maxWeightPct", maxWeight);
+    const minCash = document.getElementById("risk-min-cash").value;
+    if (minCash) params.set("minCashPct", minCash);
   } else {
     params.set("rebalance", document.getElementById("static-rebalance").value || "1");
 
@@ -752,6 +812,13 @@ function setupAllocator() {
         const safeAssetName = (ASSET_DATA.assets[safeAsset] || {}).name || safeAsset;
         showCalcError(`후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (안전자산으로 지정한 ${safeAssetName}은 대피처로 자동 사용되어 후보에서 제외됩니다)`);
         return;
+      }
+      if (selectedRiskMode === "volTarget") {
+        const targetVol = toNumber(document.getElementById("risk-target-vol").value);
+        if (!Number.isFinite(targetVol) || targetVol <= 0) {
+          showCalcError("목표 변동성을 0보다 크게 입력해주세요.");
+          return;
+        }
       }
     }
 
@@ -837,6 +904,8 @@ function init() {
   populateSafeAssetSelect("dynamic-safe-asset");
   populateSafeAssetSelect("static-safe-asset");
   initStaticSeasonalToggle();
+  initRiskModeSelect();
+  initTargetVolChips();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));
   initSelectBox("preset-select", handlePresetSelect);
   initSelectBox("strategy-select", (data) => selectDynamicStrategy(data.strategy));

@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=23" />
+<link rel="stylesheet" href="css/style.css?v=24" />
 </head>
 <body>
 <div class="page">
@@ -333,26 +333,74 @@
             <span class="select-box-caret" aria-hidden="true">▾</span>
           </button>
           <div class="select-box-dropdown" id="strategy-select-dropdown" role="listbox">
+            <div class="select-box-group-label">직접 조립하는 전략</div>
             <button type="button" class="select-box-option" data-strategy="momentum" role="option" aria-selected="false">
               <div class="select-box-option-title">듀얼 모멘텀</div>
-              <div class="select-box-option-desc">최근 수익률 상위 후보에 입력한 비중대로 투자, 전부 부진하면 안전자산으로 대피</div>
+              <div class="select-box-option-desc">상대모멘텀 상위 + 절대모멘텀(0% 초과) 필터, 미충족분은 안전자산으로</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="relMomentum" role="option" aria-selected="false">
+              <div class="select-box-option-title">상대 모멘텀</div>
+              <div class="select-box-option-desc">절대모멘텀 필터 없이 수익률 상위 후보에만 투자, 항상 100% 투자 유지</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="absMomentum" role="option" aria-selected="false">
+              <div class="select-box-option-title">절대 모멘텀</div>
+              <div class="select-box-option-desc">자산별로 독립적으로 수익률 0% 초과 여부만 확인, 미달분은 안전자산으로</div>
             </button>
             <button type="button" class="select-box-option" data-strategy="trend" role="option" aria-selected="false">
               <div class="select-box-option-title">추세추종 (이동평균)</div>
               <div class="select-box-option-desc">이동평균선 위 자산만 보유, 아래로 내려가면 안전자산으로 전환</div>
             </button>
-            <button type="button" class="select-box-option" data-strategy="volTarget" role="option" aria-selected="false">
-              <div class="select-box-option-title">변동성 타겟팅</div>
+            <button type="button" class="select-box-option" data-strategy="equalWeight" role="option" aria-selected="false">
+              <div class="select-box-option-title">동일가중</div>
+              <div class="select-box-option-desc">후보 전체에 동일 비중, 리스크 관리 옵션과 조합할 때 기준선으로 유용</div>
+            </button>
+            <div class="select-box-group-label">리스크 기반 배분</div>
+            <button type="button" class="select-box-option" data-strategy="invVol" role="option" aria-selected="false">
+              <div class="select-box-option-title">역변동성 가중</div>
               <div class="select-box-option-desc">변동성이 낮은 자산일수록 비중을 높게 자동 배분</div>
             </button>
             <button type="button" class="select-box-option" data-strategy="riskParity" role="option" aria-selected="false">
               <div class="select-box-option-title">리스크 패리티</div>
               <div class="select-box-option-desc">상관관계까지 고려해 자산별 위험 기여도가 같아지도록 비중을 자동 배분</div>
             </button>
+            <div class="select-box-group-label">이름있는 전략 (간소화판, 자산 구성 고정)</div>
+            <button type="button" class="select-box-option" data-strategy="gem" role="option" aria-selected="false">
+              <div class="select-box-option-title">GEM (글로벌 주식 모멘텀)</div>
+              <div class="select-box-option-desc">미국·선진국주식 상대모멘텀 + 안전자산 대비 절대모멘텀, 1개 자산에 100%</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="gtaa" role="option" aria-selected="false">
+              <div class="select-box-option-title">GTAA (5자산 추세추종)</div>
+              <div class="select-box-option-desc">주식·채권·원자재·리츠 5자산 각 20%, 이동평균 아래면 그 슬롯만 안전자산으로</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="vaa" role="option" aria-selected="false">
+              <div class="select-box-option-title">VAA (공격형)</div>
+              <div class="select-box-option-desc">4자산 캐너리 중 하나라도 모멘텀 음수면 즉시 방어자산 100%로 전환</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="daa" role="option" aria-selected="false">
+              <div class="select-box-option-title">DAA</div>
+              <div class="select-box-option-desc">12자산 상위 6개 보유, 2자산 캐너리 breadth로 현금비중 0/50/100% 조절</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="baa" role="option" aria-selected="false">
+              <div class="select-box-option-title">BAA (균형형)</div>
+              <div class="select-box-option-desc">12자산 상위 6개 보유, 4자산 캐너리 중 하나라도 음수면 방어자산군으로 전환</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="paa" role="option" aria-selected="false">
+              <div class="select-box-option-title">PAA</div>
+              <div class="select-box-option-desc">별도 캐너리 없이 12자산 자체의 이동평균 breadth로 채권비중 조절</div>
+            </button>
+            <button type="button" class="select-box-option" data-strategy="laa" role="option" aria-selected="false">
+              <div class="select-box-option-title">LAA (실업률 지표 제외)</div>
+              <div class="select-box-option-desc">고정 4슬롯(주식·채권·금·전환슬롯), 주가 이동평균으로 전환슬롯만 스위치</div>
+            </button>
           </div>
         </div>
 
         <p class="tip-text" id="dynamic-strategy-tip">위에서 전략을 선택하면 설명이 여기에 표시됩니다.</p>
+
+        <p class="tip-text" id="named-preset-hint" hidden>
+          이 전략은 자산 구성이 고정되어 있습니다. 아래 자산 목록이 자동으로 채워지며, 직접
+          자산을 추가/제거하면 원본 전략과 다른 결과가 나올 수 있습니다.
+        </p>
 
         <div class="field-row" id="dynamic-lookback-row">
           <div class="field-group">
@@ -433,16 +481,106 @@
 
       <div class="field-group" id="dynamic-safe-asset-group" hidden>
         <label for="dynamic-safe-asset">
-          안전자산 (신호 부진 시 대피할 자산)
+          안전자산 (신호 부진 시 · 리스크 관리에서 대피할 자산)
           <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
             <span aria-hidden="true">ⓘ</span>
             <span class="info-tooltip">
-              후보 자산의 신호(수익률·추세)가 부진할 때 대신 담을 자산입니다. 후보 목록에서는
-              자동으로 제외됩니다. 기본값은 현금성자산(BIL)입니다.
+              후보 자산의 신호(수익률·추세)가 부진할 때, 또는 아래 리스크 관리(변동성 타겟팅·최대
+              비중 제한·최소 현금 비중)에서 노출도를 줄일 때 대신 담을 자산입니다. 기본값은
+              현금성자산(BIL)입니다.
             </span>
           </button>
         </label>
         <select id="dynamic-safe-asset" class="select-input"></select>
+      </div>
+
+      <div id="risk-management-section" hidden>
+        <div class="select-box" id="risk-mode-select">
+          <button type="button" class="select-box-toggle" id="risk-mode-select-toggle" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-box-toggle-text">
+              <span class="select-box-title" id="risk-mode-select-title">리스크 관리: 없음</span>
+              <span class="select-box-desc" id="risk-mode-select-desc">전략이 정한 비중을 그대로 사용</span>
+            </span>
+            <span class="select-box-caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="select-box-dropdown" id="risk-mode-select-dropdown" role="listbox">
+            <button type="button" class="select-box-option active" data-risk="none" role="option" aria-selected="true">
+              <div class="select-box-option-title">없음</div>
+              <div class="select-box-option-desc">전략이 정한 비중을 그대로 사용</div>
+            </button>
+            <button type="button" class="select-box-option" data-risk="invVol" role="option" aria-selected="false">
+              <div class="select-box-option-title">역변동성 가중</div>
+              <div class="select-box-option-desc">전략이 고른 자산들끼리 변동성 역수 비율로 재배분</div>
+            </button>
+            <button type="button" class="select-box-option" data-risk="riskParity" role="option" aria-selected="false">
+              <div class="select-box-option-title">리스크 패리티</div>
+              <div class="select-box-option-desc">전략이 고른 자산들끼리 위험 기여도가 같아지도록 재배분</div>
+            </button>
+            <button type="button" class="select-box-option" data-risk="volTarget" role="option" aria-selected="false">
+              <div class="select-box-option-title">변동성 타겟팅</div>
+              <div class="select-box-option-desc">포트폴리오 목표 변동성에 맞춰 전체 투자 노출도를 조절(레버리지 없이 축소만)</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="field-group" id="risk-target-vol-group" hidden>
+          <label for="risk-target-vol">
+            목표 변동성
+            <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+              <span aria-hidden="true">ⓘ</span>
+              <span class="info-tooltip">
+                포트폴리오가 가져갈 연 변동성 목표치입니다. 최근 실현 변동성이 목표보다 높으면
+                노출도를 줄여 남는 몫을 안전자산으로 돌리고(레버리지가 없어 목표보다 낮을 때
+                노출도를 늘리지는 않습니다), 목표보다 낮으면 전략이 정한 비중을 그대로 유지합니다.
+              </span>
+            </button>
+          </label>
+          <div class="preset-chips" id="target-vol-presets">
+            <button type="button" class="preset-chip target-vol-chip" data-vol="10">10%</button>
+            <button type="button" class="preset-chip target-vol-chip" data-vol="12">12%</button>
+            <button type="button" class="preset-chip target-vol-chip" data-vol="15">15%</button>
+            <button type="button" class="preset-chip target-vol-chip" data-vol="20">20%</button>
+          </div>
+          <div class="field-input-wrap">
+            <input type="text" inputmode="numeric" id="risk-target-vol" value="10" />
+            <span class="field-suffix">%</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="risk-max-weight">
+              최대 비중 제한 (선택)
+              <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+                <span aria-hidden="true">ⓘ</span>
+                <span class="info-tooltip">
+                  자산 1개가 가져갈 수 있는 최대 비중입니다. 초과분은 다른 보유 자산에 비례
+                  재분배되고, 재분배할 곳이 없으면 안전자산으로 갑니다. 비워두면 제한이 없습니다.
+                </span>
+              </button>
+            </label>
+            <div class="field-input-wrap">
+              <input type="text" inputmode="numeric" id="risk-max-weight" placeholder="제한 없음" />
+              <span class="field-suffix">%</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="risk-min-cash">
+              최소 현금 비중 (선택)
+              <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+                <span aria-hidden="true">ⓘ</span>
+                <span class="info-tooltip">
+                  안전자산 비중이 이 값보다 낮아지지 않도록 강제합니다. 부족하면 위험자산 비중을
+                  비례 축소해서 채웁니다. 비워두면 0%(제한 없음)입니다.
+                </span>
+              </button>
+            </label>
+            <div class="field-input-wrap">
+              <input type="text" inputmode="numeric" id="risk-min-cash" placeholder="0" />
+              <span class="field-suffix">%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <p class="calc-error-msg" id="calc-error-msg" hidden></p>
@@ -515,6 +653,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=28"></script>
+<script src="js/app.js?v=29"></script>
 </body>
 </html>

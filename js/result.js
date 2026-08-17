@@ -82,12 +82,19 @@ function runFromParams() {
       return;
     }
     const p = { lookback: Number(params.get("lookback")) || 12 };
-    const options = { ...baseOptions, rebalanceMonths: Number(params.get("dynRebalance")) || 1 };
+    const riskMode = params.get("riskMode") || "none";
+    const riskParams = {
+      lookback: p.lookback,
+      targetVol: params.has("targetVol") ? Number(params.get("targetVol")) / 100 : 0.1,
+      maxWeightPct: params.has("maxWeightPct") ? Number(params.get("maxWeightPct")) : null,
+      minCashPct: params.has("minCashPct") ? Number(params.get("minCashPct")) : null,
+    };
+    const options = { ...baseOptions, rebalanceMonths: Number(params.get("dynRebalance")) || 1, riskMode, riskParams };
 
-    if (strategy === "momentum") {
+    if (strategy === "momentum" || strategy === "relMomentum") {
       p.topN = Number(params.get("topn")) || 2;
       p.baseWeights = normalizeWeights(weights, candidates);
-    } else if (strategy === "trend") {
+    } else if (strategy === "trend" || strategy === "absMomentum") {
       p.baseWeights = normalizeWeights(weights, candidates);
     }
     const safeAsset = params.get("safeAsset") || "BIL";
