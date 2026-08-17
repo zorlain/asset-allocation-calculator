@@ -133,51 +133,41 @@ function markPresetAsCustom() {
   clearSavedChipActive();
 }
 
-let assetAddGroupMode = "region";
+/* 자산 추가 드롭다운은 한국자산/해외자산 아코디언 형태 - 분류를 누르면 그 안의 세부 자산이 펼쳐짐 */
+let expandedAssetGroup = null;
 
 function renderAssetAddOptions() {
   const dropdown = document.getElementById("asset-add-dropdown");
   if (!dropdown) return;
-
-  const tabsHtml = `
-    <div class="group-mode-tabs">
-      ${Object.entries(ASSET_GROUP_MODES)
-        .map(
-          ([key, cfg]) => `
-            <button type="button" class="group-mode-tab${key === assetAddGroupMode ? " active" : ""}" data-group-mode="${key}">
-              ${cfg.tabLabel}
-            </button>
-          `
-        )
-        .join("")}
-    </div>
-  `;
-
   const remaining = ASSET_ORDER.filter((t) => !addedTickers.includes(t));
   if (remaining.length === 0) {
-    dropdown.innerHTML = `${tabsHtml}<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
+    dropdown.innerHTML = `<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
     return;
   }
 
-  const { map, order, label } = ASSET_GROUP_MODES[assetAddGroupMode];
-  const listHtml = order
-    .map((group) => {
-      const tickers = remaining.filter((t) => map[t] === group);
-      if (tickers.length === 0) return "";
-      const items = tickers
-        .map(
-          (t) => `
-            <button type="button" class="select-box-option" data-ticker="${t}" role="option">
-              <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
-            </button>
-          `
-        )
-        .join("");
-      return `<div class="select-box-group-label">${label[group]}</div>${items}`;
-    })
-    .join("");
-
-  dropdown.innerHTML = tabsHtml + listHtml;
+  dropdown.innerHTML = ASSET_GROUP_ORDER.map((group) => {
+    const tickers = remaining.filter((t) => ASSET_GROUP[t] === group);
+    if (tickers.length === 0) return "";
+    const isOpen = expandedAssetGroup === group;
+    const items = tickers
+      .map(
+        (t) => `
+          <button type="button" class="select-box-option" data-ticker="${t}" role="option">
+            <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
+          </button>
+        `
+      )
+      .join("");
+    return `
+      <div class="asset-group-block${isOpen ? " open" : ""}">
+        <button type="button" class="asset-group-header" data-group="${group}" aria-expanded="${isOpen}">
+          <span>${ASSET_GROUP_LABEL[group]}</span>
+          <span class="asset-group-caret" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+        </button>
+        <div class="asset-group-body">${items}</div>
+      </div>
+    `;
+  }).join("");
 }
 
 function bindWeightInput(inp) {
@@ -268,9 +258,10 @@ function initAssetAddSelect() {
   dropdown.addEventListener("click", (e) => {
     e.stopPropagation();
 
-    const modeTab = e.target.closest(".group-mode-tab");
-    if (modeTab) {
-      assetAddGroupMode = modeTab.dataset.groupMode;
+    const groupHeader = e.target.closest(".asset-group-header");
+    if (groupHeader) {
+      const group = groupHeader.dataset.group;
+      expandedAssetGroup = expandedAssetGroup === group ? null : group;
       renderAssetAddOptions();
       return;
     }
