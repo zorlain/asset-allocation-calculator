@@ -24,14 +24,18 @@ $assets = [ordered]@{
   KOSDAQ   = @{ name = "코스닥"; symbol = "^KQ11" }
   KOSPI2X  = @{ name = "코스피200 2배 레버리지 (KODEX 레버리지)"; symbol = "122630.KS"; minRatio = 0.4; maxRatio = 2.5 }
   KOSDAQ2X = @{ name = "코스닥150 2배 레버리지"; symbol = "233740.KS"; minRatio = 0.4; maxRatio = 2.5 }
+  EFA      = @{ name = "선진국주식 (미국 제외, MSCI EAFE)"; symbol = "EFA" }
   EEM      = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
   TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
   IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
+  KRBOND   = @{ name = "한국 국고채 10년 (KODEX 국고채10년)"; symbol = "114260.KS" }
   GLD      = @{ name = "금"; symbol = "GLD" }
+  SLV      = @{ name = "은"; symbol = "SLV" }
   DBC      = @{ name = "원자재"; symbol = "DBC" }
   VNQ      = @{ name = "미국 리츠 (REITs)"; symbol = "VNQ" }
   BIL      = @{ name = "현금성자산 (미국 단기국채)"; symbol = "BIL" }
   BTC      = @{ name = "비트코인"; symbol = "BTC-USD"; minRatio = 0.2; maxRatio = 4.0 }
+  ETH      = @{ name = "이더리움"; symbol = "ETH-USD"; minRatio = 0.2; maxRatio = 4.0 }
 }
 
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }

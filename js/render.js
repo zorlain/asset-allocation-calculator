@@ -34,14 +34,18 @@ const TICKER_COLORS = {
   KOSDAQ: "#6aa84f",
   KOSPI2X: "#2e5c8a",
   KOSDAQ2X: "#4e8a3e",
+  EFA: "#2f9e8f",
   EEM: "#21b3a4",
   TLT: "#f2665e",
   IEF: "#f2a341",
+  KRBOND: "#d97e5c",
   GLD: "#d4af37",
+  SLV: "#b8bcc4",
   DBC: "#8d6a4f",
   VNQ: "#4fa8d8",
   BIL: "#9aa0a6",
   BTC: "#f7931a",
+  ETH: "#627eea",
 };
 
 const REBALANCE_LABEL = {

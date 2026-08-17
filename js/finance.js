@@ -11,14 +11,18 @@ const ASSET_ORDER = [
   "KOSDAQ",
   "KOSPI2X",
   "KOSDAQ2X",
+  "EFA",
   "EEM",
   "TLT",
   "IEF",
+  "KRBOND",
   "GLD",
+  "SLV",
   "DBC",
   "VNQ",
   "BIL",
   "BTC",
+  "ETH",
 ];
 
 /* 자산 추가 목록을 묶어서 보여줄 때 쓰는 분류 (국가·자산군 기준의 세부 카테고리) */
@@ -34,32 +38,38 @@ const ASSET_GROUP = {
   QLD: "usStock",
   TQQQ: "usStock",
   SQQQ: "usStock",
+  EFA: "devStock",
   EEM: "emStock",
   TLT: "bond",
   IEF: "bond",
+  KRBOND: "krBond",
   GLD: "safe",
+  SLV: "safe",
   BIL: "safe",
   DBC: "alt",
   VNQ: "alt",
   BTC: "crypto",
+  ETH: "crypto",
 };
 
 const ASSET_GROUP_LABEL = {
   krStock: "한국주식",
   usStock: "미국주식",
+  devStock: "선진국주식 (미국 제외)",
   emStock: "신흥국주식",
-  bond: "채권",
-  safe: "안전자산 (금·현금성)",
+  krBond: "한국채권",
+  bond: "미국채권",
+  safe: "안전자산 (금·은·현금성)",
   alt: "대체자산 (원자재·리츠)",
   crypto: "코인",
 };
-const ASSET_GROUP_ORDER = ["krStock", "usStock", "emStock", "bond", "safe", "alt", "crypto"];
+const ASSET_GROUP_ORDER = ["krStock", "usStock", "devStock", "emStock", "krBond", "bond", "safe", "alt", "crypto"];
 
 /* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 
 /* 이미 원화로 표시되는 자산(지수 포인트 + 원화 ETF) - 환율 반영 토글의 적용 제외 대상 */
-const KRW_ASSETS = new Set(["KOSPI", "KOSDAQ", "KOSPI2X", "KOSDAQ2X"]);
+const KRW_ASSETS = new Set(["KOSPI", "KOSDAQ", "KOSPI2X", "KOSDAQ2X", "KRBOND"]);
 
 /* 환율 반영 토글의 적용 대상 (아직 원화가 아닌 자산 전부: 달러 ETF, 비트코인 등) */
 const USD_ASSETS = new Set(ASSET_ORDER.filter((t) => !KRW_ASSETS.has(t)));
