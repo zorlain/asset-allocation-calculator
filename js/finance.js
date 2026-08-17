@@ -768,20 +768,6 @@ function smaMomentum(closesByTicker, ticker, idx, months) {
   return series[idx] / sma - 1;
 }
 
-/* 후보 자산 중 모멘텀 점수가 가장 높은 자산 하나를 고른다 (방어자산 풀에서 최고 자산 선택용) */
-function pickBestByMomentum(tickers, momentumFn, closesByTicker, idx) {
-  let best = null;
-  let bestScore = -Infinity;
-  tickers.forEach((t) => {
-    const score = momentumFn(closesByTicker, t, idx);
-    if (score !== null && score > bestScore) {
-      bestScore = score;
-      best = t;
-    }
-  });
-  return best;
-}
-
 /* ---------- 전략별 비중 계산 (범용 엔진 - 후보/기준비중은 사용자가 정한다) ---------- */
 function computeMomentumWeights(candidates, baseWeightsInput, lookback, topN, closesByTicker, idx, safeAsset) {
   const weights = {};
