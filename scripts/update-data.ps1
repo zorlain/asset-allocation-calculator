@@ -41,7 +41,9 @@ $assets = [ordered]@{
   IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
   TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
   TIP      = @{ name = "미국 물가연동채 (TIPS)"; symbol = "TIP" }
+  AGG      = @{ name = "미국 종합채권 (AGG)"; symbol = "AGG" }
   HYG      = @{ name = "미국 하이일드 회사채"; symbol = "HYG" }
+  LQD      = @{ name = "미국 투자등급 회사채 (LQD)"; symbol = "LQD" }
   GLD      = @{ name = "금"; symbol = "GLD" }
   SLV      = @{ name = "은"; symbol = "SLV" }
   DBC      = @{ name = "원자재"; symbol = "DBC" }
