@@ -51,6 +51,43 @@ const ASSET_GROUP_LABEL = {
 };
 const ASSET_GROUP_ORDER = ["domestic", "overseas", "crypto"];
 
+/* 자산 추가 목록을 위험도로 묶어서 보여줄 때 쓰는 분류 (안전자산/위험자산)
+   국채·금·현금성자산처럼 변동성이 낮고 방어적인 자산만 안전자산으로 분류하고,
+   주식·리츠·원자재·레버리지·가상자산 등 가격 변동폭이 큰 자산은 모두 위험자산으로 묶는다. */
+const ASSET_RISK = {
+  SPY: "risky",
+  QQQ: "risky",
+  SCHD: "risky",
+  SSO: "risky",
+  QLD: "risky",
+  TQQQ: "risky",
+  SQQQ: "risky",
+  KOSPI: "risky",
+  KOSDAQ: "risky",
+  KOSPI2X: "risky",
+  KOSDAQ2X: "risky",
+  EEM: "risky",
+  TLT: "safe",
+  IEF: "safe",
+  GLD: "safe",
+  DBC: "risky",
+  VNQ: "risky",
+  BIL: "safe",
+  BTC: "risky",
+};
+
+const RISK_GROUP_LABEL = {
+  safe: "안전자산",
+  risky: "위험자산",
+};
+const RISK_GROUP_ORDER = ["safe", "risky"];
+
+/* 자산 추가 드롭다운의 분류 기준 모음 (지역별/위험도별 전환에 사용) */
+const ASSET_GROUP_MODES = {
+  region: { map: ASSET_GROUP, order: ASSET_GROUP_ORDER, label: ASSET_GROUP_LABEL, tabLabel: "지역별" },
+  risk: { map: ASSET_RISK, order: RISK_GROUP_ORDER, label: RISK_GROUP_LABEL, tabLabel: "위험도별" },
+};
+
 /* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 

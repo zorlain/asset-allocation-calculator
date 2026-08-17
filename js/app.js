@@ -133,28 +133,51 @@ function markPresetAsCustom() {
   clearSavedChipActive();
 }
 
+let assetAddGroupMode = "region";
+
 function renderAssetAddOptions() {
   const dropdown = document.getElementById("asset-add-dropdown");
   if (!dropdown) return;
+
+  const tabsHtml = `
+    <div class="group-mode-tabs">
+      ${Object.entries(ASSET_GROUP_MODES)
+        .map(
+          ([key, cfg]) => `
+            <button type="button" class="group-mode-tab${key === assetAddGroupMode ? " active" : ""}" data-group-mode="${key}">
+              ${cfg.tabLabel}
+            </button>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+
   const remaining = ASSET_ORDER.filter((t) => !addedTickers.includes(t));
   if (remaining.length === 0) {
-    dropdown.innerHTML = `<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
+    dropdown.innerHTML = `${tabsHtml}<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
     return;
   }
-  dropdown.innerHTML = ASSET_GROUP_ORDER.map((group) => {
-    const tickers = remaining.filter((t) => ASSET_GROUP[t] === group);
-    if (tickers.length === 0) return "";
-    const items = tickers
-      .map(
-        (t) => `
-          <button type="button" class="select-box-option" data-ticker="${t}" role="option">
-            <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
-          </button>
-        `
-      )
-      .join("");
-    return `<div class="select-box-group-label">${ASSET_GROUP_LABEL[group]}</div>${items}`;
-  }).join("");
+
+  const { map, order, label } = ASSET_GROUP_MODES[assetAddGroupMode];
+  const listHtml = order
+    .map((group) => {
+      const tickers = remaining.filter((t) => map[t] === group);
+      if (tickers.length === 0) return "";
+      const items = tickers
+        .map(
+          (t) => `
+            <button type="button" class="select-box-option" data-ticker="${t}" role="option">
+              <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
+            </button>
+          `
+        )
+        .join("");
+      return `<div class="select-box-group-label">${label[group]}</div>${items}`;
+    })
+    .join("");
+
+  dropdown.innerHTML = tabsHtml + listHtml;
 }
 
 function bindWeightInput(inp) {
@@ -243,9 +266,17 @@ function initAssetAddSelect() {
   });
 
   dropdown.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    const modeTab = e.target.closest(".group-mode-tab");
+    if (modeTab) {
+      assetAddGroupMode = modeTab.dataset.groupMode;
+      renderAssetAddOptions();
+      return;
+    }
+
     const opt = e.target.closest(".select-box-option");
     if (!opt) return;
-    e.stopPropagation();
     addAssetRow(opt.dataset.ticker, 0);
     markPresetAsCustom();
     closeSelectBoxDropdown("asset-add-select");
