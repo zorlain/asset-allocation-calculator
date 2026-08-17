@@ -419,15 +419,42 @@ function initBacktestSettings() {
   });
   const latestYear = Number(ASSET_DATA.updatedAt.slice(0, 4));
 
-  const startSel = document.getElementById("bt-start-year");
-  const endSel = document.getElementById("bt-end-year");
-  if (startSel && endSel) {
+  const startYearSel = document.getElementById("bt-start-year");
+  const endYearSel = document.getElementById("bt-end-year");
+  if (startYearSel && endYearSel) {
     let options = `<option value="">전체</option>`;
     for (let y = latestYear; y >= earliestYear; y--) {
       options += `<option value="${y}">${y}년</option>`;
     }
-    startSel.innerHTML = options;
-    endSel.innerHTML = options;
+    startYearSel.innerHTML = options;
+    endYearSel.innerHTML = options;
+  }
+
+  const startMonthSel = document.getElementById("bt-start-month");
+  const endMonthSel = document.getElementById("bt-end-month");
+  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
+    .map((m) => `<option value="${m}">${m}월</option>`)
+    .join("");
+  if (startMonthSel) {
+    startMonthSel.innerHTML = monthOptions;
+    startMonthSel.value = "1";
+    startMonthSel.disabled = true;
+  }
+  if (endMonthSel) {
+    endMonthSel.innerHTML = monthOptions;
+    endMonthSel.value = "12";
+    endMonthSel.disabled = true;
+  }
+
+  if (startYearSel && startMonthSel) {
+    startYearSel.addEventListener("change", () => {
+      startMonthSel.disabled = !startYearSel.value;
+    });
+  }
+  if (endYearSel && endMonthSel) {
+    endYearSel.addEventListener("change", () => {
+      endMonthSel.disabled = !endYearSel.value;
+    });
   }
 }
 
@@ -626,8 +653,10 @@ function buildResultUrl() {
 
   const startYear = document.getElementById("bt-start-year").value;
   const endYear = document.getElementById("bt-end-year").value;
-  if (startYear) params.set("start", startYear);
-  if (endYear) params.set("end", endYear);
+  const startMonth = document.getElementById("bt-start-month").value || "1";
+  const endMonth = document.getElementById("bt-end-month").value || "12";
+  if (startYear) params.set("start", `${startYear}-${startMonth.padStart(2, "0")}`);
+  if (endYear) params.set("end", `${endYear}-${endMonth.padStart(2, "0")}`);
 
   const divCb = document.getElementById("opt-reinvest-div");
   const fxCb = document.getElementById("opt-reflect-fx");

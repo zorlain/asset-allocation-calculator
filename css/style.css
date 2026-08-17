@@ -433,6 +433,21 @@ header.hero p {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.select-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.select-pair .select-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.select-pair .select-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .checkbox-row {
   display: flex;
   flex-direction: column;
