@@ -9,6 +9,13 @@ function parsePercent(str) {
   return Number.isFinite(n) ? n : 0;
 }
 
+/* toNumber는 빈 값/잘못된 입력이면 NaN을 주므로, 0처럼 유효한 값을 기본값으로 잘못 덮어쓰지
+   않도록 ||가 아닌 명시적 NaN 체크로 기본값을 적용한다 */
+function toNumberOrDefault(str, fallback) {
+  const n = toNumber(str);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /* 입력창에 천단위 콤마 자동 포맷 */
 function bindThousandsInput(id) {
   const el = document.getElementById(id);
@@ -424,15 +431,15 @@ function initBacktestSettings() {
   }
 }
 
-/* ---------- 적립식 투자 옵션 (초기 투자금 필드 <-> 매달 적립액 필드 전환) ---------- */
+/* ---------- 적립식 투자 옵션 (체크 시 초기 투자금액 옆에 매달 적립액 필드를 추가로 노출) ---------- */
 function initDcaToggle() {
   const cb = document.getElementById("opt-dca");
-  const amountGroup = document.getElementById("bt-amount-group");
   const monthlyGroup = document.getElementById("bt-monthly-group");
-  if (!cb || !amountGroup || !monthlyGroup) return;
+  const investRow = document.getElementById("bt-invest-row");
+  if (!cb || !monthlyGroup || !investRow) return;
   cb.addEventListener("change", () => {
-    amountGroup.hidden = cb.checked;
     monthlyGroup.hidden = !cb.checked;
+    investRow.classList.toggle("field-row-3", cb.checked);
   });
 }
 
@@ -610,12 +617,12 @@ function clearCalcError() {
 function buildResultUrl() {
   const params = new URLSearchParams();
   params.set("mode", allocationMode);
-  params.set("amount", String(toNumber(document.getElementById("bt-amount").value) || 10000));
-  params.set("fee", String(toNumber(document.getElementById("bt-fee").value) || 0));
+  params.set("amount", String(toNumberOrDefault(document.getElementById("bt-amount").value, 10000)));
+  params.set("fee", String(toNumberOrDefault(document.getElementById("bt-fee").value, 0)));
 
   const dcaCb = document.getElementById("opt-dca");
   params.set("dca", dcaCb && dcaCb.checked ? "1" : "0");
-  params.set("monthly", String(toNumber(document.getElementById("bt-monthly").value) || 0));
+  params.set("monthly", String(toNumberOrDefault(document.getElementById("bt-monthly").value, 0)));
 
   const startYear = document.getElementById("bt-start-year").value;
   const endYear = document.getElementById("bt-end-year").value;
@@ -679,6 +686,12 @@ function setupAllocator() {
       const monthly = toNumber(document.getElementById("bt-monthly").value);
       if (!Number.isFinite(monthly) || monthly <= 0) {
         showCalcError("매달 적립액을 0보다 크게 입력해주세요.");
+        return;
+      }
+    } else {
+      const amount = toNumber(document.getElementById("bt-amount").value);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showCalcError("초기 투자금액을 0보다 크게 입력해주세요.");
         return;
       }
     }

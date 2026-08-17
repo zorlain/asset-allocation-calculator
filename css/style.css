@@ -429,6 +429,10 @@ header.hero p {
   gap: 14px;
 }
 
+.field-row.field-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .checkbox-row {
   display: flex;
   flex-direction: column;
@@ -1285,7 +1289,8 @@ footer {
     line-height: 1.3;
   }
 
-  .field-row {
+  .field-row,
+  .field-row.field-row-3 {
     grid-template-columns: 1fr;
     gap: 0;
   }

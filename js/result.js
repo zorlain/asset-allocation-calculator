@@ -58,7 +58,8 @@ function runFromParams() {
   setDataOptions({ useAdjClose: params.get("adj") === "1", reflectFx: params.get("fx") === "1" });
 
   const mode = params.get("mode") === "dynamic" ? "dynamic" : "static";
-  const amount = Number(params.get("amount")) || 10000;
+  const parsedAmount = Number(params.get("amount"));
+  const amount = Number.isFinite(parsedAmount) ? parsedAmount : 10000;
   const fee = Number(params.get("fee")) || 0;
   const start = params.get("start") || "";
   const end = params.get("end") || "";

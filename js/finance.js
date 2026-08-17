@@ -366,15 +366,18 @@ function downsideDeviation(monthlyReturns, mar = 0) {
   return Math.sqrt(avg) * Math.sqrt(12);
 }
 
-/* 적립식(매달 일정 금액 납입) 백테스트의 연평균 수익률 계산용. 매달 초 납입한 금액이 각기 다른
-   기간 동안 복리로 불어나 최종 자산이 되는 월 이자율(r)을 연금 미래가치 공식을 이분법으로 역산해
-   구한 뒤 연율화한다 - 거치식의 CAGR과 달리 원금이 한 번에 투입되지 않아 단순 (최종/원금)^(1/년)
-   공식을 쓸 수 없기 때문에 내부수익률(IRR) 방식으로 계산한다. */
-function solveMonthlyRateForAnnuityDue(contribution, months, finalValue) {
-  if (!(contribution > 0) || !(months > 0)) return null;
+/* 적립식(초기 투자금 + 매달 일정 금액 납입) 백테스트의 연평균 수익률 계산용. 초기 투자금과 매달
+   납입액이 각기 다른 기간 동안 복리로 불어나 최종 자산이 되는 월 이자율(r)을, 거치식 미래가치
+   공식(초기 투자금)과 연금 미래가치 공식(매달 납입액)을 합친 식을 이분법으로 역산해 구한 뒤
+   연율화한다 - 원금이 한 번에 투입되지 않아 단순 (최종/원금)^(1/년) 공식을 쓸 수 없기 때문에
+   내부수익률(IRR) 방식으로 계산한다. */
+function solveMonthlyRateForAnnuityDue(initialAmount, contribution, months, finalValue) {
+  if (!(months > 0)) return null;
+  if (!(initialAmount > 0) && !(contribution > 0)) return null;
   const fv = (r) => {
-    if (Math.abs(r) < 1e-9) return contribution * months;
-    return (contribution * (1 + r) * (Math.pow(1 + r, months) - 1)) / r;
+    const lumpFactor = Math.pow(1 + r, months);
+    const annuityFactor = Math.abs(r) < 1e-9 ? months : ((lumpFactor - 1) / r) * (1 + r);
+    return initialAmount * lumpFactor + contribution * annuityFactor;
   };
   let lo = -0.99;
   let hi = 10;
@@ -394,11 +397,11 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, op
   const months = dates.length;
   const years = months / 12;
   const finalValue = values[values.length - 1];
-  const totalContributed = dcaMode ? monthlyContribution * months : initialAmount;
+  const totalContributed = dcaMode ? initialAmount + monthlyContribution * months : initialAmount;
 
   let cagr;
   if (dcaMode) {
-    const monthlyRate = solveMonthlyRateForAnnuityDue(monthlyContribution, months, finalValue);
+    const monthlyRate = solveMonthlyRateForAnnuityDue(initialAmount, monthlyContribution, months, finalValue);
     cagr = monthlyRate === null ? 0 : Math.pow(1 + monthlyRate, 12) - 1;
   } else {
     cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
@@ -494,9 +497,9 @@ function runBacktest(weights, initialAmount, options = {}) {
   const monthlyFee = feeAnnualPct / 100 / 12;
 
   const holdings = {};
-  tickers.forEach((t) => (holdings[t] = dcaMode ? 0 : weights[t] * initialAmount));
+  tickers.forEach((t) => (holdings[t] = weights[t] * initialAmount));
 
-  const values = [dcaMode ? 0 : initialAmount];
+  const values = [initialAmount];
   const monthlyReturns = [];
   for (let i = 0; i < dates.length; i++) {
     if (dcaMode) {
@@ -682,9 +685,9 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
   const monthlyFee = feeAnnualPct / 100 / 12;
   const holdings = {};
-  allTickers.forEach((t) => (holdings[t] = dcaMode ? 0 : (currentTargets[t] || 0) * initialAmount));
+  allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * initialAmount));
 
-  const values = [dcaMode ? 0 : initialAmount];
+  const values = [initialAmount];
   const monthlyReturns = [];
   const simDates = [];
 
