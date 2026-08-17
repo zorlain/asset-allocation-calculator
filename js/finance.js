@@ -4,20 +4,26 @@ const ASSET_ORDER = [
   "QQQ",
   "SCHD",
   "SSO",
+  "SDS",
   "QLD",
+  "QID",
   "TQQQ",
   "SQQQ",
   "IWM",
   "KOSPI",
   "KOSDAQ",
   "KOSPI2X",
+  "KOSPIINV",
   "KOSDAQ2X",
+  "KOSDAQINV",
   "EFA",
   "VGK",
   "EEM",
   "MCHI",
   "EWJ",
-  "KRBOND",
+  "KRBOND3Y",
+  "KRBOND10Y",
+  "KRBOND30Y",
   "SHY",
   "IEF",
   "TLT",
@@ -29,8 +35,13 @@ const ASSET_ORDER = [
   "USO",
   "VNQ",
   "BIL",
+  "KRCASH",
   "BTC",
+  "BITX",
+  "BITI",
   "ETH",
+  "ETHU",
+  "ETHS",
 ];
 
 /* 자산 추가 목록을 묶어서 보여줄 때 쓰는 분류 (국가·자산군 기준의 세부 카테고리) */
@@ -38,12 +49,16 @@ const ASSET_GROUP = {
   KOSPI: "krStock",
   KOSDAQ: "krStock",
   KOSPI2X: "krStock",
+  KOSPIINV: "krStock",
   KOSDAQ2X: "krStock",
+  KOSDAQINV: "krStock",
   SPY: "usStock",
   QQQ: "usStock",
   SCHD: "usStock",
   SSO: "usStock",
+  SDS: "usStock",
   QLD: "usStock",
+  QID: "usStock",
   TQQQ: "usStock",
   SQQQ: "usStock",
   IWM: "usStock",
@@ -52,7 +67,9 @@ const ASSET_GROUP = {
   EEM: "intlStock",
   MCHI: "intlStock",
   EWJ: "intlStock",
-  KRBOND: "bond",
+  KRBOND3Y: "bond",
+  KRBOND10Y: "bond",
+  KRBOND30Y: "bond",
   SHY: "bond",
   IEF: "bond",
   TLT: "bond",
@@ -61,11 +78,16 @@ const ASSET_GROUP = {
   GLD: "safe",
   SLV: "alt",
   BIL: "safe",
+  KRCASH: "safe",
   DBC: "alt",
   USO: "alt",
   VNQ: "alt",
   BTC: "crypto",
+  BITX: "crypto",
+  BITI: "crypto",
   ETH: "crypto",
+  ETHU: "crypto",
+  ETHS: "crypto",
 };
 
 const ASSET_GROUP_LABEL = {
@@ -83,7 +105,18 @@ const ASSET_GROUP_ORDER = ["krStock", "usStock", "intlStock", "bond", "safe", "a
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 
 /* 이미 원화로 표시되는 자산(지수 포인트 + 원화 ETF) - 환율 반영 토글의 적용 제외 대상 */
-const KRW_ASSETS = new Set(["KOSPI", "KOSDAQ", "KOSPI2X", "KOSDAQ2X", "KRBOND"]);
+const KRW_ASSETS = new Set([
+  "KOSPI",
+  "KOSDAQ",
+  "KOSPI2X",
+  "KOSPIINV",
+  "KOSDAQ2X",
+  "KOSDAQINV",
+  "KRBOND3Y",
+  "KRBOND10Y",
+  "KRBOND30Y",
+  "KRCASH",
+]);
 
 /* 환율 반영 토글의 적용 대상 (아직 원화가 아닌 자산 전부: 달러 ETF, 비트코인 등) */
 const USD_ASSETS = new Set(ASSET_ORDER.filter((t) => !KRW_ASSETS.has(t)));

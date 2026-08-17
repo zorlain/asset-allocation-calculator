@@ -17,20 +17,26 @@ $assets = [ordered]@{
   QQQ      = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
   SCHD     = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
   SSO      = @{ name = "미국 S&P500 2배 레버리지 (SSO)"; symbol = "SSO"; minRatio = 0.4; maxRatio = 2.5 }
+  SDS      = @{ name = "미국 S&P500 2배 인버스 (SDS)"; symbol = "SDS"; minRatio = 0.4; maxRatio = 2.5 }
   QLD      = @{ name = "미국 나스닥100 2배 레버리지 (QLD)"; symbol = "QLD"; minRatio = 0.4; maxRatio = 2.5 }
+  QID      = @{ name = "미국 나스닥100 2배 인버스 (QID)"; symbol = "QID"; minRatio = 0.4; maxRatio = 2.5 }
   TQQQ     = @{ name = "미국 나스닥100 3배 레버리지 (TQQQ)"; symbol = "TQQQ"; minRatio = 0.3; maxRatio = 3.0 }
   SQQQ     = @{ name = "미국 나스닥100 3배 인버스 (SQQQ)"; symbol = "SQQQ"; minRatio = 0.3; maxRatio = 3.0 }
   IWM      = @{ name = "미국 중소형주 (러셀2000)"; symbol = "IWM" }
   KOSPI    = @{ name = "코스피"; symbol = "^KS11" }
   KOSDAQ   = @{ name = "코스닥"; symbol = "^KQ11" }
   KOSPI2X  = @{ name = "코스피200 2배 레버리지 (KODEX 레버리지)"; symbol = "122630.KS"; minRatio = 0.4; maxRatio = 2.5 }
+  KOSPIINV = @{ name = "코스피200 2배 인버스 (KODEX 200선물인버스2X)"; symbol = "252670.KS"; minRatio = 0.4; maxRatio = 2.5 }
   KOSDAQ2X = @{ name = "코스닥150 2배 레버리지"; symbol = "233740.KS"; minRatio = 0.4; maxRatio = 2.5 }
+  KOSDAQINV = @{ name = "코스닥150 인버스 (KODEX 코스닥150선물인버스)"; symbol = "251340.KS"; minRatio = 0.4; maxRatio = 2.5 }
   EFA      = @{ name = "선진국주식 (미국 제외, MSCI EAFE)"; symbol = "EFA" }
   VGK      = @{ name = "유럽주식 (FTSE Europe)"; symbol = "VGK" }
   EEM      = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
   MCHI     = @{ name = "중국주식 (MSCI China)"; symbol = "MCHI" }
   EWJ      = @{ name = "일본주식 (MSCI Japan)"; symbol = "EWJ" }
-  KRBOND   = @{ name = "한국 국고채 10년 (KODEX 국고채10년)"; symbol = "114260.KS" }
+  KRBOND3Y  = @{ name = "한국 국고채 3년 (TIGER 국채3년)"; symbol = "114820.KS" }
+  KRBOND10Y = @{ name = "한국 국고채 10년 (KODEX 국고채10년)"; symbol = "114260.KS" }
+  KRBOND30Y = @{ name = "한국 국고채 30년 (KODEX 30년국고채액티브)"; symbol = "439870.KS" }
   SHY      = @{ name = "미국 단기국채 (1-3년)"; symbol = "SHY" }
   IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
   TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
@@ -41,9 +47,14 @@ $assets = [ordered]@{
   DBC      = @{ name = "원자재"; symbol = "DBC" }
   USO      = @{ name = "원유"; symbol = "USO"; minRatio = 0.4; maxRatio = 2.5 }
   VNQ      = @{ name = "미국 리츠 (REITs)"; symbol = "VNQ" }
-  BIL      = @{ name = "현금성자산 (미국 단기국채)"; symbol = "BIL" }
+  BIL      = @{ name = "미국 초단기국채 (BIL)"; symbol = "BIL" }
+  KRCASH   = @{ name = "현금 (KODEX KRW Cash)"; symbol = "153130.KS" }
   BTC      = @{ name = "비트코인"; symbol = "BTC-USD"; minRatio = 0.2; maxRatio = 4.0 }
+  BITX     = @{ name = "비트코인 2배 레버리지 (BITX)"; symbol = "BITX"; minRatio = 0.15; maxRatio = 5.0 }
+  BITI     = @{ name = "비트코인 인버스 (BITI)"; symbol = "BITI"; minRatio = 0.15; maxRatio = 5.0 }
   ETH      = @{ name = "이더리움"; symbol = "ETH-USD"; minRatio = 0.2; maxRatio = 4.0 }
+  ETHU     = @{ name = "이더리움 2배 레버리지 (ETHU)"; symbol = "ETHU"; minRatio = 0.15; maxRatio = 5.0 }
+  ETHS     = @{ name = "이더리움 인버스 (SETH)"; symbol = "SETH"; minRatio = 0.15; maxRatio = 5.0 }
 }
 
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
