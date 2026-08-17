@@ -28,7 +28,9 @@ const ASSET_ORDER = [
   "IEF",
   "TLT",
   "TIP",
+  "AGG",
   "HYG",
+  "LQD",
   "GLD",
   "SLV",
   "DBC",
@@ -72,7 +74,9 @@ const ASSET_GROUP = {
   IEF: "bond",
   TLT: "bond",
   TIP: "bond",
+  AGG: "bond",
   HYG: "bond",
+  LQD: "bond",
   GLD: "safe",
   SLV: "alt",
   BIL: "safe",
@@ -171,6 +175,23 @@ const DYNAMIC_STRATEGIES = {
     showTopN: true,
     usesWeightNumber: true,
     usesSafeAsset: true,
+    showLookback: true,
+  },
+  relMomentum: {
+    label: "상대 모멘텀",
+    tip: "듀얼 모멘텀과 비슷하지만 절대모멘텀 필터(수익률 0% 이하 확인)가 없습니다. 후보 중 최근 [기준 기간] 수익률 상위 [동시 보유 자산 수]개를 부호와 무관하게 뽑아 입력한 비중 비율대로 투자합니다. 항상 후보 전체(안전자산 제외)에 100% 투자된 상태를 유지합니다.",
+    showTopN: true,
+    usesWeightNumber: true,
+    usesSafeAsset: false,
+    showLookback: true,
+  },
+  absMomentum: {
+    label: "절대 모멘텀",
+    tip: "후보 자산 각각의 최근 [기준 기간] 수익률이 0%보다 크면 입력한 비중대로 보유하고, 0% 이하이면 그만큼 안전자산으로 돌립니다. 자산 간 순위를 매기는 상대 모멘텀 없이, 각 자산을 독립적으로 판단합니다.",
+    showTopN: false,
+    usesWeightNumber: true,
+    usesSafeAsset: true,
+    showLookback: true,
   },
   trend: {
     label: "추세추종 (이동평균)",
@@ -178,18 +199,130 @@ const DYNAMIC_STRATEGIES = {
     showTopN: false,
     usesWeightNumber: true,
     usesSafeAsset: true,
+    showLookback: true,
   },
-  volTarget: {
-    label: "변동성 타겟팅",
-    tip: "후보로 추가한 자산들의 최근 [기준 기간] 변동성을 계산해 변동성이 낮을수록 비중을 높게 자동 배분합니다. 입력한 비중 숫자는 사용하지 않고 후보로 추가되어 있는지만 반영됩니다.",
+  equalWeight: {
+    label: "동일가중",
+    tip: "후보로 추가한 자산 전체에 동일한 비중으로 나눠 투자합니다. 순위나 신호 없이 항상 100% 투자된 상태를 유지하며, 리스크 관리 옵션(역변동성 가중·리스크 패리티·변동성 타겟팅)과 조합했을 때 그 효과를 가장 순수하게 볼 수 있는 기준선입니다.",
     showTopN: false,
     usesWeightNumber: false,
+    usesSafeAsset: false,
+    showLookback: false,
+  },
+  invVol: {
+    label: "역변동성 가중",
+    tip: "후보로 추가한 자산들의 최근 [기준 기간] 변동성을 계산해 변동성이 낮을수록 비중을 높게 자동 배분합니다(비중 ∝ 1/변동성). 입력한 비중 숫자는 사용하지 않고 후보로 추가되어 있는지만 반영됩니다. 자산 간 상관관계는 보지 않는 단순한 방식입니다.",
+    showTopN: false,
+    usesWeightNumber: false,
+    showLookback: true,
   },
   riskParity: {
     label: "리스크 패리티",
-    tip: "후보로 추가한 자산들의 최근 [기준 기간] 수익률로 공분산(상관관계+변동성)을 계산해, 각 자산이 포트폴리오 전체 위험에 기여하는 비중이 서로 같아지도록 자동 배분합니다. 변동성 타겟팅과 달리 자산 간 상관관계도 함께 고려하므로, 상관관계가 낮은 자산일수록 분산 효과 덕분에 비중이 더 커지는 경향이 있습니다. 입력한 비중 숫자는 사용하지 않습니다.",
+    tip: "후보로 추가한 자산들의 최근 [기준 기간] 수익률로 공분산(상관관계+변동성)을 계산해, 각 자산이 포트폴리오 전체 위험에 기여하는 비중이 서로 같아지도록 자동 배분합니다. 역변동성 가중과 달리 자산 간 상관관계도 함께 고려하므로, 상관관계가 낮은 자산일수록 분산 효과 덕분에 비중이 더 커지는 경향이 있습니다. 입력한 비중 숫자는 사용하지 않습니다.",
     showTopN: false,
     usesWeightNumber: false,
+    showLookback: true,
+  },
+  gem: {
+    label: "GEM (글로벌 주식 모멘텀)",
+    tip: "Gary Antonacci의 Global Equity Momentum. 미국주식(SPY)과 선진국주식(EFA) 중 최근 12개월 수익률이 더 높은 쪽을 고르고(상대모멘텀), 그 수익률이 안전자산(중기국채 IEF) 수익률보다 낮으면 안전자산으로 대피합니다(절대모멘텀). 항상 1개 자산에 100% 투자. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  gtaa: {
+    label: "GTAA (5자산 추세추종, 간소화판)",
+    tip: "Mebane Faber의 Global Tactical Asset Allocation을 5개 자산(미국주식·선진국주식·중기국채·원자재·리츠, 각 20%)으로 간소화한 버전. 각 자산이 자기 10개월 이동평균 위에 있으면 보유하고, 아래로 내려가면 그 슬롯만 안전자산으로 전환합니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  vaa: {
+    label: "VAA (공격형, 간소화판)",
+    tip: "Keller & Keuning의 Vigilant Asset Allocation-G4. 미국주식·선진국주식·신흥국주식·종합채권 4개 자산의 모멘텀(최근 1·3·6·12개월 수익률을 12:4:2:1 비율로 가중)을 매달 계산해, 4개 전부 모멘텀이 양수면 그중 1위 자산에 100% 투자합니다. 단 1개라도 음수면 즉시 방어자산(회사채·중기국채·단기국채 중 모멘텀 최고) 100%로 전환합니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  daa: {
+    label: "DAA (간소화판)",
+    tip: "Keller & Keuning의 Defensive Asset Allocation. 12개 오펜시브 자산 중 모멘텀 상위 6개를 동일비중 보유합니다. 신흥국주식·종합채권 2개로 구성된 별도 '캐너리' 자산의 모멘텀이 음수인 개수(0~2개)에 비례해 현금비중을 0%/50%/100%로 조절하고, 나머지는 방어자산(회사채·중기국채·단기국채 중 모멘텀 최고) 1개로 채웁니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  baa: {
+    label: "BAA (균형형, 간소화판)",
+    tip: "Keller의 Bold Asset Allocation-Balanced. 12개 오펜시브 자산 중 모멘텀 상위 6개를 동일비중 보유합니다. 미국주식·신흥국주식·선진국주식·종합채권 4개 캐너리 자산 중 단 1개라도 모멘텀이 음수면 즉시 방어자산군(물가연동채·원자재·초단기국채 등 7개 중 모멘텀 상위 3개) 동일비중으로 전액 전환합니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  paa: {
+    label: "PAA (간소화판)",
+    tip: "Keller & Keuning의 Protective Asset Allocation. 12개 자산 각각이 자기 13개월 이동평균보다 위인지(n개)를 세어, 보호계수(기본 1)로 계산한 채권비중만큼 중기국채(IEF)에 넣고 나머지는 이동평균 위인 자산 중 모멘텀 상위 6개에 동일비중 투자합니다. 별도 캐너리 없이 오펜시브 자산 자체의 추세로 방어 수준을 정하는 방식입니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+  laa: {
+    label: "LAA (간소화판, 실업률 지표 제외)",
+    tip: "Keller의 Lethargic Asset Allocation을 가격신호만으로 간소화한 버전. 미국주식(SPY)·중기국채(IEF)·금(GLD) 각 25% + 스위치 슬롯 25%로 구성되며, 스위치 슬롯은 SPY가 자기 10개월 이동평균 위이면 나스닥100(QQQ), 아래이면 단기국채(SHY)입니다. 원래 이 스위치는 실업률 추세도 함께 확인하지만 이 사이트는 주가 데이터만 다뤄 실업률 신호는 뺐습니다(원본보다 전환이 잦을 수 있음). 반기 리밸런싱을 권장합니다. 자산 구성이 고정되어 있습니다.",
+    isNamedPreset: true,
+  },
+};
+
+/* 이름있는 전략(VAA/DAA/BAA/PAA/GEM/GTAA/LAA)의 고정 자산 구성 - 후보 목록을 사용자가 바꿔도
+   이 프리셋에 정의된 자산으로 신호를 계산한다(원 논문 방법론을 최대한 그대로 재현하기 위함).
+   원본 논문의 정확한 티커 대신 이 사이트가 이미 보유한 자산군으로 대체한 부분이 있고(예: VWO→EEM,
+   BND→AGG), LAA는 실업률 지표를 뺀 가격신호 전용 간소화판이다. */
+const NAMED_STRATEGY_PRESETS = {
+  gem: {
+    kind: "momentum",
+    offensive: ["SPY", "EFA"],
+    defensiveAsset: "IEF",
+    lookback: 12,
+  },
+  gtaa: {
+    kind: "trend",
+    offensive: ["SPY", "EFA", "IEF", "DBC", "VNQ"],
+    lookback: 10,
+  },
+  vaa: {
+    kind: "canaryBreadth",
+    offensive: ["SPY", "EFA", "EEM", "AGG"],
+    canary: ["SPY", "EFA", "EEM", "AGG"],
+    defensive: ["LQD", "IEF", "SHY"],
+    topN: 1,
+    defensiveTopN: 1,
+    breadthType: "binary",
+    momentumType: "13612w",
+  },
+  daa: {
+    kind: "canaryBreadth",
+    offensive: ["SPY", "QQQ", "IWM", "VGK", "EWJ", "EEM", "VNQ", "DBC", "GLD", "HYG", "LQD", "TLT"],
+    canary: ["EEM", "AGG"],
+    defensive: ["SHY", "IEF", "LQD"],
+    topN: 6,
+    defensiveTopN: 1,
+    breadthType: "fractionalCanary",
+    momentumType: "13612w",
+  },
+  baa: {
+    kind: "canaryBreadth",
+    offensive: ["SPY", "QQQ", "IWM", "VGK", "EWJ", "EEM", "VNQ", "DBC", "GLD", "TLT", "HYG", "LQD"],
+    canary: ["SPY", "EEM", "EFA", "AGG"],
+    defensive: ["TIP", "DBC", "BIL", "IEF", "TLT", "LQD", "AGG"],
+    topN: 6,
+    defensiveTopN: 3,
+    breadthType: "binary",
+    momentumType: "13612w",
+  },
+  paa: {
+    kind: "canaryBreadth",
+    offensive: ["SPY", "QQQ", "IWM", "VGK", "EWJ", "EEM", "VNQ", "DBC", "GLD", "HYG", "LQD", "TLT"],
+    canary: null,
+    defensive: ["IEF"],
+    topN: 6,
+    defensiveTopN: 1,
+    breadthType: "paaProtection",
+    protectionFactor: 1,
+    momentumType: "sma13",
+  },
+  laa: {
+    kind: "laa",
+    core: ["SPY", "IEF", "GLD"],
+    switchOn: "QQQ",
+    switchOff: "SHY",
+    smaMonths: 10,
   },
 };
 
@@ -606,107 +739,489 @@ function solveRiskParityWeights(cov) {
 /* ---------- 동적 배분 전략별 목표 비중 계산 ----------
    idx: closesByTicker의 기준 시점 인덱스 (idx까지의 데이터만 사용 - 미래 데이터 참조 없음)
    반환값이 null이면 해당 시점엔 신호를 계산할 과거 데이터가 부족하다는 뜻 */
-function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
+/* ---------- 모멘텀/이동평균 신호 계산 헬퍼 (이름있는 전략들이 공유) ---------- */
+
+/* VAA/DAA/BAA의 "13612W" 가중 모멘텀 - 최근 1개월 수익률에 12배 가중을 줘 최근성 편향이 강함 */
+function weightedMomentum13612(closesByTicker, ticker, idx) {
+  if (idx < 12) return null;
+  const series = closesByTicker[ticker];
+  const p0 = series[idx];
+  const p1 = series[idx - 1];
+  const p3 = series[idx - 3];
+  const p6 = series[idx - 6];
+  const p12 = series[idx - 12];
+  if (p0 == null || p1 == null || p3 == null || p6 == null || p12 == null) return null;
+  return 12 * (p0 / p1 - 1) + 4 * (p0 / p3 - 1) + 2 * (p0 / p6 - 1) + (p0 / p12 - 1);
+}
+
+/* PAA의 모멘텀 - 가격 대비 최근 N개월(현재 포함) 이동평균 비율 */
+function smaMomentum(closesByTicker, ticker, idx, months) {
+  if (idx < months - 1) return null;
+  const series = closesByTicker[ticker];
+  let sum = 0;
+  for (let k = 0; k < months; k++) {
+    const v = series[idx - k];
+    if (v == null) return null;
+    sum += v;
+  }
+  const sma = sum / months;
+  return series[idx] / sma - 1;
+}
+
+/* 후보 자산 중 모멘텀 점수가 가장 높은 자산 하나를 고른다 (방어자산 풀에서 최고 자산 선택용) */
+function pickBestByMomentum(tickers, momentumFn, closesByTicker, idx) {
+  let best = null;
+  let bestScore = -Infinity;
+  tickers.forEach((t) => {
+    const score = momentumFn(closesByTicker, t, idx);
+    if (score !== null && score > bestScore) {
+      bestScore = score;
+      best = t;
+    }
+  });
+  return best;
+}
+
+/* ---------- 전략별 비중 계산 (범용 엔진 - 후보/기준비중은 사용자가 정한다) ---------- */
+function computeMomentumWeights(candidates, baseWeightsInput, lookback, topN, closesByTicker, idx, safeAsset) {
+  const weights = {};
+  let baseWeights = baseWeightsInput || {};
+  if (candidates.every((t) => !(baseWeights[t] > 0))) {
+    const eq = 1 / candidates.length;
+    baseWeights = {};
+    candidates.forEach((t) => (baseWeights[t] = eq));
+  }
+  const scores = candidates.map((t) => ({
+    t,
+    ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
+  }));
+  scores.sort((a, b) => b.ret - a.ret);
+  const picked = scores.slice(0, topN).filter((s) => s.ret > 0);
+  // 뽑힌 자산은 입력한 절대 비중을 그대로 유지한다(뽑힌 자산끼리 100%로 재분배하지 않음).
+  // 뽑히지 못한 후보의 몫(순위 밖으로 밀렸거나 절대모멘텀 미충족)은 안전자산으로 보낸다.
+  let invested = 0;
+  picked.forEach((s) => {
+    const w = baseWeights[s.t] || 0;
+    weights[s.t] = (weights[s.t] || 0) + w;
+    invested += w;
+  });
+  const remainder = 1 - invested;
+  if (remainder > 0) weights[safeAsset] = (weights[safeAsset] || 0) + remainder;
+  return weights;
+}
+
+function computeRelMomentumWeights(candidates, baseWeightsInput, lookback, topN, closesByTicker, idx) {
+  const weights = {};
+  let baseWeights = baseWeightsInput || {};
+  if (candidates.every((t) => !(baseWeights[t] > 0))) {
+    const eq = 1 / candidates.length;
+    baseWeights = {};
+    candidates.forEach((t) => (baseWeights[t] = eq));
+  }
+  const scores = candidates.map((t) => ({
+    t,
+    ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
+  }));
+  scores.sort((a, b) => b.ret - a.ret);
+  const picked = scores.slice(0, topN); // 절대모멘텀 필터 없음 - 부호와 무관하게 상위 N개
+  const total = picked.reduce((sum, s) => sum + (baseWeights[s.t] || 0), 0);
+  if (total > 0) {
+    picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + (baseWeights[s.t] || 0) / total));
+  } else {
+    const w = 1 / picked.length;
+    picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+  }
+  return weights;
+}
+
+function computeAbsMomentumWeights(candidates, baseWeightsInput, lookback, closesByTicker, idx, safeAsset) {
+  const weights = {};
+  const baseWeights = baseWeightsInput || {};
+  let safeAccum = 0;
+  candidates.forEach((t) => {
+    const ret = closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1;
+    const base = baseWeights[t] || 0;
+    if (ret > 0) {
+      weights[t] = (weights[t] || 0) + base;
+    } else {
+      safeAccum += base;
+    }
+  });
+  if (safeAccum > 0) weights[safeAsset] = (weights[safeAsset] || 0) + safeAccum;
+  return weights;
+}
+
+function computeTrendWeights(candidates, baseWeightsInput, lookback, closesByTicker, idx, safeAsset) {
+  const weights = {};
+  const baseWeights = baseWeightsInput || {};
+  let safeAccum = 0;
+  candidates.forEach((t) => {
+    let sum = 0;
+    for (let k = 0; k < lookback; k++) sum += closesByTicker[t][idx - k];
+    const ma = sum / lookback;
+    const price = closesByTicker[t][idx];
+    const base = baseWeights[t] || 0;
+    if (price >= ma) {
+      weights[t] = (weights[t] || 0) + base;
+    } else {
+      safeAccum += base;
+    }
+  });
+  if (safeAccum > 0) weights[safeAsset] = (weights[safeAsset] || 0) + safeAccum;
+  return weights;
+}
+
+function computeInvVolWeights(candidates, lookback, closesByTicker, idx) {
+  const weights = {};
+  let sumInv = 0;
+  const invVols = {};
+  candidates.forEach((t) => {
+    const rets = [];
+    for (let k = 0; k < lookback; k++) {
+      rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
+    }
+    const vol = stdev(rets) || 0.0001;
+    invVols[t] = 1 / vol;
+    sumInv += invVols[t];
+  });
+  candidates.forEach((t) => (weights[t] = invVols[t] / sumInv));
+  return weights;
+}
+
+function computeRiskParityStrategyWeights(candidates, lookback, closesByTicker, idx) {
+  const weights = {};
+  const n = candidates.length;
+  const retsByTicker = candidates.map((t) => {
+    const rets = [];
+    for (let k = 0; k < lookback; k++) {
+      rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
+    }
+    return rets;
+  });
+  const means = retsByTicker.map((rets) => mean(rets));
+  const cov = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      let s = 0;
+      for (let k = 0; k < lookback; k++) {
+        s += (retsByTicker[i][k] - means[i]) * (retsByTicker[j][k] - means[j]);
+      }
+      cov[i][j] = s / lookback;
+    }
+  }
+  const w = solveRiskParityWeights(cov);
+  candidates.forEach((t, i) => (weights[t] = w[i]));
+  return weights;
+}
+
+/* ---------- GEM 전용 (상대모멘텀 + 안전자산 대비 절대모멘텀) ---------- */
+function computeGemWeights(preset, closesByTicker, idx) {
+  const lookback = preset.lookback || 12;
+  if (idx < lookback) return null;
+  const scores = preset.offensive.map((t) => ({
+    t,
+    ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
+  }));
+  scores.sort((a, b) => b.ret - a.ret);
+  const winner = scores[0];
+  const safeTicker = preset.defensiveAsset;
+  const safeSeries = closesByTicker[safeTicker];
+  if (safeSeries[idx] == null || safeSeries[idx - lookback] == null) return null;
+  const safeRet = safeSeries[idx] / safeSeries[idx - lookback] - 1;
+  const weights = {};
+  if (winner.ret > safeRet) {
+    weights[winner.t] = 1;
+  } else {
+    weights[safeTicker] = 1;
+  }
+  return weights;
+}
+
+/* ---------- VAA/DAA/BAA(캐너리 breadth)/PAA(오펜시브 자체 SMA breadth) 공용 엔진 ---------- */
+function computeCanaryBreadthWeights(preset, closesByTicker, idx) {
+  const momentumFn =
+    preset.momentumType === "sma13" ? (ct, t, i) => smaMomentum(ct, t, i, 13) : (ct, t, i) => weightedMomentum13612(ct, t, i);
   const weights = {};
 
+  if (preset.breadthType === "paaProtection") {
+    const scores = preset.offensive.map((t) => ({ t, score: momentumFn(closesByTicker, t, idx) }));
+    if (scores.some((s) => s.score === null)) return null;
+    const n = scores.filter((s) => s.score > 0).length;
+    const N = preset.offensive.length;
+    const a = preset.protectionFactor != null ? preset.protectionFactor : 1;
+    const n1 = (a * N) / 4;
+    let bondFraction = N - n1 > 0 ? (N - n) / (N - n1) : 1;
+    bondFraction = Math.max(0, Math.min(1, bondFraction));
+    const eligible = scores
+      .filter((s) => s.score > 0)
+      .sort((a2, b2) => b2.score - a2.score)
+      .slice(0, preset.topN);
+    let riskyFraction = 1 - bondFraction;
+    if (eligible.length > 0) {
+      const w = riskyFraction / eligible.length;
+      eligible.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+    } else {
+      bondFraction = 1;
+    }
+    if (bondFraction > 0) {
+      const bondTicker = preset.defensive[0];
+      weights[bondTicker] = (weights[bondTicker] || 0) + bondFraction;
+    }
+    return weights;
+  }
+
+  // VAA/DAA/BAA: 별도 캐너리 자산군의 모멘텀 부호로 현금비중을 정한다
+  const canaryList = preset.canary || preset.offensive;
+  const canaryScores = canaryList.map((t) => momentumFn(closesByTicker, t, idx));
+  if (canaryScores.some((s) => s === null)) return null;
+  const badCount = canaryScores.filter((s) => s <= 0).length;
+
+  const cashFraction = preset.breadthType === "binary" ? (badCount > 0 ? 1 : 0) : badCount / canaryList.length;
+  const riskyFraction = 1 - cashFraction;
+
+  if (riskyFraction > 0) {
+    const offScores = preset.offensive
+      .map((t) => ({ t, score: momentumFn(closesByTicker, t, idx) }))
+      .filter((s) => s.score !== null);
+    if (offScores.length === 0) return null;
+    offScores.sort((a2, b2) => b2.score - a2.score);
+    const picked = offScores.slice(0, preset.topN);
+    const w = riskyFraction / picked.length;
+    picked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + w));
+  }
+
+  if (cashFraction > 0) {
+    const defScores = preset.defensive
+      .map((t) => ({ t, score: momentumFn(closesByTicker, t, idx) }))
+      .filter((s) => s.score !== null);
+    if (defScores.length === 0) return null;
+    defScores.sort((a2, b2) => b2.score - a2.score);
+    const defPicked = defScores.slice(0, preset.defensiveTopN || 1);
+    const dw = cashFraction / defPicked.length;
+    defPicked.forEach((s) => (weights[s.t] = (weights[s.t] || 0) + dw));
+  }
+
+  return weights;
+}
+
+/* ---------- LAA 전용 (고정 코어 3슬롯 + 1개 전환 슬롯) ---------- */
+function computeLaaWeights(preset, closesByTicker, idx) {
+  const smaMonths = preset.smaMonths || 10;
+  if (idx < smaMonths - 1) return null;
+  const signalTicker = preset.core[0]; // SPY
+  const series = closesByTicker[signalTicker];
+  let sum = 0;
+  for (let k = 0; k < smaMonths; k++) {
+    if (series[idx - k] == null) return null;
+    sum += series[idx - k];
+  }
+  const sma = sum / smaMonths;
+  const bearish = series[idx] < sma;
+  const switchTicker = bearish ? preset.switchOff : preset.switchOn;
+  const weights = {};
+  preset.core.forEach((t) => (weights[t] = 0.25));
+  weights[switchTicker] = (weights[switchTicker] || 0) + 0.25;
+  return weights;
+}
+
+/* ---------- 전략 목표 비중 계산 (진입점) ----------
+   이름있는 전략(NAMED_STRATEGY_PRESETS에 있는 경우)은 candidates 인자를 무시하고 프리셋에 고정된
+   자산 구성으로 신호를 계산한다. 그 외에는 사용자가 후보/기준비중을 직접 정한다. */
+function computeStrategyWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
+  const preset = NAMED_STRATEGY_PRESETS[strategy];
+  if (preset) {
+    if (preset.kind === "canaryBreadth") return computeCanaryBreadthWeights(preset, closesByTicker, idx);
+    if (preset.kind === "momentum") return computeGemWeights(preset, closesByTicker, idx);
+    if (preset.kind === "trend") {
+      const baseWeights = {};
+      const eq = 1 / preset.offensive.length;
+      preset.offensive.forEach((t) => (baseWeights[t] = eq));
+      if (idx < preset.lookback) return null;
+      return computeTrendWeights(preset.offensive, baseWeights, preset.lookback, closesByTicker, idx, safeAsset);
+    }
+    if (preset.kind === "laa") return computeLaaWeights(preset, closesByTicker, idx);
+    return null;
+  }
+
   const lookback = Math.max(1, params.lookback || 12);
+
+  if (strategy === "equalWeight") {
+    const weights = {};
+    const w = 1 / candidates.length;
+    candidates.forEach((t) => (weights[t] = w));
+    return weights;
+  }
+
   if (idx < lookback) return null;
 
   if (strategy === "momentum") {
-    const topN = Math.max(1, params.topN || 2);
-    let baseWeights = params.baseWeights || {};
-    if (candidates.every((t) => !(baseWeights[t] > 0))) {
-      // 비중을 입력하지 않은 경우(방어적 기본값): 후보 전체를 동일 비중으로 취급
-      const eq = 1 / candidates.length;
-      baseWeights = {};
-      candidates.forEach((t) => (baseWeights[t] = eq));
-    }
-    const scores = candidates.map((t) => ({
-      t,
-      ret: closesByTicker[t][idx] / closesByTicker[t][idx - lookback] - 1,
-    }));
-    scores.sort((a, b) => b.ret - a.ret);
-    const picked = scores.slice(0, topN).filter((s) => s.ret > 0);
-    // 뽑힌 자산은 입력한 절대 비중을 그대로 유지한다(뽑힌 자산끼리 100%로 재분배하지 않음).
-    // 뽑히지 못한 후보의 몫(순위 밖으로 밀렸거나 절대모멘텀 미충족)은 안전자산으로 보낸다.
-    let invested = 0;
-    picked.forEach((s) => {
-      const w = baseWeights[s.t] || 0;
-      weights[s.t] = (weights[s.t] || 0) + w;
-      invested += w;
-    });
-    const remainder = 1 - invested;
-    if (remainder > 0) weights[safeAsset] = (weights[safeAsset] || 0) + remainder;
-    return weights;
+    return computeMomentumWeights(candidates, params.baseWeights, lookback, Math.max(1, params.topN || 2), closesByTicker, idx, safeAsset);
   }
-
+  if (strategy === "relMomentum") {
+    return computeRelMomentumWeights(candidates, params.baseWeights, lookback, Math.max(1, params.topN || 2), closesByTicker, idx);
+  }
+  if (strategy === "absMomentum") {
+    return computeAbsMomentumWeights(candidates, params.baseWeights, lookback, closesByTicker, idx, safeAsset);
+  }
   if (strategy === "trend") {
-    const baseWeights = params.baseWeights || {};
-    let safeAccum = 0;
-    candidates.forEach((t) => {
-      let sum = 0;
-      for (let k = 0; k < lookback; k++) sum += closesByTicker[t][idx - k];
-      const ma = sum / lookback;
-      const price = closesByTicker[t][idx];
-      const base = baseWeights[t] || 0;
-      if (price >= ma) {
-        weights[t] = (weights[t] || 0) + base;
-      } else {
-        safeAccum += base;
-      }
-    });
-    if (safeAccum > 0) weights[safeAsset] = (weights[safeAsset] || 0) + safeAccum;
-    return weights;
+    return computeTrendWeights(candidates, params.baseWeights, lookback, closesByTicker, idx, safeAsset);
   }
-
-  if (strategy === "volTarget") {
-    let sumInv = 0;
-    const invVols = {};
-    candidates.forEach((t) => {
-      const rets = [];
-      for (let k = 0; k < lookback; k++) {
-        rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
-      }
-      const vol = stdev(rets) || 0.0001;
-      invVols[t] = 1 / vol;
-      sumInv += invVols[t];
-    });
-    candidates.forEach((t) => (weights[t] = invVols[t] / sumInv));
-    return weights;
+  if (strategy === "invVol") {
+    return computeInvVolWeights(candidates, lookback, closesByTicker, idx);
   }
-
   if (strategy === "riskParity") {
-    const n = candidates.length;
-    const retsByTicker = candidates.map((t) => {
-      const rets = [];
-      for (let k = 0; k < lookback; k++) {
-        rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
-      }
-      return rets;
-    });
-    const means = retsByTicker.map((rets) => mean(rets));
-    const cov = Array.from({ length: n }, () => new Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        let s = 0;
-        for (let k = 0; k < lookback; k++) {
-          s += (retsByTicker[i][k] - means[i]) * (retsByTicker[j][k] - means[j]);
-        }
-        cov[i][j] = s / lookback;
-      }
-    }
-    const w = solveRiskParityWeights(cov);
-    candidates.forEach((t, i) => (weights[t] = w[i]));
-    return weights;
+    return computeRiskParityStrategyWeights(candidates, lookback, closesByTicker, idx);
   }
 
   return null;
 }
 
+/* ---------- 이름있는 전략이 필요로 하는 전체 티커 목록 (신호 계산용 가격 데이터 확보) ----------
+   일반 전략은 후보+안전자산만 있으면 되지만, 이름있는 전략은 캐너리·방어자산군까지 필요하다.
+   safeAsset은 리스크관리(변동성타겟팅 등)의 노출도 축소분이 흘러갈 곳으로 항상 포함한다. */
+function requiredTickersForStrategy(strategy, candidates, safeAsset) {
+  const preset = NAMED_STRATEGY_PRESETS[strategy];
+  if (preset) {
+    if (preset.kind === "canaryBreadth") {
+      return Array.from(new Set([...preset.offensive, ...(preset.canary || []), ...preset.defensive, safeAsset]));
+    }
+    if (preset.kind === "momentum") {
+      return Array.from(new Set([...preset.offensive, preset.defensiveAsset, safeAsset]));
+    }
+    if (preset.kind === "trend") {
+      return Array.from(new Set([...preset.offensive, safeAsset]));
+    }
+    if (preset.kind === "laa") {
+      return Array.from(new Set([...preset.core, preset.switchOn, preset.switchOff, safeAsset]));
+    }
+  }
+  return Array.from(new Set([...candidates, safeAsset]));
+}
+
+/* ---------- 리스크 관리 (전략이 정한 목표 비중을 "얼마나 투자할지" 관점에서 조정) ----------
+   riskMode: "none" | "invVol" | "riskParity" | "volTarget"
+   riskParams: { lookback, targetVol(0~1), maxWeightPct(0~100), minCashPct(0~100) } */
+function computeRealizedVol(weights, closesByTicker, idx, lookback, safeAsset) {
+  const tickers = Object.keys(weights).filter((t) => weights[t] > 0);
+  if (tickers.length === 0 || idx < lookback) return null;
+  const portRets = [];
+  for (let k = 0; k < lookback; k++) {
+    let r = 0;
+    let ok = true;
+    tickers.forEach((t) => {
+      const p0 = closesByTicker[t][idx - k];
+      const p1 = closesByTicker[t][idx - k - 1];
+      if (p0 == null || p1 == null) {
+        ok = false;
+        return;
+      }
+      r += weights[t] * (p0 / p1 - 1);
+    });
+    if (ok) portRets.push(r);
+  }
+  if (portRets.length < 2) return null;
+  return stdev(portRets) * Math.sqrt(12);
+}
+
+function applyMaxWeightCap(weights, maxFrac, safeAsset) {
+  let w = { ...weights };
+  for (let iter = 0; iter < 20; iter++) {
+    let excess = 0;
+    const overTickers = [];
+    const underTickers = [];
+    Object.keys(w).forEach((t) => {
+      if (t === safeAsset) return;
+      if (w[t] > maxFrac) {
+        excess += w[t] - maxFrac;
+        overTickers.push(t);
+      } else if (w[t] > 0) {
+        underTickers.push(t);
+      }
+    });
+    if (excess <= 1e-9) break;
+    overTickers.forEach((t) => (w[t] = maxFrac));
+    const underTotal = underTickers.reduce((s, t) => s + w[t], 0);
+    if (underTotal > 0) {
+      underTickers.forEach((t) => (w[t] += (excess * w[t]) / underTotal));
+    } else {
+      w[safeAsset] = (w[safeAsset] || 0) + excess;
+      break;
+    }
+  }
+  return w;
+}
+
+function applyMinCashFloor(weights, minFrac, safeAsset) {
+  const w = { ...weights };
+  const currentSafe = w[safeAsset] || 0;
+  if (currentSafe >= minFrac) return w;
+  const deficit = minFrac - currentSafe;
+  const riskyTickers = Object.keys(w).filter((t) => t !== safeAsset && w[t] > 0);
+  const riskyTotal = riskyTickers.reduce((s, t) => s + w[t], 0);
+  if (riskyTotal <= 0) {
+    w[safeAsset] = minFrac;
+    return w;
+  }
+  const scale = Math.max(0, (riskyTotal - deficit) / riskyTotal);
+  riskyTickers.forEach((t) => (w[t] *= scale));
+  w[safeAsset] = minFrac;
+  return w;
+}
+
+function applyRiskManagement(riskMode, riskParams, weights, closesByTicker, idx, safeAsset) {
+  if (!weights) return weights;
+  let w = { ...weights };
+  const lookback = (riskParams && riskParams.lookback) || 12;
+
+  if (riskMode === "invVol" || riskMode === "riskParity") {
+    const held = Object.keys(w).filter((t) => w[t] > 0 && t !== safeAsset);
+    if (held.length > 1) {
+      const reweighted =
+        riskMode === "invVol"
+          ? computeInvVolWeights(held, lookback, closesByTicker, idx)
+          : computeRiskParityStrategyWeights(held, lookback, closesByTicker, idx);
+      if (reweighted) {
+        const investedTotal = held.reduce((sum, t) => sum + w[t], 0);
+        const newW = {};
+        Object.keys(w).forEach((t) => {
+          if (!held.includes(t)) newW[t] = w[t];
+        });
+        held.forEach((t) => (newW[t] = (reweighted[t] || 0) * investedTotal));
+        w = newW;
+      }
+    }
+  } else if (riskMode === "volTarget") {
+    const targetVol = (riskParams && riskParams.targetVol) || 0.1;
+    const realizedVol = computeRealizedVol(w, closesByTicker, idx, lookback, safeAsset);
+    if (realizedVol && realizedVol > 0) {
+      const scale = Math.max(0, Math.min(1, targetVol / realizedVol));
+      const newW = {};
+      let riskyTotalNew = 0;
+      Object.keys(w).forEach((t) => {
+        if (t === safeAsset) return;
+        newW[t] = w[t] * scale;
+        riskyTotalNew += newW[t];
+      });
+      newW[safeAsset] = Math.max(0, 1 - riskyTotalNew);
+      w = newW;
+    }
+  }
+
+  if (riskParams && riskParams.maxWeightPct > 0 && riskParams.maxWeightPct < 100) {
+    w = applyMaxWeightCap(w, riskParams.maxWeightPct / 100, safeAsset);
+  }
+  if (riskParams && riskParams.minCashPct > 0) {
+    w = applyMinCashFloor(w, riskParams.minCashPct / 100, safeAsset);
+  }
+
+  return w;
+}
+
 /* ---------- 포트폴리오 백테스트 (동적 배분: 매 리밸런싱마다 비중 재계산) ----------
-   strategy: "momentum" | "trend" | "volTarget"
-   params: { lookback: 기준 개월 수, topN: momentum 보유 자산 수, baseWeights: trend 기준비중(합 1) }
-   candidates: 후보 자산 티커 배열, safeAsset: 신호가 부진할 때 대피할 자산(기본 BIL) */
+   strategy: DYNAMIC_STRATEGIES의 키 (일반 전략 또는 이름있는 전략)
+   params: { lookback, topN, baseWeights } - 이름있는 전략은 candidates/params 대신 자체 프리셋 사용
+   candidates: 후보 자산 티커 배열, safeAsset: 신호가 부진할 때/리스크관리에서 대피할 자산
+   options.riskMode/riskParams: 전략이 정한 비중에 추가로 적용할 리스크관리 (역변동성가중/리스크패리티/변동성타겟팅 + 최대비중/최소현금) */
 function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmount, options = {}) {
   const {
     rebalanceMonths = 1,
@@ -715,10 +1230,13 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     endDate = null,
     dcaMode = false,
     monthlyContribution = 0,
+    riskMode = "none",
+    riskParams = {},
   } = options;
-  if (candidates.length === 0) return null;
+  const namedPreset = NAMED_STRATEGY_PRESETS[strategy];
+  if (!namedPreset && candidates.length === 0) return null;
 
-  const allTickers = Array.from(new Set([...candidates, safeAsset]));
+  const allTickers = requiredTickersForStrategy(strategy, candidates, safeAsset);
   const { dates: closeDates, closesByTicker } = alignSeries(allTickers);
   if (closeDates.length < 2) return null;
 
@@ -750,7 +1268,13 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   }
   if (simStart >= simEndExclusive) return null;
 
-  let currentTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, simStart, safeAsset);
+  function computeFinalTargets(idx) {
+    const raw = computeStrategyWeights(strategy, params, candidates, closesByTicker, idx, safeAsset);
+    if (!raw) return null;
+    return applyRiskManagement(riskMode, riskParams, raw, closesByTicker, idx, safeAsset);
+  }
+
+  let currentTargets = computeFinalTargets(simStart);
   if (!currentTargets) return null;
 
   const monthlyFee = feeAnnualPct / 100 / 12;
@@ -778,7 +1302,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
     const stepCount = i - simStart + 1;
     if (rebalanceMonths > 0 && stepCount % rebalanceMonths === 0 && i + 1 < simEndExclusive) {
-      const nextTargets = computeDynamicWeights(strategy, params, candidates, closesByTicker, i + 1, safeAsset);
+      const nextTargets = computeFinalTargets(i + 1);
       if (nextTargets) {
         currentTargets = nextTargets;
         allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));
@@ -791,6 +1315,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   result.feeAnnualPct = feeAnnualPct;
   result.mode = "dynamic";
   result.strategy = strategy;
+  result.riskMode = riskMode;
   result.finalWeights = currentTargets;
   return result;
 }
