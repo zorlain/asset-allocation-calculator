@@ -26,8 +26,12 @@ const TICKER_COLORS = {
   SPY: "#494fdf",
   QQQ: "#7c4fd8",
   SCHD: "#c25b8f",
+  TQQQ: "#9b5de5",
+  SQQQ: "#5e548e",
   KOSPI: "#3a6ea5",
   KOSDAQ: "#6aa84f",
+  KOSPI2X: "#2e5c8a",
+  KOSDAQ2X: "#4e8a3e",
   EEM: "#21b3a4",
   TLT: "#f2665e",
   IEF: "#f2a341",
@@ -35,6 +39,7 @@ const TICKER_COLORS = {
   DBC: "#8d6a4f",
   VNQ: "#4fa8d8",
   BIL: "#9aa0a6",
+  BTC: "#f7931a",
 };
 
 const REBALANCE_LABEL = {

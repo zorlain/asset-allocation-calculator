@@ -141,15 +141,20 @@ function renderAssetAddOptions() {
     dropdown.innerHTML = `<div class="select-box-empty">추가할 수 있는 자산이 없습니다</div>`;
     return;
   }
-  dropdown.innerHTML = remaining
-    .map(
-      (t) => `
-        <button type="button" class="select-box-option" data-ticker="${t}" role="option">
-          <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
-        </button>
-      `
-    )
-    .join("");
+  dropdown.innerHTML = ASSET_GROUP_ORDER.map((group) => {
+    const tickers = remaining.filter((t) => ASSET_GROUP[t] === group);
+    if (tickers.length === 0) return "";
+    const items = tickers
+      .map(
+        (t) => `
+          <button type="button" class="select-box-option" data-ticker="${t}" role="option">
+            <div class="select-box-option-title">${ASSET_DATA.assets[t].name}</div>
+          </button>
+        `
+      )
+      .join("");
+    return `<div class="select-box-group-label">${ASSET_GROUP_LABEL[group]}</div>${items}`;
+  }).join("");
 }
 
 function bindWeightInput(inp) {

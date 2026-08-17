@@ -9,25 +9,32 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $outPath = Join-Path $root "data\asset-data.js"
 
-# 자산군 => { 표시 이름, Yahoo Finance 조회 심볼 } 매핑 (내부 키와 조회 심볼이 다른 경우 있음: 지수 등)
+# 자산군 => { 표시 이름, Yahoo Finance 조회 심볼, (선택) 이상치 판정 비율 범위 } 매핑
+# 내부 키와 조회 심볼이 다른 경우 있음(지수, 레버리지 ETF 등). 레버리지/코인은 변동폭이 커서
+# 이상치 판정 범위를 기본값보다 넓게 잡는다(minRatio/maxRatio).
 $assets = [ordered]@{
-  SPY    = @{ name = "미국주식 (S&P500)"; symbol = "SPY" }
-  QQQ    = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
-  SCHD   = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
-  KOSPI  = @{ name = "코스피"; symbol = "^KS11" }
-  KOSDAQ = @{ name = "코스닥"; symbol = "^KQ11" }
-  EEM    = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
-  TLT    = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
-  IEF    = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
-  GLD    = @{ name = "금"; symbol = "GLD" }
-  DBC    = @{ name = "원자재"; symbol = "DBC" }
-  VNQ    = @{ name = "미국 리츠 (REITs)"; symbol = "VNQ" }
-  BIL    = @{ name = "현금성자산 (미국 단기국채)"; symbol = "BIL" }
+  SPY      = @{ name = "미국주식 (S&P500)"; symbol = "SPY" }
+  QQQ      = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
+  SCHD     = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
+  TQQQ     = @{ name = "미국 나스닥100 3배 레버리지 (TQQQ)"; symbol = "TQQQ"; minRatio = 0.3; maxRatio = 3.0 }
+  SQQQ     = @{ name = "미국 나스닥100 3배 인버스 (SQQQ)"; symbol = "SQQQ"; minRatio = 0.3; maxRatio = 3.0 }
+  KOSPI    = @{ name = "코스피"; symbol = "^KS11" }
+  KOSDAQ   = @{ name = "코스닥"; symbol = "^KQ11" }
+  KOSPI2X  = @{ name = "코스피200 2배 레버리지 (KODEX 레버리지)"; symbol = "122630.KS"; minRatio = 0.4; maxRatio = 2.5 }
+  KOSDAQ2X = @{ name = "코스닥150 2배 레버리지"; symbol = "233740.KS"; minRatio = 0.4; maxRatio = 2.5 }
+  EEM      = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
+  TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
+  IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
+  GLD      = @{ name = "금"; symbol = "GLD" }
+  DBC      = @{ name = "원자재"; symbol = "DBC" }
+  VNQ      = @{ name = "미국 리츠 (REITs)"; symbol = "VNQ" }
+  BIL      = @{ name = "현금성자산 (미국 단기국채)"; symbol = "BIL" }
+  BTC      = @{ name = "비트코인"; symbol = "BTC-USD"; minRatio = 0.2; maxRatio = 4.0 }
 }
 
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
 
-function Get-MonthlySeries($symbol, $includeAdjClose) {
+function Get-MonthlySeries($symbol, $includeAdjClose, $minRatio = 0.5, $maxRatio = 2.0) {
   $encodedSymbol = [Uri]::EscapeDataString($symbol)
   $url = "https://query1.finance.yahoo.com/v8/finance/chart/$encodedSymbol`?range=max&interval=1mo&events=div%7Csplit"
   $resp = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
@@ -65,12 +72,25 @@ function Get-MonthlySeries($symbol, $includeAdjClose) {
     }
     $prev = $clean[$clean.Count - 1]
     $ratio = $point.c / $prev.c
-    if ($ratio -lt 0.5 -or $ratio -gt 2.0) {
+    if ($ratio -lt $minRatio -or $ratio -gt $maxRatio) {
       Write-Host "  경고: $symbol $($point.d) 이상치로 제외 (직전 대비 비율 $([math]::Round($ratio, 3)))"
       continue
     }
     $clean.Add($point)
   }
+
+  # 맨 첫 포인트는 비교할 직전 값이 없어 위 필터를 그냥 통과한다. 다음 포인트와 비교했을 때도
+  # 범위를 벗어나면(레버리지/인버스 ETF의 초기 상장가 데이터 오류 등) 앞에서부터 제거한다.
+  while ($clean.Count -ge 2) {
+    $ratio = $clean[1].c / $clean[0].c
+    if ($ratio -lt $minRatio -or $ratio -gt $maxRatio) {
+      Write-Host "  경고: $symbol $($clean[0].d) 선두 이상치로 제외 (다음 포인트 대비 비율 $([math]::Round($ratio, 3)))"
+      $clean.RemoveAt(0)
+    } else {
+      break
+    }
+  }
+
   return $clean
 }
 
@@ -78,7 +98,9 @@ $result = [ordered]@{}
 foreach ($ticker in $assets.Keys) {
   $meta = $assets[$ticker]
   Write-Host "다운로드 중: $ticker ($($meta.name))..."
-  $series = Get-MonthlySeries $meta.symbol $true
+  $minR = if ($meta.minRatio) { $meta.minRatio } else { 0.5 }
+  $maxR = if ($meta.maxRatio) { $meta.maxRatio } else { 2.0 }
+  $series = Get-MonthlySeries $meta.symbol $true $minR $maxR
   $result[$ticker] = [ordered]@{
     name   = $meta.name
     series = $series

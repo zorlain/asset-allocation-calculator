@@ -1,11 +1,60 @@
 /* ---------- 자산군 메타데이터 & 프리셋 ---------- */
-const ASSET_ORDER = ["SPY", "QQQ", "SCHD", "KOSPI", "KOSDAQ", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "BIL"];
+const ASSET_ORDER = [
+  "SPY",
+  "QQQ",
+  "SCHD",
+  "TQQQ",
+  "SQQQ",
+  "KOSPI",
+  "KOSDAQ",
+  "KOSPI2X",
+  "KOSDAQ2X",
+  "EEM",
+  "TLT",
+  "IEF",
+  "GLD",
+  "DBC",
+  "VNQ",
+  "BIL",
+  "BTC",
+];
+
+/* 자산 추가 목록을 묶어서 보여줄 때 쓰는 분류 (국내/해외/가상자산) */
+const ASSET_GROUP = {
+  SPY: "overseas",
+  QQQ: "overseas",
+  SCHD: "overseas",
+  TQQQ: "overseas",
+  SQQQ: "overseas",
+  EEM: "overseas",
+  TLT: "overseas",
+  IEF: "overseas",
+  GLD: "overseas",
+  DBC: "overseas",
+  VNQ: "overseas",
+  BIL: "overseas",
+  KOSPI: "domestic",
+  KOSDAQ: "domestic",
+  KOSPI2X: "domestic",
+  KOSDAQ2X: "domestic",
+  BTC: "crypto",
+};
+
+const ASSET_GROUP_LABEL = {
+  domestic: "국내",
+  overseas: "해외",
+  crypto: "가상자산",
+};
+const ASSET_GROUP_ORDER = ["domestic", "overseas", "crypto"];
 
 /* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
 
-/* 달러 표시 자산 (환율 반영 토글의 적용 대상). 코스피/코스닥은 이미 원화라 제외 */
-const USD_ASSETS = new Set(ASSET_ORDER.filter((t) => !INDEX_POINT_ASSETS.has(t)));
+/* 이미 원화로 표시되는 자산(지수 포인트 + 원화 ETF) - 환율 반영 토글의 적용 제외 대상 */
+const KRW_ASSETS = new Set(["KOSPI", "KOSDAQ", "KOSPI2X", "KOSDAQ2X"]);
+
+/* 환율 반영 토글의 적용 대상 (아직 원화가 아닌 자산 전부: 달러 ETF, 비트코인 등) */
+const USD_ASSETS = new Set(ASSET_ORDER.filter((t) => !KRW_ASSETS.has(t)));
 
 /* ---------- 데이터 계산 옵션 (환율 반영 / 배당 재투자) ----------
    설정 화면의 체크박스로 전역 상태를 바꾸며, 바뀌면 아래 캐시를 모두 비운다. */
@@ -570,8 +619,14 @@ function formatIndexPoint(x) {
   return `${x.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}pt`;
 }
 
+function formatKrw(x) {
+  return `${Math.round(x).toLocaleString("ko-KR")}원`;
+}
+
 function formatAssetPrice(ticker, x) {
-  return INDEX_POINT_ASSETS.has(ticker) ? formatIndexPoint(x) : formatUsd(x);
+  if (INDEX_POINT_ASSETS.has(ticker)) return formatIndexPoint(x);
+  if (KRW_ASSETS.has(ticker)) return formatKrw(x);
+  return formatUsd(x);
 }
 
 function formatManwon(n) {
