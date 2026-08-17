@@ -37,10 +37,8 @@ const ASSET_ORDER = [
   "BIL",
   "KRCASH",
   "BTC",
-  "BITX",
   "BITI",
   "ETH",
-  "ETHU",
   "ETHS",
 ];
 
@@ -83,10 +81,8 @@ const ASSET_GROUP = {
   USO: "alt",
   VNQ: "alt",
   BTC: "crypto",
-  BITX: "crypto",
   BITI: "crypto",
   ETH: "crypto",
-  ETHU: "crypto",
   ETHS: "crypto",
 };
 

@@ -60,10 +60,8 @@ const TICKER_COLORS = {
   BIL: "#9aa0a6",
   KRCASH: "#6f7680",
   BTC: "#f7931a",
-  BITX: "#ffb04d",
   BITI: "#c9701a",
   ETH: "#627eea",
-  ETHU: "#8a9df0",
   ETHS: "#4a5aab",
 };
 

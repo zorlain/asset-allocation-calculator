@@ -50,10 +50,8 @@ $assets = [ordered]@{
   BIL      = @{ name = "미국 초단기국채 (BIL)"; symbol = "BIL" }
   KRCASH   = @{ name = "현금 (KODEX KRW Cash)"; symbol = "153130.KS" }
   BTC      = @{ name = "비트코인"; symbol = "BTC-USD"; minRatio = 0.2; maxRatio = 4.0 }
-  BITX     = @{ name = "비트코인 2배 레버리지 (BITX)"; symbol = "BITX"; minRatio = 0.15; maxRatio = 5.0 }
   BITI     = @{ name = "비트코인 인버스 (BITI)"; symbol = "BITI"; minRatio = 0.15; maxRatio = 5.0 }
   ETH      = @{ name = "이더리움"; symbol = "ETH-USD"; minRatio = 0.2; maxRatio = 4.0 }
-  ETHU     = @{ name = "이더리움 2배 레버리지 (ETHU)"; symbol = "ETHU"; minRatio = 0.15; maxRatio = 5.0 }
   ETHS     = @{ name = "이더리움 인버스 (SETH)"; symbol = "SETH"; minRatio = 0.15; maxRatio = 5.0 }
 }
 
