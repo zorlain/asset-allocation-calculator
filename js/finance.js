@@ -366,19 +366,54 @@ function downsideDeviation(monthlyReturns, mar = 0) {
   return Math.sqrt(avg) * Math.sqrt(12);
 }
 
+/* 적립식(매달 일정 금액 납입) 백테스트의 연평균 수익률 계산용. 매달 초 납입한 금액이 각기 다른
+   기간 동안 복리로 불어나 최종 자산이 되는 월 이자율(r)을 연금 미래가치 공식을 이분법으로 역산해
+   구한 뒤 연율화한다 - 거치식의 CAGR과 달리 원금이 한 번에 투입되지 않아 단순 (최종/원금)^(1/년)
+   공식을 쓸 수 없기 때문에 내부수익률(IRR) 방식으로 계산한다. */
+function solveMonthlyRateForAnnuityDue(contribution, months, finalValue) {
+  if (!(contribution > 0) || !(months > 0)) return null;
+  const fv = (r) => {
+    if (Math.abs(r) < 1e-9) return contribution * months;
+    return (contribution * (1 + r) * (Math.pow(1 + r, months) - 1)) / r;
+  };
+  let lo = -0.99;
+  let hi = 10;
+  if (finalValue <= fv(lo)) return lo;
+  if (finalValue >= fv(hi)) return hi;
+  for (let iter = 0; iter < 100; iter++) {
+    const mid = (lo + hi) / 2;
+    if (fv(mid) < finalValue) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 /* ---------- 백테스트 결과 공통 지표 계산 (정적/동적 엔진이 공유) ---------- */
-function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount) {
+function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, options = {}) {
+  const { dcaMode = false, monthlyContribution = 0 } = options;
   const months = dates.length;
   const years = months / 12;
   const finalValue = values[values.length - 1];
-  const cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
+  const totalContributed = dcaMode ? monthlyContribution * months : initialAmount;
+
+  let cagr;
+  if (dcaMode) {
+    const monthlyRate = solveMonthlyRateForAnnuityDue(monthlyContribution, months, finalValue);
+    cagr = monthlyRate === null ? 0 : Math.pow(1 + monthlyRate, 12) - 1;
+  } else {
+    cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
+  }
   const annVol = stdev(monthlyReturns) * Math.sqrt(12);
 
-  let peak = values[0];
+  // MDD는 납입 시점에 따라 계좌 잔액 규모가 왜곡되지 않도록 실제 잔액이 아닌 월별 수익률을
+  // 누적한 지수(1에서 시작)로 계산한다 (거치식은 결과적으로 잔액 기준과 동일함)
+  let idx = 1;
+  let peak = 1;
   let mdd = 0;
-  values.forEach((v) => {
-    peak = Math.max(peak, v);
-    mdd = Math.min(mdd, (v - peak) / peak);
+  monthlyReturns.forEach((r) => {
+    idx *= 1 + r;
+    peak = Math.max(peak, idx);
+    mdd = Math.min(mdd, (idx - peak) / peak);
   });
 
   const rf = riskFreeCagr(dates);
@@ -405,6 +440,9 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount) {
     years,
     finalValue,
     initialAmount,
+    dcaMode,
+    monthlyContribution,
+    totalContributed,
     cagr,
     annVol,
     mdd,
@@ -427,7 +465,14 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount) {
      startDate / endDate: "YYYY-MM" 형식, 백테스트 구간 제한. 기본 전체 구간
    } */
 function runBacktest(weights, initialAmount, options = {}) {
-  const { rebalanceMonths = 1, feeAnnualPct = 0, startDate = null, endDate = null } = options;
+  const {
+    rebalanceMonths = 1,
+    feeAnnualPct = 0,
+    startDate = null,
+    endDate = null,
+    dcaMode = false,
+    monthlyContribution = 0,
+  } = options;
   const tickers = Object.keys(weights).filter((t) => weights[t] > 0);
   if (tickers.length === 0) return null;
 
@@ -449,17 +494,22 @@ function runBacktest(weights, initialAmount, options = {}) {
   const monthlyFee = feeAnnualPct / 100 / 12;
 
   const holdings = {};
-  tickers.forEach((t) => (holdings[t] = weights[t] * initialAmount));
+  tickers.forEach((t) => (holdings[t] = dcaMode ? 0 : weights[t] * initialAmount));
 
-  const values = [initialAmount];
+  const values = [dcaMode ? 0 : initialAmount];
   const monthlyReturns = [];
   for (let i = 0; i < dates.length; i++) {
+    if (dcaMode) {
+      tickers.forEach((t) => {
+        holdings[t] += weights[t] * monthlyContribution;
+      });
+    }
     const before = tickers.reduce((sum, t) => sum + holdings[t], 0);
     tickers.forEach((t) => {
       holdings[t] = holdings[t] * (1 + returnsByTicker[t][i]) * (1 - monthlyFee);
     });
     const after = tickers.reduce((sum, t) => sum + holdings[t], 0);
-    monthlyReturns.push(after / before - 1);
+    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
     values.push(after);
 
     const monthIndex = i + 1;
@@ -468,7 +518,7 @@ function runBacktest(weights, initialAmount, options = {}) {
     }
   }
 
-  const result = computeBacktestMetrics(dates, values, monthlyReturns, initialAmount);
+  const result = computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, { dcaMode, monthlyContribution });
   result.rebalanceMonths = rebalanceMonths;
   result.feeAnnualPct = feeAnnualPct;
   result.mode = "static";
@@ -585,7 +635,14 @@ function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx
    params: { lookback: 기준 개월 수, topN: momentum 보유 자산 수, baseWeights: trend 기준비중(합 1) }
    candidates: 후보 자산 티커 배열, safeAsset: 신호가 부진할 때 대피할 자산(기본 BIL) */
 function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmount, options = {}) {
-  const { rebalanceMonths = 1, feeAnnualPct = 0, startDate = null, endDate = null } = options;
+  const {
+    rebalanceMonths = 1,
+    feeAnnualPct = 0,
+    startDate = null,
+    endDate = null,
+    dcaMode = false,
+    monthlyContribution = 0,
+  } = options;
   if (candidates.length === 0) return null;
 
   const allTickers = Array.from(new Set([...candidates, safeAsset]));
@@ -625,19 +682,24 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
   const monthlyFee = feeAnnualPct / 100 / 12;
   const holdings = {};
-  allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * initialAmount));
+  allTickers.forEach((t) => (holdings[t] = dcaMode ? 0 : (currentTargets[t] || 0) * initialAmount));
 
-  const values = [initialAmount];
+  const values = [dcaMode ? 0 : initialAmount];
   const monthlyReturns = [];
   const simDates = [];
 
   for (let i = simStart; i < simEndExclusive; i++) {
+    if (dcaMode) {
+      allTickers.forEach((t) => {
+        holdings[t] += (currentTargets[t] || 0) * monthlyContribution;
+      });
+    }
     const before = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     allTickers.forEach((t) => {
       holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
     const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
-    monthlyReturns.push(after / before - 1);
+    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
     values.push(after);
     simDates.push(returnDates[i]);
 
@@ -651,7 +713,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     }
   }
 
-  const result = computeBacktestMetrics(simDates, values, monthlyReturns, initialAmount);
+  const result = computeBacktestMetrics(simDates, values, monthlyReturns, initialAmount, { dcaMode, monthlyContribution });
   result.rebalanceMonths = rebalanceMonths;
   result.feeAnnualPct = feeAnnualPct;
   result.mode = "dynamic";

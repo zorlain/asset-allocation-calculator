@@ -9,6 +9,8 @@ const METRIC_INFO = {
     "샤프비율과 비슷하지만 상승 변동성은 빼고 하락 변동성만으로 위험을 계산합니다. 손실 위험 대비 수익 효율을 더 정확히 보여줍니다.",
   calmar:
     "연평균 수익률(CAGR)을 최대낙폭(MDD)으로 나눈 값입니다. 감내해야 했던 최악의 하락폭 대비 수익이 얼마나 좋았는지를 보여줍니다.",
+  cagrDca:
+    "적립식(매달 납입) 투자의 연평균 수익률입니다. 납입 시점마다 투자 원금이 각기 다른 기간 동안 불어나므로, 단순히 최종금액을 원금으로 나눈 값이 아니라 내부수익률(IRR) 방식으로 계산한 값입니다.",
 };
 
 function statLabelWithInfo(label, key) {
@@ -201,6 +203,10 @@ function renderResult(bt) {
   const bestYearText = bt.bestYear ? `${bt.bestYear.year}년 ${formatSignedPct(bt.bestYear.return, 1)}` : "-";
   const worstYearText = bt.worstYear ? `${bt.worstYear.year}년 ${formatSignedPct(bt.worstYear.return, 1)}` : "-";
   const pieCaption = bt.mode === "dynamic" ? `<div class="chart-note">마지막 리밸런싱 시점 기준 비중</div>` : "";
+  const investNote = bt.dcaMode
+    ? `매달 적립 ${formatManwon(bt.monthlyContribution)} · 총 납입액 ${formatManwon(bt.totalContributed)}`
+    : `초기 투자금 ${formatManwon(bt.initialAmount)}`;
+  const cagrLabel = bt.dcaMode ? statLabelWithInfo("연평균 수익률 (CAGR)", "cagrDca") : "연평균 수익률 (CAGR)";
 
   resultEl.innerHTML = `
     <div class="result-top">
@@ -230,13 +236,13 @@ function renderResult(bt) {
     <div class="result-hero">
       <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · 초기 투자금 ${formatManwon(bt.initialAmount)} · ${strategyNote}${rebalanceLabel}${feeNote}</div>
+      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · ${investNote} · ${strategyNote}${rebalanceLabel}${feeNote}</div>
     </div>
     <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
 
     <div class="result-grid">
       <div class="result-stat">
-        <div class="result-stat-label">연평균 수익률 (CAGR)</div>
+        <div class="result-stat-label">${cagrLabel}</div>
         <div class="result-stat-value ${bt.cagr >= 0 ? "positive" : "negative"}">${formatSignedPct(bt.cagr, 2)}</div>
       </div>
       <div class="result-stat">

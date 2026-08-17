@@ -403,6 +403,7 @@ function initSavedPortfolios() {
 /* ---------- 백테스트 설정 (수수료 / 리밸런싱 주기 / 기간) ---------- */
 function initBacktestSettings() {
   bindThousandsInput("bt-amount");
+  bindThousandsInput("bt-monthly");
 
   let earliestYear = 9999;
   ASSET_ORDER.forEach((t) => {
@@ -421,6 +422,18 @@ function initBacktestSettings() {
     startSel.innerHTML = options;
     endSel.innerHTML = options;
   }
+}
+
+/* ---------- 적립식 투자 옵션 (초기 투자금 필드 <-> 매달 적립액 필드 전환) ---------- */
+function initDcaToggle() {
+  const cb = document.getElementById("opt-dca");
+  const amountGroup = document.getElementById("bt-amount-group");
+  const monthlyGroup = document.getElementById("bt-monthly-group");
+  if (!cb || !amountGroup || !monthlyGroup) return;
+  cb.addEventListener("change", () => {
+    amountGroup.hidden = cb.checked;
+    monthlyGroup.hidden = !cb.checked;
+  });
 }
 
 /* ---------- 배당 재투자 / 환율 반영 옵션 ---------- */
@@ -600,6 +613,10 @@ function buildResultUrl() {
   params.set("amount", String(toNumber(document.getElementById("bt-amount").value) || 10000));
   params.set("fee", String(toNumber(document.getElementById("bt-fee").value) || 0));
 
+  const dcaCb = document.getElementById("opt-dca");
+  params.set("dca", dcaCb && dcaCb.checked ? "1" : "0");
+  params.set("monthly", String(toNumber(document.getElementById("bt-monthly").value) || 0));
+
   const startYear = document.getElementById("bt-start-year").value;
   const endYear = document.getElementById("bt-end-year").value;
   if (startYear) params.set("start", startYear);
@@ -653,6 +670,15 @@ function setupAllocator() {
       const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerActive(t));
       if (candidates.length === 0) {
         showCalcError("후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)");
+        return;
+      }
+    }
+
+    const dcaCb = document.getElementById("opt-dca");
+    if (dcaCb && dcaCb.checked) {
+      const monthly = toNumber(document.getElementById("bt-monthly").value);
+      if (!Number.isFinite(monthly) || monthly <= 0) {
+        showCalcError("매달 적립액을 0보다 크게 입력해주세요.");
         return;
       }
     }
@@ -718,6 +744,7 @@ function init() {
   initInfoTooltips();
   initBacktestSettings();
   initDataOptionCheckboxes();
+  initDcaToggle();
   initAssetAddSelect();
   initSavedPortfolios();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));

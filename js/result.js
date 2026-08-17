@@ -62,10 +62,14 @@ function runFromParams() {
   const fee = Number(params.get("fee")) || 0;
   const start = params.get("start") || "";
   const end = params.get("end") || "";
+  const dcaMode = params.get("dca") === "1";
+  const monthlyContribution = Number(params.get("monthly")) || 0;
   const baseOptions = {
     feeAnnualPct: fee,
     startDate: start ? `${start}-01` : null,
     endDate: end ? `${end}-12` : null,
+    dcaMode,
+    monthlyContribution,
   };
 
   let bt = null;

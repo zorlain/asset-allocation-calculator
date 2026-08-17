@@ -72,17 +72,25 @@
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
-            초기 투자금액, 연 수수료, 백테스트 기간을 설정합니다. 리밸런싱 주기는 정적/동적 배분마다
-            의미가 달라 포트폴리오 구성 쪽에서 방식별로 따로 설정합니다.
+            초기 투자금액, 연 수수료, 백테스트 기간을 설정합니다. 적립식을 선택하면 초기 투자금 대신
+            매달 일정 금액을 납입하는 방식으로 계산합니다. 리밸런싱 주기는 정적/동적 배분마다 의미가
+            달라 포트폴리오 구성 쪽에서 방식별로 따로 설정합니다.
           </span>
         </button>
       </h2>
 
       <div class="field-row">
-        <div class="field-group">
+        <div class="field-group" id="bt-amount-group">
           <label for="bt-amount">초기 투자금액</label>
           <div class="field-input-wrap">
             <input type="text" inputmode="numeric" id="bt-amount" value="10,000" />
+            <span class="field-suffix">만원</span>
+          </div>
+        </div>
+        <div class="field-group" id="bt-monthly-group" hidden>
+          <label for="bt-monthly">매달 적립액</label>
+          <div class="field-input-wrap">
+            <input type="text" inputmode="numeric" id="bt-monthly" value="100" />
             <span class="field-suffix">만원</span>
           </div>
         </div>
@@ -107,6 +115,10 @@
       </div>
 
       <div class="checkbox-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-dca" />
+          <span>적립식 투자 (초기 투자금 대신 매달 일정 금액을 납입)</span>
+        </label>
         <label class="checkbox-label">
           <input type="checkbox" id="opt-reinvest-div" />
           <span>배당 재투자 (배당을 재투자한 총수익률로 계산)</span>
@@ -459,6 +471,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js"></script>
-<script src="js/app.js?v=22"></script>
+<script src="js/app.js?v=23"></script>
 </body>
 </html>
