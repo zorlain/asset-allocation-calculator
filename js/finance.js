@@ -183,6 +183,12 @@ const DYNAMIC_STRATEGIES = {
     showTopN: false,
     usesWeightNumber: false,
   },
+  riskParity: {
+    label: "리스크 패리티",
+    tip: "후보로 추가한 자산들의 최근 [기준 기간] 수익률로 공분산(상관관계+변동성)을 계산해, 각 자산이 포트폴리오 전체 위험에 기여하는 비중이 서로 같아지도록 자동 배분합니다. 변동성 타겟팅과 달리 자산 간 상관관계도 함께 고려하므로, 상관관계가 낮은 자산일수록 분산 효과 덕분에 비중이 더 커지는 경향이 있습니다. 입력한 비중 숫자는 사용하지 않습니다.",
+    showTopN: false,
+    usesWeightNumber: false,
+  },
   seasonal: {
     label: "계절성 (Sell in May)",
     tip: "설정한 투자 기간(기본 11월~4월)과 그 외 기간에 각각 목표 비중의 몇 %를 투자할지 정합니다. 나머지는 현금성자산(BIL)으로 둡니다. '11월~4월 강세, 5월~10월 약세'로 알려진 계절성 패턴을 활용하는 전략으로, 기본값은 성수기 100%·비수기 0%(전액 현금)입니다.",
@@ -545,6 +551,30 @@ function alignSeries(tickers) {
   return { dates: commonDates, closesByTicker };
 }
 
+/* 리스크 패리티(동일위험기여) 비중 계산 - 공분산 행렬(cov)이 주어졌을 때, 각 자산의 위험 기여도
+   (w_i * (Σw)_i)가 서로 같아지도록 비중을 반복적으로 조정한다(long-only, 합 1로 정규화).
+   엄밀한 해석해가 없어 널리 쓰이는 승법적 반복(iterative proportional scaling)으로 근사한다:
+   자산의 위험 기여도가 평균보다 크면 비중을 줄이고 작으면 늘리는 과정을 반복하면 균형점에 수렴한다. */
+function solveRiskParityWeights(cov) {
+  const n = cov.length;
+  if (n === 1) return [1];
+  let w = new Array(n).fill(1 / n);
+  for (let iter = 0; iter < 200; iter++) {
+    const sw = cov.map((row) => row.reduce((s, c, j) => s + c * w[j], 0));
+    const rc = w.map((wi, i) => wi * sw[i]);
+    const total = rc.reduce((a, b) => a + b, 0);
+    if (!(total > 0)) break;
+    const target = total / n;
+    const wNew = w.map((wi, i) => {
+      const ratio = rc[i] > 1e-12 ? target / rc[i] : 1;
+      return Math.max(wi * Math.sqrt(ratio), 1e-6);
+    });
+    const sum = wNew.reduce((a, b) => a + b, 0);
+    w = wNew.map((x) => x / sum);
+  }
+  return w;
+}
+
 /* ---------- 동적 배분 전략별 목표 비중 계산 ----------
    idx: closesByTicker의 기준 시점 인덱스 (idx까지의 데이터만 사용 - 미래 데이터 참조 없음)
    date: idx 시점의 "YYYY-MM" 날짜 (계절성 전략에서 달을 판단할 때 사용)
@@ -627,6 +657,31 @@ function computeDynamicWeights(strategy, params, candidates, closesByTicker, idx
       sumInv += invVols[t];
     });
     candidates.forEach((t) => (weights[t] = invVols[t] / sumInv));
+    return weights;
+  }
+
+  if (strategy === "riskParity") {
+    const n = candidates.length;
+    const retsByTicker = candidates.map((t) => {
+      const rets = [];
+      for (let k = 0; k < lookback; k++) {
+        rets.push(closesByTicker[t][idx - k] / closesByTicker[t][idx - k - 1] - 1);
+      }
+      return rets;
+    });
+    const means = retsByTicker.map((rets) => mean(rets));
+    const cov = Array.from({ length: n }, () => new Array(n).fill(0));
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        let s = 0;
+        for (let k = 0; k < lookback; k++) {
+          s += (retsByTicker[i][k] - means[i]) * (retsByTicker[j][k] - means[j]);
+        }
+        cov[i][j] = s / lookback;
+      }
+    }
+    const w = solveRiskParityWeights(cov);
+    candidates.forEach((t, i) => (weights[t] = w[i]));
     return weights;
   }
 
