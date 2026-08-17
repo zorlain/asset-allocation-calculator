@@ -26,9 +26,13 @@ $assets = [ordered]@{
   KOSDAQ2X = @{ name = "코스닥150 2배 레버리지"; symbol = "233740.KS"; minRatio = 0.4; maxRatio = 2.5 }
   EFA      = @{ name = "선진국주식 (미국 제외, MSCI EAFE)"; symbol = "EFA" }
   EEM      = @{ name = "신흥국주식 (MSCI EM)"; symbol = "EEM" }
-  TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
-  IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
+  EWJ      = @{ name = "일본주식 (MSCI Japan)"; symbol = "EWJ" }
   KRBOND   = @{ name = "한국 국고채 10년 (KODEX 국고채10년)"; symbol = "114260.KS" }
+  SHY      = @{ name = "미국 단기국채 (1-3년)"; symbol = "SHY" }
+  IEF      = @{ name = "미국 중기국채 (7-10년)"; symbol = "IEF" }
+  TLT      = @{ name = "미국 장기국채 (20년+)"; symbol = "TLT" }
+  TIP      = @{ name = "미국 물가연동채 (TIPS)"; symbol = "TIP" }
+  HYG      = @{ name = "미국 하이일드 회사채"; symbol = "HYG" }
   GLD      = @{ name = "금"; symbol = "GLD" }
   SLV      = @{ name = "은"; symbol = "SLV" }
   DBC      = @{ name = "원자재"; symbol = "DBC" }
