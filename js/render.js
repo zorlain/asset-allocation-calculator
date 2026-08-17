@@ -26,6 +26,8 @@ const TICKER_COLORS = {
   SPY: "#494fdf",
   QQQ: "#7c4fd8",
   SCHD: "#c25b8f",
+  SSO: "#6a6fea",
+  QLD: "#9974e0",
   TQQQ: "#9b5de5",
   SQQQ: "#5e548e",
   KOSPI: "#3a6ea5",

@@ -16,6 +16,8 @@ $assets = [ordered]@{
   SPY      = @{ name = "미국주식 (S&P500)"; symbol = "SPY" }
   QQQ      = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
   SCHD     = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
+  SSO      = @{ name = "미국 S&P500 2배 레버리지 (SSO)"; symbol = "SSO"; minRatio = 0.4; maxRatio = 2.5 }
+  QLD      = @{ name = "미국 나스닥100 2배 레버리지 (QLD)"; symbol = "QLD"; minRatio = 0.4; maxRatio = 2.5 }
   TQQQ     = @{ name = "미국 나스닥100 3배 레버리지 (TQQQ)"; symbol = "TQQQ"; minRatio = 0.3; maxRatio = 3.0 }
   SQQQ     = @{ name = "미국 나스닥100 3배 인버스 (SQQQ)"; symbol = "SQQQ"; minRatio = 0.3; maxRatio = 3.0 }
   KOSPI    = @{ name = "코스피"; symbol = "^KS11" }
