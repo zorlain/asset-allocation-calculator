@@ -21,35 +21,39 @@ const ASSET_ORDER = [
   "BTC",
 ];
 
-/* 자산 추가 목록을 묶어서 보여줄 때 쓰는 분류 (한국자산/해외자산). 비트코인은 국내 상장 자산이
-   아니므로 해외자산으로 분류한다. */
+/* 자산 추가 목록을 묶어서 보여줄 때 쓰는 분류 (국가·자산군 기준의 세부 카테고리) */
 const ASSET_GROUP = {
-  SPY: "overseas",
-  QQQ: "overseas",
-  SCHD: "overseas",
-  SSO: "overseas",
-  QLD: "overseas",
-  TQQQ: "overseas",
-  SQQQ: "overseas",
-  EEM: "overseas",
-  TLT: "overseas",
-  IEF: "overseas",
-  GLD: "overseas",
-  DBC: "overseas",
-  VNQ: "overseas",
-  BIL: "overseas",
-  BTC: "overseas",
-  KOSPI: "domestic",
-  KOSDAQ: "domestic",
-  KOSPI2X: "domestic",
-  KOSDAQ2X: "domestic",
+  KOSPI: "krStock",
+  KOSDAQ: "krStock",
+  KOSPI2X: "krStock",
+  KOSDAQ2X: "krStock",
+  SPY: "usStock",
+  QQQ: "usStock",
+  SCHD: "usStock",
+  SSO: "usStock",
+  QLD: "usStock",
+  TQQQ: "usStock",
+  SQQQ: "usStock",
+  EEM: "emStock",
+  TLT: "bond",
+  IEF: "bond",
+  GLD: "safe",
+  BIL: "safe",
+  DBC: "alt",
+  VNQ: "alt",
+  BTC: "crypto",
 };
 
 const ASSET_GROUP_LABEL = {
-  domestic: "한국자산",
-  overseas: "해외자산",
+  krStock: "한국주식",
+  usStock: "미국주식",
+  emStock: "신흥국주식",
+  bond: "채권",
+  safe: "안전자산 (금·현금성)",
+  alt: "대체자산 (원자재·리츠)",
+  crypto: "코인",
 };
-const ASSET_GROUP_ORDER = ["domestic", "overseas"];
+const ASSET_GROUP_ORDER = ["krStock", "usStock", "emStock", "bond", "safe", "alt", "crypto"];
 
 /* 원화 지수(가격지수, 배당 미반영)로 표시 단위가 다른 자산 - 자산 현황 탭 포맷팅에 사용 */
 const INDEX_POINT_ASSETS = new Set(["KOSPI", "KOSDAQ"]);
