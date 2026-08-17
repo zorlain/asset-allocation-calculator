@@ -616,7 +616,28 @@ function selectDynamicStrategy(key) {
   if (lookbackRow) lookbackRow.hidden = isSeasonal;
   if (seasonRow) seasonRow.hidden = !isSeasonal;
 
+  const safeAssetGroup = document.getElementById("dynamic-safe-asset-group");
+  if (safeAssetGroup) safeAssetGroup.hidden = !(meta && meta.usesSafeAsset);
+
   updateWeightInputVisibility();
+}
+
+/* ---------- 동적 배분 안전자산(신호 부진 시 대피 자산) 선택 ---------- */
+function initDynamicSafeAssetSelect() {
+  const sel = document.getElementById("dynamic-safe-asset");
+  if (!sel) return;
+  sel.innerHTML = ASSET_GROUP_ORDER.map((group) => {
+    const tickers = ASSET_ORDER.filter((t) => ASSET_GROUP[t] === group);
+    if (tickers.length === 0) return "";
+    const opts = tickers.map((t) => `<option value="${t}">${ASSET_DATA.assets[t].name}</option>`).join("");
+    return `<optgroup label="${ASSET_GROUP_LABEL[group]}">${opts}</optgroup>`;
+  }).join("");
+  sel.value = "BIL";
+}
+
+function getDynamicSafeAsset() {
+  const sel = document.getElementById("dynamic-safe-asset");
+  return (sel && sel.value) || "BIL";
 }
 
 /* ---------- 탭 1: 배분 계산기 + 백테스트 (계산은 result.html에서 수행, 여기서는 검증 후 새 창을 연다) ---------- */
@@ -671,6 +692,7 @@ function buildResultUrl() {
 
   if (allocationMode === "dynamic") {
     params.set("strategy", selectedDynamicStrategy || "");
+    params.set("safeAsset", getDynamicSafeAsset());
     params.set("lookback", document.getElementById("dynamic-lookback").value || "12");
     params.set("dynRebalance", document.getElementById("dynamic-rebalance").value || "1");
     if (selectedDynamicStrategy === "momentum") {
@@ -703,9 +725,11 @@ function setupAllocator() {
         showCalcError("동적 배분 전략을 선택해주세요.");
         return;
       }
-      const candidates = ASSET_ORDER.filter((t) => t !== "BIL" && isTickerActive(t));
+      const safeAsset = getDynamicSafeAsset();
+      const candidates = ASSET_ORDER.filter((t) => t !== safeAsset && isTickerActive(t));
       if (candidates.length === 0) {
-        showCalcError("후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (현금성자산 BIL은 대피처로 자동 사용되어 후보에서 제외됩니다)");
+        const safeAssetName = (ASSET_DATA.assets[safeAsset] || {}).name || safeAsset;
+        showCalcError(`후보로 삼을 자산에 비중(%)을 1개 이상 입력해주세요. (안전자산으로 지정한 ${safeAssetName}은 대피처로 자동 사용되어 후보에서 제외됩니다)`);
         return;
       }
     }
@@ -789,6 +813,7 @@ function init() {
   initDcaToggle();
   initAssetAddSelect();
   initSavedPortfolios();
+  initDynamicSafeAssetSelect();
   initSelectBox("mode-select", (data) => setAllocationMode(data.mode));
   initSelectBox("preset-select", handlePresetSelect);
   initSelectBox("strategy-select", (data) => selectDynamicStrategy(data.strategy));

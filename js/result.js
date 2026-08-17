@@ -96,7 +96,8 @@ function runFromParams() {
       p.seasonOutPct = params.has("seasonOutPct") ? Number(params.get("seasonOutPct")) / 100 : 0;
       options.rebalanceMonths = 1;
     }
-    bt = runDynamicBacktest(strategy, p, candidates, "BIL", amount, options);
+    const safeAsset = params.get("safeAsset") || "BIL";
+    bt = runDynamicBacktest(strategy, p, candidates, safeAsset, amount, options);
   } else {
     const rebalanceMonths = Number(params.get("rebalance"));
     baseOptions.rebalanceMonths = Number.isFinite(rebalanceMonths) ? rebalanceMonths : 1;
