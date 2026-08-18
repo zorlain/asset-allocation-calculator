@@ -963,6 +963,133 @@ function buildResultUrl() {
   return `result.html?${params.toString()}`;
 }
 
+/* ---------- 입력 상태 자동 저장/복원 ----------
+   결과창(새 탭)에서 뒤로가기를 누르면 처음부터 다시 입력해야 하는 불편을 없애기 위해, 페이지를
+   벗어날 때마다(계산 버튼 클릭·다른 페이지로 이동 등) 현재 입력 상태를 저장해두고 다시 방문했을
+   때 그대로 복원한다. buildResultUrl()이 이미 모든 입력을 쿼리스트링으로 직렬화하므로 그 포맷을
+   그대로 재사용한다(모바일 인앱 브라우저 등 새 탭이 아니라 같은 탭에서 이동하는 경우를 대비). */
+const AUTOSAVE_KEY = "aa-calc-autosave-v1";
+
+function saveStateSnapshot() {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, buildResultUrl().replace(/^result\.html\?/, ""));
+  } catch {
+    /* localStorage 사용 불가 시 조용히 무시 */
+  }
+}
+
+function applyWeightsFromParam(wParam) {
+  document.getElementById("weight-list").innerHTML = "";
+  addedTickers = [];
+  if (!wParam) return;
+  wParam.split(",").forEach((pair) => {
+    const [ticker, pct] = pair.split(":");
+    if (ticker && ASSET_DATA.assets[ticker]) addAssetRow(ticker, Number(pct) || 0);
+  });
+}
+
+function restoreSavedState() {
+  let raw;
+  try {
+    raw = localStorage.getItem(AUTOSAVE_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+  const params = new URLSearchParams(raw);
+  const strategy = params.get("strategy");
+
+  if (strategy && params.has("presetOverride")) {
+    try {
+      setPresetOverride(strategy, JSON.parse(params.get("presetOverride")));
+    } catch {
+      /* 무시하고 기본 구성으로 진행 */
+    }
+  }
+
+  const mode = params.get("mode") === "dynamic" ? "dynamic" : "static";
+  document.querySelector(`#mode-select [data-mode="${mode}"]`)?.click();
+
+  if (mode === "dynamic") {
+    if (strategy) document.querySelector(`#strategy-select [data-strategy="${strategy}"]`)?.click();
+    const meta = DYNAMIC_STRATEGIES[strategy];
+    if (!(meta && meta.isNamedPreset)) applyWeightsFromParam(params.get("w"));
+
+    const safeSel = document.getElementById("dynamic-safe-asset");
+    if (safeSel && params.get("safeAsset")) safeSel.value = params.get("safeAsset");
+    if (params.has("lookback")) document.getElementById("dynamic-lookback").value = params.get("lookback");
+    if (params.has("dynRebalance")) document.getElementById("dynamic-rebalance").value = params.get("dynRebalance");
+    if (params.has("topn")) document.getElementById("dynamic-topn").value = params.get("topn");
+
+    const riskMode = params.get("riskMode") || "none";
+    document.querySelector(`#risk-mode-select [data-risk="${riskMode}"]`)?.click();
+    if (params.has("targetVol")) document.getElementById("risk-target-vol").value = params.get("targetVol");
+    if (params.has("maxWeightPct")) document.getElementById("risk-max-weight").value = params.get("maxWeightPct");
+    if (params.has("minCashPct")) document.getElementById("risk-min-cash").value = params.get("minCashPct");
+  } else {
+    applyWeightsFromParam(params.get("w"));
+    if (params.has("rebalance")) document.getElementById("static-rebalance").value = params.get("rebalance");
+
+    const seasonalCb = document.getElementById("opt-seasonal");
+    if (seasonalCb) {
+      seasonalCb.checked = params.get("seasonal") === "1";
+      seasonalCb.dispatchEvent(new Event("change"));
+    }
+    if (params.has("seasonStart")) document.getElementById("static-season-start").value = params.get("seasonStart");
+    if (params.has("seasonEnd")) document.getElementById("static-season-end").value = params.get("seasonEnd");
+    if (params.has("seasonInPct")) document.getElementById("static-season-in-pct").value = params.get("seasonInPct");
+    if (params.has("seasonOutPct")) document.getElementById("static-season-out-pct").value = params.get("seasonOutPct");
+    const staticSafeSel = document.getElementById("static-safe-asset");
+    if (staticSafeSel && params.get("staticSafeAsset")) staticSafeSel.value = params.get("staticSafeAsset");
+  }
+
+  if (params.has("amount")) document.getElementById("bt-amount").value = Number(params.get("amount")).toLocaleString("ko-KR");
+  if (params.has("fee")) document.getElementById("bt-fee").value = params.get("fee");
+
+  const dcaCb = document.getElementById("opt-dca");
+  if (dcaCb) {
+    dcaCb.checked = params.get("dca") === "1";
+    dcaCb.dispatchEvent(new Event("change"));
+  }
+  if (params.has("monthly")) document.getElementById("bt-monthly").value = Number(params.get("monthly")).toLocaleString("ko-KR");
+
+  const start = params.get("start");
+  if (start) {
+    const [y, m] = start.split("-");
+    const startYearSel = document.getElementById("bt-start-year");
+    if (startYearSel) {
+      startYearSel.value = y;
+      startYearSel.dispatchEvent(new Event("change"));
+    }
+    const startMonthSel = document.getElementById("bt-start-month");
+    if (startMonthSel) startMonthSel.value = String(Number(m));
+  }
+  const end = params.get("end");
+  if (end) {
+    const [y, m] = end.split("-");
+    const endYearSel = document.getElementById("bt-end-year");
+    if (endYearSel) {
+      endYearSel.value = y;
+      endYearSel.dispatchEvent(new Event("change"));
+    }
+    const endMonthSel = document.getElementById("bt-end-month");
+    if (endMonthSel) endMonthSel.value = String(Number(m));
+  }
+
+  const divCb = document.getElementById("opt-reinvest-div");
+  const fxCb = document.getElementById("opt-reflect-fx");
+  if (divCb) divCb.checked = params.get("adj") === "1";
+  if (fxCb) fxCb.checked = params.get("fx") === "1";
+  if (divCb?.checked || fxCb?.checked) {
+    setDataOptions({ useAdjClose: !!(divCb && divCb.checked), reflectFx: !!(fxCb && fxCb.checked) });
+    renderDashboard();
+    renderCorrelationTable();
+  }
+
+  updateWeightTotal();
+  updateWeightInputVisibility();
+}
+
 function setupAllocator() {
   document.getElementById("allocator-calc-btn").addEventListener("click", () => {
     clearCalcError();
@@ -1009,6 +1136,7 @@ function setupAllocator() {
       }
     }
 
+    saveStateSnapshot();
     window.open(buildResultUrl(), "_blank");
   });
 }
@@ -1085,6 +1213,9 @@ function init() {
   updateWeightTotal();
   renderDashboard();
   renderCorrelationTable();
+
+  restoreSavedState();
+  window.addEventListener("pagehide", saveStateSnapshot);
 }
 
 document.addEventListener("DOMContentLoaded", init);
