@@ -81,6 +81,13 @@ function runFromParams() {
       resultEl.innerHTML = `<p class="result-placeholder">불러올 결과가 없습니다. 메인 페이지에서 계산 후 "새 창에서 보기"를 눌러주세요.</p>`;
       return;
     }
+    if (params.has("presetOverride")) {
+      try {
+        setPresetOverride(strategy, JSON.parse(params.get("presetOverride")));
+      } catch {
+        /* 파싱 실패 시 기본 구성으로 계산 */
+      }
+    }
     const p = { lookback: Number(params.get("lookback")) || 12 };
     const riskMode = params.get("riskMode") || "none";
     const riskParams = {

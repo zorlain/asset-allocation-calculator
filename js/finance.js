@@ -326,6 +326,27 @@ const NAMED_STRATEGY_PRESETS = {
   },
 };
 
+/* ---------- 이름있는 전략의 자산 구성 사용자 오버라이드 ----------
+   원본 논문 구성(NAMED_STRATEGY_PRESETS)은 그대로 두고, 사용자가 위험자산/기준자산/안전자산을
+   추가·삭제·변경하면 그 차이만 여기 저장해 계산에 반영한다(topN·breadthType 등 전략의 구조적
+   파라미터는 오버라이드 대상이 아니다 - 자산 배열/단일 티커 필드만 덮어쓴다). */
+let PRESET_OVERRIDES = {};
+
+function getEffectivePreset(key) {
+  const base = NAMED_STRATEGY_PRESETS[key];
+  const override = PRESET_OVERRIDES[key];
+  if (!base) return null;
+  return override ? { ...base, ...override } : base;
+}
+
+function setPresetOverride(key, partial) {
+  PRESET_OVERRIDES[key] = partial ? { ...partial } : null;
+}
+
+function clearPresetOverride(key) {
+  delete PRESET_OVERRIDES[key];
+}
+
 /* 계절성 전략: month(1~12)가 시작월~종료월 구간에 포함되는지 (11→4처럼 연말을 넘어가는 구간도 처리) */
 function isMonthInSeason(month, startMonth, endMonth) {
   if (startMonth <= endMonth) return month >= startMonth && month <= endMonth;
@@ -1004,9 +1025,12 @@ function computeLaaWeights(preset, closesByTicker, idx) {
   const sma = sum / smaMonths;
   const bearish = series[idx] < sma;
   const switchTicker = bearish ? preset.switchOff : preset.switchOn;
+  // 코어 자산 수 + 전환 슬롯 1개가 동일 비중을 나눠 갖는다(기본 3코어면 각 25%, 사용자가 코어를
+  // 추가/삭제하면 그 수에 맞춰 슬롯당 비중이 자동으로 재조정된다)
+  const slot = 1 / (preset.core.length + 1);
   const weights = {};
-  preset.core.forEach((t) => (weights[t] = 0.25));
-  weights[switchTicker] = (weights[switchTicker] || 0) + 0.25;
+  preset.core.forEach((t) => (weights[t] = (weights[t] || 0) + slot));
+  weights[switchTicker] = (weights[switchTicker] || 0) + slot;
   return weights;
 }
 
@@ -1014,7 +1038,7 @@ function computeLaaWeights(preset, closesByTicker, idx) {
    이름있는 전략(NAMED_STRATEGY_PRESETS에 있는 경우)은 candidates 인자를 무시하고 프리셋에 고정된
    자산 구성으로 신호를 계산한다. 그 외에는 사용자가 후보/기준비중을 직접 정한다. */
 function computeStrategyWeights(strategy, params, candidates, closesByTicker, idx, safeAsset) {
-  const preset = NAMED_STRATEGY_PRESETS[strategy];
+  const preset = getEffectivePreset(strategy);
   if (preset) {
     if (preset.kind === "canaryBreadth") return computeCanaryBreadthWeights(preset, closesByTicker, idx);
     if (preset.kind === "momentum") return computeGemWeights(preset, closesByTicker, idx);
@@ -1066,7 +1090,7 @@ function computeStrategyWeights(strategy, params, candidates, closesByTicker, id
    일반 전략은 후보+안전자산만 있으면 되지만, 이름있는 전략은 캐너리·방어자산군까지 필요하다.
    safeAsset은 리스크관리(변동성타겟팅 등)의 노출도 축소분이 흘러갈 곳으로 항상 포함한다. */
 function requiredTickersForStrategy(strategy, candidates, safeAsset) {
-  const preset = NAMED_STRATEGY_PRESETS[strategy];
+  const preset = getEffectivePreset(strategy);
   if (preset) {
     if (preset.kind === "canaryBreadth") {
       return Array.from(new Set([...preset.offensive, ...(preset.canary || []), ...preset.defensive, safeAsset]));

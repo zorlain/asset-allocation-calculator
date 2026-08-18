@@ -210,6 +210,7 @@ function addAssetRow(ticker, value = 0) {
   row.querySelector(".weight-row-remove").addEventListener("click", () => {
     removeAssetRow(ticker);
     markPresetAsCustom();
+    syncOffensiveOverrideFromWeightList();
   });
 
   updateRowActiveClass(ticker);
@@ -277,6 +278,7 @@ function initAssetAddSelect() {
     if (!opt) return;
     addAssetRow(opt.dataset.ticker, 0);
     markPresetAsCustom();
+    syncOffensiveOverrideFromWeightList();
     closeSelectBoxDropdown("asset-add-select");
   });
 
@@ -615,7 +617,7 @@ function handlePresetSelect(data) {
 const NAMED_PRESET_LOOKBACK = { gem: 12, gtaa: 10, vaa: 12, daa: 12, baa: 12, paa: 12, laa: 10 };
 
 function applyDynamicStrategyPreset(key) {
-  const preset = NAMED_STRATEGY_PRESETS[key];
+  const preset = getEffectivePreset(key);
   if (!preset) return;
   document.getElementById("weight-list").innerHTML = "";
   addedTickers = [];
@@ -625,6 +627,163 @@ function applyDynamicStrategyPreset(key) {
 
   const lookbackInput = document.getElementById("dynamic-lookback");
   if (lookbackInput) lookbackInput.value = String(NAMED_PRESET_LOOKBACK[key] || 12);
+}
+
+/* ---------- 이름있는 전략의 위험자산(offensive/core) 목록을 자산 목록 UI(weight-list)에서
+   추가/제거할 때, 그 변경분을 오버라이드에 반영한다 - 사용자가 실제로 손댔을 때만 호출되어야
+   하므로 초기 프리셋 채우기(applyDynamicStrategyPreset)에서는 호출하지 않는다 */
+function syncOffensiveOverrideFromWeightList() {
+  const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
+  if (allocationMode !== "dynamic" || !meta || !meta.isNamedPreset) return;
+  const base = NAMED_STRATEGY_PRESETS[selectedDynamicStrategy];
+  if (!base || addedTickers.length === 0) return;
+  const field = base.core ? "core" : "offensive";
+  const current = getEffectivePreset(selectedDynamicStrategy);
+  setPresetOverride(selectedDynamicStrategy, { ...current, [field]: [...addedTickers] });
+  renderPresetRoleEditor(selectedDynamicStrategy);
+}
+
+/* ---------- 이름있는 전략의 나머지 자산 역할(기준자산·안전자산 등) 편집 ----------
+   위험자산(offensive/core)은 기존 자산 목록(weight-list)을 그대로 재사용하고, 여기서는 전략별로
+   구조가 다른 나머지 역할만 그린다: GEM=안전자산(단일), GTAA=없음(전역 안전자산 사용),
+   VAA/DAA/BAA/PAA=기준자산+안전자산(다중), LAA=상승/하락 전환자산(단일 2개) */
+function assetSelectOptionsHtml() {
+  return ASSET_GROUP_ORDER.map((group) => {
+    const tickers = ASSET_ORDER.filter((t) => ASSET_GROUP[t] === group);
+    if (tickers.length === 0) return "";
+    const opts = tickers.map((t) => `<option value="${t}">${ASSET_DATA.assets[t].name}</option>`).join("");
+    return `<optgroup label="${ASSET_GROUP_LABEL[group]}">${opts}</optgroup>`;
+  }).join("");
+}
+
+function renderRoleChipBlock(key, field, label) {
+  const preset = getEffectivePreset(key);
+  const tickers = preset[field] || [];
+  const excluded = ASSET_ORDER.filter((t) => !tickers.includes(t));
+  const addOptions = excluded.length
+    ? ASSET_GROUP_ORDER.map((group) => {
+        const gTickers = excluded.filter((t) => ASSET_GROUP[t] === group);
+        if (gTickers.length === 0) return "";
+        const opts = gTickers.map((t) => `<option value="${t}">${ASSET_DATA.assets[t].name}</option>`).join("");
+        return `<optgroup label="${ASSET_GROUP_LABEL[group]}">${opts}</optgroup>`;
+      }).join("")
+    : "";
+  const chips = tickers.length
+    ? tickers
+        .map(
+          (t) => `
+        <span class="ticker-chip" data-ticker="${t}">
+          ${ASSET_DATA.assets[t].name}
+          <button type="button" class="ticker-chip-remove" data-role="${field}" data-ticker="${t}" aria-label="${ASSET_DATA.assets[t].name} 제거">×</button>
+        </span>`
+        )
+        .join("")
+    : `<span class="chip-empty-hint">없음</span>`;
+  return `
+    <div class="role-block" data-role="${field}">
+      <div class="role-block-label">${label}</div>
+      <div class="role-chip-list">${chips}</div>
+      <select class="select-input role-add-select" data-role="${field}" ${excluded.length ? "" : "disabled"}>
+        <option value="">${excluded.length ? "+ 자산 추가" : "추가할 자산 없음"}</option>
+        ${addOptions}
+      </select>
+    </div>
+  `;
+}
+
+function renderRoleSingleBlock(key, field, label) {
+  const preset = getEffectivePreset(key);
+  return `
+    <div class="role-block" data-role="${field}">
+      <div class="role-block-label">${label}</div>
+      <select class="select-input role-single-select" data-role="${field}">${assetSelectOptionsHtml()}</select>
+    </div>
+  `;
+}
+
+function renderPresetRoleEditor(key) {
+  const container = document.getElementById("preset-role-editor");
+  if (!container) return;
+  const base = NAMED_STRATEGY_PRESETS[key];
+  if (!base) {
+    container.hidden = true;
+    return;
+  }
+  const preset = getEffectivePreset(key);
+
+  let html = "";
+  if (preset.kind === "momentum") {
+    html += renderRoleSingleBlock(key, "defensiveAsset", "안전자산 (신호 부진 시 대피 자산)");
+  } else if (preset.kind === "canaryBreadth") {
+    if (preset.canary) html += renderRoleChipBlock(key, "canary", "기준자산 (캐너리 - 위험 신호 판단용)");
+    html += renderRoleChipBlock(key, "defensive", "안전자산 (방어 자산군)");
+  } else if (preset.kind === "laa") {
+    html += renderRoleSingleBlock(key, "switchOn", "전환자산 - 상승장일 때");
+    html += renderRoleSingleBlock(key, "switchOff", "전환자산 - 하락장일 때 (안전자산)");
+  }
+
+  if (!html) {
+    container.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+
+  const overridden = !!PRESET_OVERRIDES[key];
+  html += `<button type="button" class="role-reset-btn" id="preset-role-reset" ${overridden ? "" : "disabled"}>이 전략을 기본 구성으로 되돌리기</button>`;
+  container.innerHTML = html;
+  container.hidden = false;
+
+  container.querySelectorAll(".role-single-select").forEach((sel) => {
+    sel.value = preset[sel.dataset.role];
+  });
+
+  bindPresetRoleEditorEvents(key);
+}
+
+function updatePresetRoleField(key, field, value) {
+  const current = getEffectivePreset(key);
+  setPresetOverride(key, { ...current, [field]: value });
+  renderPresetRoleEditor(key);
+}
+
+function bindPresetRoleEditorEvents(key) {
+  const container = document.getElementById("preset-role-editor");
+  if (!container) return;
+
+  container.querySelectorAll(".role-add-select").forEach((sel) => {
+    sel.addEventListener("change", () => {
+      const field = sel.dataset.role;
+      const ticker = sel.value;
+      if (!ticker) return;
+      const current = getEffectivePreset(key);
+      const list = current[field] || [];
+      if (list.includes(ticker)) return;
+      updatePresetRoleField(key, field, [...list, ticker]);
+    });
+  });
+
+  container.querySelectorAll(".ticker-chip-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const field = btn.dataset.role;
+      const current = getEffectivePreset(key);
+      const list = (current[field] || []).filter((t) => t !== btn.dataset.ticker);
+      if (list.length === 0) return; // 최소 1개는 유지 (0개면 신호 계산이 불가능해짐)
+      updatePresetRoleField(key, field, list);
+    });
+  });
+
+  container.querySelectorAll(".role-single-select").forEach((sel) => {
+    sel.addEventListener("change", () => updatePresetRoleField(key, sel.dataset.role, sel.value));
+  });
+
+  const resetBtn = document.getElementById("preset-role-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      clearPresetOverride(key);
+      applyDynamicStrategyPreset(key);
+      renderPresetRoleEditor(key);
+    });
+  }
 }
 
 /* ---------- 동적 전략 상자 ---------- */
@@ -642,7 +801,16 @@ function selectDynamicStrategy(key) {
   const namedHint = document.getElementById("named-preset-hint");
   if (namedHint) namedHint.hidden = !isNamedPreset;
 
-  if (isNamedPreset) applyDynamicStrategyPreset(key);
+  if (isNamedPreset) {
+    applyDynamicStrategyPreset(key);
+    renderPresetRoleEditor(key);
+  } else {
+    const roleEditor = document.getElementById("preset-role-editor");
+    if (roleEditor) {
+      roleEditor.hidden = true;
+      roleEditor.innerHTML = "";
+    }
+  }
 
   updateWeightInputVisibility();
 }
@@ -764,6 +932,10 @@ function buildResultUrl() {
     params.set("dynRebalance", document.getElementById("dynamic-rebalance").value || "1");
     if (selectedDynamicStrategy === "momentum" || selectedDynamicStrategy === "relMomentum") {
       params.set("topn", document.getElementById("dynamic-topn").value || "2");
+    }
+    const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
+    if (meta && meta.isNamedPreset && PRESET_OVERRIDES[selectedDynamicStrategy]) {
+      params.set("presetOverride", JSON.stringify(PRESET_OVERRIDES[selectedDynamicStrategy]));
     }
 
     params.set("riskMode", selectedRiskMode || "none");
