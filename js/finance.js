@@ -365,6 +365,58 @@ function stdev(arr) {
   return Math.sqrt(variance);
 }
 
+/* 왜도(Skewness) - 수익률 분포가 좌우 어느 쪽으로 치우쳤는지. 양수면 큰 상승이 가끔 나오는 분포,
+   음수면 큰 하락이 가끔 나오는 분포(꼬리위험)를 뜻한다. */
+function skewness(arr) {
+  const n = arr.length;
+  if (n < 3) return 0;
+  const m = mean(arr);
+  const sd = stdev(arr);
+  if (sd === 0) return 0;
+  const sum = arr.reduce((s, v) => s + ((v - m) / sd) ** 3, 0);
+  return (n / ((n - 1) * (n - 2))) * sum;
+}
+
+/* 첨도(Kurtosis, 초과첨도) - 정규분포 대비 꼬리가 얼마나 두꺼운지. 양수면 극단적인 달이 정규분포
+   가정보다 더 자주 나온다는 뜻(fat tail). */
+function kurtosis(arr) {
+  const n = arr.length;
+  if (n < 4) return 0;
+  const m = mean(arr);
+  const sd = stdev(arr);
+  if (sd === 0) return 0;
+  const sum = arr.reduce((s, v) => s + ((v - m) / sd) ** 4, 0);
+  const term1 = (n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3));
+  const term2 = (3 * (n - 1) ** 2) / ((n - 2) * (n - 3));
+  return term1 * sum - term2;
+}
+
+/* 역사적 VaR/CVaR(월간, 95% 신뢰수준) - 수익률을 정렬해 하위 5% 지점의 손실률(VaR)과, 그보다
+   더 나쁜 구간의 평균 손실률(CVaR, Expected Shortfall)을 구한다. */
+function historicalVarCvar(arr, confidence = 0.95) {
+  if (arr.length === 0) return { var: 0, cvar: 0 };
+  const sorted = [...arr].sort((a, b) => a - b);
+  const idx = Math.max(0, Math.floor((1 - confidence) * sorted.length) - 1);
+  const varValue = sorted[idx];
+  const tail = sorted.slice(0, idx + 1);
+  const cvarValue = tail.length ? mean(tail) : varValue;
+  return { var: varValue, cvar: cvarValue };
+}
+
+/* 오메가 비율(Omega Ratio) - 기준 수익률(threshold, 기본 0) 위에서 번 몫의 합을 그 아래에서
+   잃은 몫의 합으로 나눈 값. 표준편차 하나로 뭉뚱그리지 않고 분포 전체(비대칭성 포함)를 반영한다. */
+function omegaRatio(arr, threshold = 0) {
+  let gains = 0;
+  let losses = 0;
+  arr.forEach((r) => {
+    const diff = r - threshold;
+    if (diff > 0) gains += diff;
+    else losses += -diff;
+  });
+  if (losses === 0) return gains > 0 ? Infinity : 0;
+  return gains / losses;
+}
+
 /* ---------- 자산별 월간 수익률 (종가 시계열 -> 수익률 시계열, 캐시) ---------- */
 function getAssetReturns(ticker) {
   const cacheKey = `${ticker}|${DATA_OPTIONS.useAdjClose}|${DATA_OPTIONS.reflectFx}`;
@@ -546,6 +598,15 @@ function solveMonthlyRateForAnnuityDue(initialAmount, contribution, months, fina
   return (lo + hi) / 2;
 }
 
+/* "YYYY-MM" 문자열에 개월수를 더하고 뺀다 (음수 delta 허용) */
+function shiftYearMonth(ymStr, delta) {
+  const [y, m] = ymStr.split("-").map(Number);
+  const total = y * 12 + (m - 1) + delta;
+  const ny = Math.floor(total / 12);
+  const nm = (((total % 12) + 12) % 12) + 1;
+  return `${ny}-${String(nm).padStart(2, "0")}`;
+}
+
 /* ---------- 백테스트 결과 공통 지표 계산 (정적/동적 엔진이 공유) ---------- */
 function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, options = {}) {
   const { dcaMode = false, monthlyContribution = 0 } = options;
@@ -562,17 +623,65 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, op
     cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
   }
   const annVol = stdev(monthlyReturns) * Math.sqrt(12);
+  const totalReturn = dcaMode
+    ? totalContributed > 0
+      ? finalValue / totalContributed - 1
+      : 0
+    : initialAmount > 0
+    ? finalValue / initialAmount - 1
+    : 0;
+  const totalProfit = finalValue - totalContributed;
 
   // MDD는 납입 시점에 따라 계좌 잔액 규모가 왜곡되지 않도록 실제 잔액이 아닌 월별 수익률을
-  // 누적한 지수(1에서 시작)로 계산한다 (거치식은 결과적으로 잔액 기준과 동일함)
-  let idx = 1;
-  let peak = 1;
-  let mdd = 0;
+  // 누적한 지수(1에서 시작)로 계산한다 (거치식은 결과적으로 잔액 기준과 동일함). 동시에 드로다운
+  // 상세(고점·저점·회복 시점)와 차트용 드로다운 시계열도 함께 만든다.
+  const idxSeries = [];
+  let cum = 1;
   monthlyReturns.forEach((r) => {
-    idx *= 1 + r;
-    peak = Math.max(peak, idx);
-    mdd = Math.min(mdd, (idx - peak) / peak);
+    cum *= 1 + r;
+    idxSeries.push(cum);
   });
+
+  let peak = 1;
+  let peakPos = -1; // -1이면 아직 시작 시점(투자 개시 직후)의 값이 최고점이라는 뜻
+  let mdd = 0;
+  let mddPeakPos = -1;
+  let mddTroughPos = -1;
+  const drawdownSeries = [];
+  idxSeries.forEach((v, i) => {
+    if (v >= peak) {
+      peak = v;
+      peakPos = i;
+    }
+    const dd = (v - peak) / peak;
+    drawdownSeries.push({ date: dates[i], dd });
+    if (dd < mdd) {
+      mdd = dd;
+      mddPeakPos = peakPos;
+      mddTroughPos = i;
+    }
+  });
+
+  let maxDDDetail = null;
+  if (mddTroughPos >= 0) {
+    const peakValue = mddPeakPos >= 0 ? idxSeries[mddPeakPos] : 1;
+    let recoveryPos = -1;
+    for (let i = mddTroughPos + 1; i < idxSeries.length; i++) {
+      if (idxSeries[i] >= peakValue) {
+        recoveryPos = i;
+        break;
+      }
+    }
+    maxDDDetail = {
+      peakDate: mddPeakPos >= 0 ? dates[mddPeakPos] : shiftYearMonth(dates[0], -1),
+      troughDate: dates[mddTroughPos],
+      dd: mdd,
+      drawdownMonths: mddTroughPos - mddPeakPos,
+      recoveryDate: recoveryPos >= 0 ? dates[recoveryPos] : null,
+      recoveryMonths: recoveryPos >= 0 ? recoveryPos - mddTroughPos : null,
+      ongoing: recoveryPos === -1,
+    };
+  }
 
   const rf = riskFreeCagr(dates);
   const sharpe = annVol > 0 ? (cagr - rf) / annVol : 0;
@@ -580,7 +689,27 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, op
   const downsideDev = downsideDeviation(monthlyReturns);
   const sortino = downsideDev > 0 ? (cagr - rf) / downsideDev : 0;
   const calmar = mdd < 0 ? cagr / Math.abs(mdd) : 0;
+  const omega = omegaRatio(monthlyReturns, 0);
+  const skew = skewness(monthlyReturns);
+  const kurt = kurtosis(monthlyReturns);
+  const { var: var95, cvar: cvar95 } = historicalVarCvar(monthlyReturns, 0.95);
+
   const winRate = monthlyReturns.length ? monthlyReturns.filter((r) => r > 0).length / monthlyReturns.length : 0;
+  const gains = monthlyReturns.filter((r) => r > 0);
+  const losses = monthlyReturns.filter((r) => r < 0);
+  const avgGain = gains.length ? mean(gains) : 0;
+  const avgLoss = losses.length ? mean(losses) : 0;
+  const gainLossRatio = avgLoss !== 0 ? Math.abs(avgGain / avgLoss) : avgGain > 0 ? Infinity : 0;
+  const sumGains = gains.reduce((s, v) => s + v, 0);
+  const sumLosses = losses.reduce((s, v) => s + v, 0);
+  const profitFactor = sumLosses !== 0 ? Math.abs(sumGains / sumLosses) : sumGains > 0 ? Infinity : 0;
+
+  let bestMonth = null;
+  let worstMonth = null;
+  monthlyReturns.forEach((r, i) => {
+    if (!bestMonth || r > bestMonth.return) bestMonth = { date: dates[i], return: r };
+    if (!worstMonth || r < worstMonth.return) worstMonth = { date: dates[i], return: r };
+  });
 
   const yearly = annualReturnsFromMonthly(dates, monthlyReturns);
   let bestYear = null;
@@ -602,17 +731,108 @@ function computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, op
     monthlyContribution,
     totalContributed,
     cagr,
+    totalReturn,
+    totalProfit,
     annVol,
     mdd,
+    maxDDDetail,
+    drawdownSeries,
     sharpe,
     sortino,
     calmar,
+    omega,
+    skew,
+    kurt,
+    var95,
+    cvar95,
+    downsideDev,
     winRate,
+    avgGain,
+    avgLoss,
+    gainLossRatio,
+    profitFactor,
+    bestMonth,
+    worstMonth,
     bestYear,
     worstYear,
     startDate: dates[0],
     endDate: dates[dates.length - 1],
   };
+}
+
+/* ---------- 백테스트 중 자산별 비중 이력에서 파생 통계 계산 (평균/최대/최소 비중, 평균 보유기간) -
+   정적/동적 엔진이 공유. weightSnapshots: [{date, weights:{ticker: 0~1}}] 매달 기록 */
+function summarizeWeightHistory(weightSnapshots, allTickers) {
+  const avgWeights = {};
+  const maxWeights = {};
+  const minWeights = {};
+  const avgHoldingMonths = {};
+  allTickers.forEach((t) => {
+    const series = weightSnapshots.map((s) => s.weights[t] || 0);
+    avgWeights[t] = series.length ? mean(series) : 0;
+    maxWeights[t] = series.length ? Math.max(...series) : 0;
+    minWeights[t] = series.length ? Math.min(...series) : 0;
+
+    // 보유기간: 비중이 0.05% 넘게 유지된 연속 구간들의 길이(개월)를 모아 평균낸다
+    const runs = [];
+    let run = 0;
+    series.forEach((w) => {
+      if (w > 0.0005) {
+        run += 1;
+      } else if (run > 0) {
+        runs.push(run);
+        run = 0;
+      }
+    });
+    if (run > 0) runs.push(run);
+    avgHoldingMonths[t] = runs.length ? mean(runs) : 0;
+  });
+  return { avgWeights, maxWeights, minWeights, avgHoldingMonths };
+}
+
+/* trades: [{date, ticker, before, after, delta}] - 같은 date에 발생한 delta 절대값 합의 절반이
+   그 리밸런싱 시점의 턴오버(매수·매도 양쪽을 중복 세지 않기 위해 절반으로 나눔) */
+function summarizeTurnover(trades, years) {
+  const byDate = {};
+  trades.forEach((tr) => {
+    byDate[tr.date] = (byDate[tr.date] || 0) + Math.abs(tr.delta);
+  });
+  const turnovers = Object.values(byDate).map((sum) => sum / 2);
+  const totalTurnover = turnovers.reduce((s, v) => s + v, 0);
+  return {
+    rebalanceCount: turnovers.length,
+    avgTurnover: turnovers.length ? mean(turnovers) : 0,
+    maxTurnover: turnovers.length ? Math.max(...turnovers) : 0,
+    annualizedTurnover: years > 0 ? totalTurnover / years : 0,
+  };
+}
+
+/* 자산별 위험 기여도(단순화) - 백테스트 전체 구간의 평균 비중과 공분산 행렬로 한계위험기여도를
+   구해 포트폴리오 전체 분산 대비 비율로 표시한다(비중이 계속 바뀌는 동적 배분에서는 구간별
+   변화까지 반영한 정밀한 값이 아니라 "평균적으로 어느 자산이 위험을 많이 만들었는지"의 근사치다) */
+function contributionToRisk(avgWeights, returnsByTicker, tickers) {
+  const active = tickers.filter((t) => avgWeights[t] > 0.0005 && returnsByTicker[t] && returnsByTicker[t].length > 1);
+  if (active.length === 0) return {};
+  const rets = active.map((t) => returnsByTicker[t]);
+  const n = active.length;
+  const means = rets.map((r) => mean(r));
+  const cov = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      let s = 0;
+      const len = rets[i].length;
+      for (let k = 0; k < len; k++) s += (rets[i][k] - means[i]) * (rets[j][k] - means[j]);
+      cov[i][j] = len > 0 ? s / len : 0;
+    }
+  }
+  const w = active.map((t) => avgWeights[t]);
+  const sw = cov.map((row) => row.reduce((s, c, j) => s + c * w[j], 0));
+  const portVar = w.reduce((s, wi, i) => s + wi * sw[i], 0);
+  const out = {};
+  active.forEach((t, i) => {
+    out[t] = portVar > 0 ? (w[i] * sw[i]) / portVar : 0;
+  });
+  return out;
 }
 
 /* ---------- 포트폴리오 백테스트 (정적 배분: 고정 비중 유지) ----------
@@ -682,6 +902,9 @@ function runBacktest(weights, initialAmount, options = {}) {
 
   const values = [initialAmount];
   const monthlyReturns = [];
+  const weightSnapshots = [];
+  const trades = [];
+  const contributionByTicker = {};
   for (let i = 0; i < dates.length; i++) {
     if (dcaMode) {
       allTickers.forEach((t) => {
@@ -690,21 +913,38 @@ function runBacktest(weights, initialAmount, options = {}) {
     }
     const before = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     allTickers.forEach((t) => {
+      const w = before > 0 ? holdings[t] / before : 0;
+      contributionByTicker[t] = (contributionByTicker[t] || 0) + w * (returnsByTicker[t][i] || 0);
       holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
     const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     monthlyReturns.push(before > 0 ? after / before - 1 : 0);
     values.push(after);
 
+    const driftedWeights = {};
+    allTickers.forEach((t) => (driftedWeights[t] = after > 0 ? holdings[t] / after : 0));
+    weightSnapshots.push({ date: dates[i], weights: driftedWeights });
+
     const monthIndex = i + 1;
     if (seasonal) {
       // 계절 전환은 사용자가 정한 리밸런싱 주기와 무관하게 항상 매달 확인한다
       if (monthIndex < dates.length) {
         currentTargets = targetWeightsFor(dates[monthIndex]);
-        allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));
+        const newWeights = {};
+        allTickers.forEach((t) => {
+          newWeights[t] = currentTargets[t] || 0;
+          holdings[t] = newWeights[t] * after;
+          const delta = newWeights[t] - driftedWeights[t];
+          if (Math.abs(delta) > 0.0005) trades.push({ date: dates[monthIndex], ticker: t, before: driftedWeights[t], after: newWeights[t], delta });
+        });
       }
     } else if (rebalanceMonths > 0 && monthIndex % rebalanceMonths === 0) {
-      tickers.forEach((t) => (holdings[t] = weights[t] * after));
+      const rebalanceDate = dates[monthIndex] || dates[i];
+      tickers.forEach((t) => {
+        holdings[t] = weights[t] * after;
+        const delta = weights[t] - driftedWeights[t];
+        if (Math.abs(delta) > 0.0005) trades.push({ date: rebalanceDate, ticker: t, before: driftedWeights[t], after: weights[t], delta });
+      });
     }
   }
 
@@ -714,6 +954,28 @@ function runBacktest(weights, initialAmount, options = {}) {
   result.mode = "static";
   result.finalWeights = currentTargets;
   result.seasonal = seasonal;
+
+  const activity = summarizeWeightHistory(weightSnapshots, allTickers);
+  result.avgWeights = activity.avgWeights;
+  result.maxWeights = activity.maxWeights;
+  result.minWeights = activity.minWeights;
+  result.avgHoldingMonths = activity.avgHoldingMonths;
+  result.trades = trades;
+  result.turnoverStats = summarizeTurnover(trades, result.years);
+  result.contributionToReturn = contributionByTicker;
+  result.contributionToRisk = contributionToRisk(activity.avgWeights, returnsByTicker, allTickers);
+
+  if (feeAnnualPct > 0) {
+    const noFee = runBacktest(weights, initialAmount, { ...options, feeAnnualPct: 0 });
+    if (noFee) {
+      result.costComparison = {
+        cagrNoFee: noFee.cagr,
+        finalValueNoFee: noFee.finalValue,
+        feeDragAnnual: noFee.cagr - result.cagr,
+      };
+    }
+  }
+
   return result;
 }
 
@@ -1286,6 +1548,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
 
   let currentTargets = computeFinalTargets(simStart);
   if (!currentTargets) return null;
+  let lastDecisionIdx = simStart;
 
   const monthlyFee = feeAnnualPct / 100 / 12;
   const holdings = {};
@@ -1294,6 +1557,9 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   const values = [initialAmount];
   const monthlyReturns = [];
   const simDates = [];
+  const weightSnapshots = [];
+  const trades = [];
+  const contributionByTicker = {};
 
   for (let i = simStart; i < simEndExclusive; i++) {
     if (dcaMode) {
@@ -1303,6 +1569,8 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     }
     const before = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     allTickers.forEach((t) => {
+      const w = before > 0 ? holdings[t] / before : 0;
+      contributionByTicker[t] = (contributionByTicker[t] || 0) + w * (returnsByTicker[t][i] || 0);
       holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
     const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
@@ -1310,12 +1578,24 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     values.push(after);
     simDates.push(returnDates[i]);
 
+    const driftedWeights = {};
+    allTickers.forEach((t) => (driftedWeights[t] = after > 0 ? holdings[t] / after : 0));
+    weightSnapshots.push({ date: returnDates[i], weights: driftedWeights });
+
     const stepCount = i - simStart + 1;
     if (rebalanceMonths > 0 && stepCount % rebalanceMonths === 0 && i + 1 < simEndExclusive) {
       const nextTargets = computeFinalTargets(i + 1);
       if (nextTargets) {
         currentTargets = nextTargets;
-        allTickers.forEach((t) => (holdings[t] = (currentTargets[t] || 0) * after));
+        lastDecisionIdx = i + 1;
+        const rebalanceDate = returnDates[i + 1];
+        allTickers.forEach((t) => {
+          holdings[t] = (currentTargets[t] || 0) * after;
+          const delta = (currentTargets[t] || 0) - driftedWeights[t];
+          if (Math.abs(delta) > 0.0005) {
+            trades.push({ date: rebalanceDate, ticker: t, before: driftedWeights[t], after: currentTargets[t] || 0, delta });
+          }
+        });
       }
     }
   }
@@ -1327,7 +1607,137 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   result.strategy = strategy;
   result.riskMode = riskMode;
   result.finalWeights = currentTargets;
+
+  const activity = summarizeWeightHistory(weightSnapshots, allTickers);
+  result.avgWeights = activity.avgWeights;
+  result.maxWeights = activity.maxWeights;
+  result.minWeights = activity.minWeights;
+  result.avgHoldingMonths = activity.avgHoldingMonths;
+  result.trades = trades;
+  result.turnoverStats = summarizeTurnover(trades, result.years);
+  result.contributionToReturn = contributionByTicker;
+  result.contributionToRisk = contributionToRisk(activity.avgWeights, returnsByTicker, allTickers);
+  result.decisionDetail = computeDecisionDetail(strategy, closesByTicker, lastDecisionIdx);
+  result.decisionDate = returnDates[lastDecisionIdx];
+
+  if (feeAnnualPct > 0) {
+    const noFee = runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmount, { ...options, feeAnnualPct: 0 });
+    if (noFee) {
+      result.costComparison = {
+        cagrNoFee: noFee.cagr,
+        finalValueNoFee: noFee.finalValue,
+        feeDragAnnual: noFee.cagr - result.cagr,
+      };
+    }
+  }
+
   return result;
+}
+
+/* ---------- 이름있는 전략의 마지막 재평가 시점 판단 근거 (모멘텀/이동평균 점수표) ----------
+   "왜 이 자산이 선택됐는지"를 그대로 보여주기 위해, 실제 신호 계산과 같은 함수(weightedMomentum13612
+   / smaMomentum)로 후보별 점수와 최근 1·3·6·12개월 수익률을 다시 계산한다. 일반 전략(듀얼모멘텀 등
+   사용자가 직접 조립하는 전략)은 후보 구성이 매번 달라 여기서는 이름있는 전략만 다룬다. */
+function computeDecisionDetail(strategy, closesByTicker, idx) {
+  const preset = getEffectivePreset(strategy);
+  if (!preset) return null;
+  const periods = [1, 3, 6, 12];
+  const priceReturns = (ticker) => {
+    const series = closesByTicker[ticker];
+    if (!series || series[idx] == null) return null;
+    const out = {};
+    periods.forEach((p) => {
+      const past = series[idx - p];
+      out[p] = past != null ? series[idx] / past - 1 : null;
+    });
+    return out;
+  };
+
+  if (preset.kind === "momentum") {
+    const lookback = preset.lookback || 12;
+    const scored = preset.offensive.map((t) => {
+      const series = closesByTicker[t];
+      const past = series[idx - lookback];
+      return { ticker: t, score: past != null ? series[idx] / past - 1 : null, returns: priceReturns(t) };
+    });
+    scored.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+    const winner = scored[0];
+    const safeSeries = closesByTicker[preset.defensiveAsset];
+    const safePast = safeSeries[idx - lookback];
+    const safeScore = safePast != null ? safeSeries[idx] / safePast - 1 : null;
+    const safeRow = { ticker: preset.defensiveAsset, score: safeScore, returns: priceReturns(preset.defensiveAsset), isSafe: true };
+    const selected = winner && winner.score != null && safeScore != null && winner.score > safeScore ? winner.ticker : preset.defensiveAsset;
+    [...scored, safeRow].forEach((r) => (r.selected = r.ticker === selected));
+    return { kind: "momentum", label: `상대모멘텀 승자 vs 안전자산 (최근 ${lookback}개월 수익률 기준)`, rows: [...scored, safeRow], selected };
+  }
+
+  if (preset.kind === "canaryBreadth") {
+    const momentumFn = preset.momentumType === "sma13" ? (t) => smaMomentum(closesByTicker, t, idx, 13) : (t) => weightedMomentum13612(closesByTicker, t, idx);
+
+    const offRanked = preset.offensive
+      .map((t) => ({ ticker: t, score: momentumFn(t) }))
+      .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+    const offSelected = new Set(offRanked.slice(0, preset.topN || 1).filter((r) => r.score != null && r.score > 0).map((r) => r.ticker));
+
+    // 같은 자산이 위험자산·기준자산·안전자산 역할을 동시에 겸하는 경우(VAA 등 canary=offensive)가
+    // 있어, 티커별로 한 행만 만들고 역할 태그를 합쳐서 보여준다(같은 자산이 표에 중복으로 뜨지 않게)
+    const byTicker = new Map();
+    const addRole = (t, roleLabel, extra = {}) => {
+      const existing = byTicker.get(t);
+      if (existing) {
+        if (!existing.roles.includes(roleLabel)) existing.roles.push(roleLabel);
+        Object.assign(existing, extra);
+      } else {
+        byTicker.set(t, { ticker: t, score: momentumFn(t), returns: priceReturns(t), roles: [roleLabel], ...extra });
+      }
+    };
+    preset.offensive.forEach((t) => addRole(t, "offensive", { selected: offSelected.has(t) }));
+    (preset.canary || []).forEach((t) => {
+      const score = momentumFn(t);
+      addRole(t, "canary", { ok: score != null && score > 0 });
+    });
+    preset.defensive.forEach((t) => addRole(t, "defensive"));
+
+    const roleOrder = { offensive: 0, canary: 1, defensive: 2 };
+    const rows = Array.from(byTicker.values()).sort((a, b) => roleOrder[a.roles[0]] - roleOrder[b.roles[0]] || (b.score ?? -Infinity) - (a.score ?? -Infinity));
+
+    return {
+      kind: "canaryBreadth",
+      label: preset.momentumType === "sma13" ? "13개월 이동평균 대비 괴리율" : "13612W 가중모멘텀 (최근1M×12 + 3M×4 + 6M×2 + 12M×1)",
+      rows,
+    };
+  }
+
+  if (preset.kind === "trend") {
+    const lookback = preset.lookback || 10;
+    const rows = preset.offensive.map((t) => {
+      const series = closesByTicker[t];
+      let sum = 0;
+      for (let k = 0; k < lookback; k++) sum += series[idx - k];
+      const sma = sum / lookback;
+      return { ticker: t, score: series[idx] / sma - 1, returns: priceReturns(t), selected: series[idx] >= sma };
+    });
+    return { kind: "trend", label: `${lookback}개월 이동평균 대비 괴리율 (0% 이상이면 보유)`, rows };
+  }
+
+  if (preset.kind === "laa") {
+    const smaMonths = preset.smaMonths || 10;
+    const signalTicker = preset.core[0];
+    const series = closesByTicker[signalTicker];
+    let sum = 0;
+    for (let k = 0; k < smaMonths; k++) sum += series[idx - k];
+    const sma = sum / smaMonths;
+    const bearish = series[idx] < sma;
+    const selected = bearish ? preset.switchOff : preset.switchOn;
+    return {
+      kind: "laa",
+      label: `${signalTicker} ${smaMonths}개월 이동평균 대비 괴리율 (아래면 방어자산으로 전환)`,
+      rows: [{ ticker: signalTicker, score: series[idx] / sma - 1, returns: priceReturns(signalTicker), selected: false }],
+      switchSelected: selected,
+    };
+  }
+
+  return null;
 }
 
 /* ---------- 포맷 유틸 ---------- */

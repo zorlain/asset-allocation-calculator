@@ -41,6 +41,7 @@ function initThemeToggleStandalone() {
     if (lastResult) {
       renderPieChart(lastResult.finalWeights || {});
       renderLineChart(lastResult);
+      renderDrawdownChart(lastResult);
     }
   });
 }
@@ -127,6 +128,28 @@ function runFromParams() {
     resultEl.innerHTML = `<p class="result-placeholder">선택한 조건으로는 결과를 계산할 수 없습니다. 자산 조합이나 기간을 조정해 메인 페이지에서 다시 시도해주세요.</p>`;
     return;
   }
+
+  // 벤치마크 비교 - 같은 기간·투자금액·적립 조건으로 대표 지수/고정배분과 나란히 비교한다.
+  // 벤치마크는 수수료 없는 순수 지수/고정비중 기준으로 계산(사용자 전략의 수수료와 섞이지 않게).
+  const benchOptions = {
+    feeAnnualPct: 0,
+    startDate: start || null,
+    endDate: end || null,
+    dcaMode,
+    monthlyContribution,
+    rebalanceMonths: 1,
+  };
+  const benchmarks = [];
+  const spyBt = runBacktest({ SPY: 1 }, amount, benchOptions);
+  if (spyBt) benchmarks.push({ key: "spy", label: "S&P 500", result: spyBt });
+  const b6040 = runBacktest({ SPY: 0.6, IEF: 0.4 }, amount, benchOptions);
+  if (b6040) benchmarks.push({ key: "6040", label: "60/40", result: b6040 });
+  if (mode === "static") {
+    const bh = runBacktest(weights, amount, { ...benchOptions, rebalanceMonths: 0 });
+    if (bh) benchmarks.push({ key: "bh", label: "Buy & Hold (리밸런싱 없음)", result: bh });
+  }
+  bt.benchmarks = benchmarks;
+
   lastResult = bt;
   renderResult(bt);
 }

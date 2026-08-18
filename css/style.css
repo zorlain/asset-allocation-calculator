@@ -1104,6 +1104,23 @@ footer {
   height: 260px;
 }
 
+.chart-wrap.dd-wrap {
+  height: 160px;
+  margin-top: 14px;
+}
+
+.subsection-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 18px 0 10px;
+}
+
+.trade-log-wrap {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
 /* ---------- 결과 상단: 파이차트 + 핵심 지표 ---------- */
 .result-top {
   display: flex;
