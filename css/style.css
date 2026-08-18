@@ -374,6 +374,7 @@ header.hero p {
 
 /* 입력 폼 */
 .field-group {
+  max-width: 400px;
   margin-bottom: 20px;
 }
 
