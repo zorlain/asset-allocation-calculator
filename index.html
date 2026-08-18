@@ -398,8 +398,6 @@
           자산을 추가/제거하면 원본 전략과 다른 결과가 나올 수 있습니다.
         </p>
 
-        <div class="preset-role-editor" id="preset-role-editor" hidden></div>
-
         <div class="field-row" id="dynamic-lookback-row">
           <div class="field-group">
             <label for="dynamic-lookback">
@@ -477,9 +475,11 @@
         <div class="select-box-dropdown" id="asset-add-dropdown" role="listbox"></div>
       </div>
 
+      <div class="preset-role-editor" id="preset-role-editor" hidden></div>
+
       <div class="field-group" id="dynamic-safe-asset-group" hidden>
         <label for="dynamic-safe-asset">
-          안전자산 (신호 부진 시 · 리스크 관리에서 대피할 자산)
+          공통 안전자산 (신호 부진 시 · 리스크 관리에서 대피할 자산)
           <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
             <span aria-hidden="true">ⓘ</span>
             <span class="info-tooltip">
@@ -651,6 +651,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js?v=2"></script>
-<script src="js/app.js?v=31"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>

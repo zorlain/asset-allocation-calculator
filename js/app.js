@@ -600,6 +600,15 @@ function setAllocationMode(mode) {
   const riskSection = document.getElementById("risk-management-section");
   if (riskSection) riskSection.hidden = mode !== "dynamic";
 
+  // 전략 자산 역할 편집기(기준자산·전략 안전자산)도 자산 목록 아래(패널 밖)에 있어 별도로 갱신
+  const meta = DYNAMIC_STRATEGIES[selectedDynamicStrategy];
+  if (mode === "dynamic" && meta && meta.isNamedPreset) {
+    renderPresetRoleEditor(selectedDynamicStrategy);
+  } else {
+    const roleEditor = document.getElementById("preset-role-editor");
+    if (roleEditor) roleEditor.hidden = true;
+  }
+
   updateWeightInputVisibility();
 }
 
@@ -713,10 +722,10 @@ function renderPresetRoleEditor(key) {
 
   let html = "";
   if (preset.kind === "momentum") {
-    html += renderRoleSingleBlock(key, "defensiveAsset", "안전자산 (신호 부진 시 대피 자산)");
+    html += renderRoleSingleBlock(key, "defensiveAsset", "전략 안전자산 (상대모멘텀 열세 시 대피 자산)");
   } else if (preset.kind === "canaryBreadth") {
     if (preset.canary) html += renderRoleChipBlock(key, "canary", "기준자산 (캐너리 - 위험 신호 판단용)");
-    html += renderRoleChipBlock(key, "defensive", "안전자산 (방어 자산군)");
+    html += renderRoleChipBlock(key, "defensive", "전략 안전자산 (방어 자산군)");
   } else if (preset.kind === "laa") {
     html += renderRoleSingleBlock(key, "switchOn", "전환자산 - 상승장일 때");
     html += renderRoleSingleBlock(key, "switchOff", "전환자산 - 하락장일 때 (안전자산)");
