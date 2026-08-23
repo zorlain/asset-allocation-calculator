@@ -1,9 +1,5 @@
 /* ---------- 전략 탭: 팩터 백테스트 UI 연결 ---------- */
 
-function factorDataAvailable() {
-  return typeof FACTOR_DATA !== "undefined" && FACTOR_DATA.stocks && Object.keys(FACTOR_DATA.stocks).length > 0;
-}
-
 /* 전체 데이터에서 가장 이르고 늦은 월봉 날짜를 찾아 시작/종료 select 범위를 정한다 */
 function priceDateRange() {
   let min = null;
@@ -339,26 +335,57 @@ function formatMarketCapShort(cap) {
   return `$${(cap / 1e6).toFixed(0)}M`;
 }
 
+/* 날짜 select는 실제 데이터 로드 전엔 안전한 기본 범위(2011~올해)로 채워두고,
+   샤드 로딩이 끝나면 진짜 최소/최대 날짜로 다시 채운다 */
+function refreshDateRangeSelects() {
+  const { min, max } = priceDateRange();
+  if (!min || !max) return;
+  const safeMin = min > "2011-01-01" ? min : "2011-01-01";
+  fillYearMonthSelect(document.getElementById("strat-start-year"), document.getElementById("strat-start-month"), safeMin, max, safeMin);
+  fillYearMonthSelect(document.getElementById("strat-end-year"), document.getElementById("strat-end-month"), safeMin, max, max);
+}
+
+/* 백테스트 실행 · 종목 추출 버튼 둘 다, 누르는 시점에 샤드가 아직 안 실려있으면 그때
+   불러온다(페이지 진입과 동시에 수백MB를 강제로 받게 하지 않기 위해 지연 로딩). 버튼
+   텍스트를 진행률로 바꿔서 로딩 중임을 보여준다. */
+async function ensureFactorDataLoaded(triggerBtn) {
+  const asofEl = document.getElementById("strat-asof");
+  const originalBtnText = triggerBtn ? triggerBtn.textContent : "";
+  if (triggerBtn) triggerBtn.disabled = true;
+
+  await loadAllFactorShards((loaded, total) => {
+    const pct = Math.round((loaded / total) * 100);
+    if (triggerBtn) triggerBtn.textContent = `데이터 불러오는 중... ${pct}%`;
+    if (asofEl) asofEl.textContent = `데이터 불러오는 중... (${loaded}/${total}개 샤드, ${pct}%)`;
+  });
+
+  if (triggerBtn) {
+    triggerBtn.disabled = false;
+    triggerBtn.textContent = originalBtnText;
+  }
+  refreshDateRangeSelects();
+  const count = Object.keys(FACTOR_DATA.stocks).length;
+  if (asofEl) asofEl.textContent = `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${count}개 (미국 Nasdaq·NYSE·CBOE 상장, SEC EDGAR 공시데이터)`;
+}
+
 function initStrategyLab() {
   const btn = document.getElementById("strat-run-btn");
   if (!btn) return;
-  if (!factorDataAvailable()) {
-    document.getElementById("strat-asof").textContent = "팩터 데이터를 아직 수집 중입니다. 잠시 후 다시 시도해주세요.";
+  if (typeof FACTOR_DATA === "undefined") {
+    document.getElementById("strat-asof").textContent = "팩터 데이터를 불러올 수 없습니다.";
     btn.disabled = true;
     return;
   }
 
-  const count = Object.keys(FACTOR_DATA.stocks).length;
-  document.getElementById("strat-asof").textContent = `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${count}개 (S&P500 기준, SEC EDGAR 공시데이터)`;
+  document.getElementById("strat-asof").textContent =
+    `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${FACTOR_DATA.totalStocks}개 (미국 Nasdaq·NYSE·CBOE 상장, SEC EDGAR 공시데이터) · 아래 버튼을 누르면 데이터를 불러옵니다`;
 
-  const { min, max } = priceDateRange();
-  const safeMin = min && min > "2011-01-01" ? min : "2011-01-01";
-  const startYearSel = document.getElementById("strat-start-year");
-  const startMonthSel = document.getElementById("strat-start-month");
-  const endYearSel = document.getElementById("strat-end-year");
-  const endMonthSel = document.getElementById("strat-end-month");
-  fillYearMonthSelect(startYearSel, startMonthSel, safeMin, max, safeMin);
-  fillYearMonthSelect(endYearSel, endMonthSel, safeMin, max, max);
+  refreshDateRangeSelects();
+  if (!document.getElementById("strat-start-year").options.length) {
+    const thisYear = new Date().getFullYear();
+    fillYearMonthSelect(document.getElementById("strat-start-year"), document.getElementById("strat-start-month"), "2011-01-01", `${thisYear}-12-01`, "2011-01-01");
+    fillYearMonthSelect(document.getElementById("strat-end-year"), document.getElementById("strat-end-month"), "2011-01-01", `${thisYear}-12-01`, `${thisYear}-12-01`);
+  }
 
   ["per", "pbr", "roe", "momentum6m"].forEach(addFactorRow);
   initFactorAddSelect();
@@ -372,14 +399,23 @@ function initStrategyLab() {
     selectAll.checked = genFilters.every((f) => f.checked);
   }));
 
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
+    await ensureFactorDataLoaded(btn);
     const options = gatherStrategyOptions();
     if (!options) return;
     window.open(buildFactorResultUrl(options), "_blank");
   });
 
   const extractBtn = document.getElementById("strat-extract-btn");
-  if (extractBtn) extractBtn.addEventListener("click", runStockExtraction);
+  if (extractBtn) {
+    extractBtn.addEventListener("click", async () => {
+      await ensureFactorDataLoaded(extractBtn);
+      runStockExtraction();
+    });
+  }
+
+  // 페이지를 열자마자 백그라운드로 미리 받아두면, 버튼을 누를 때쯤엔 이미 끝나있을 수 있다
+  ensureFactorDataLoaded(null);
 }
 
 document.addEventListener("DOMContentLoaded", initStrategyLab);

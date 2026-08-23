@@ -140,29 +140,23 @@ function Get-MonthlyPrices($symbol) {
   }
 }
 
-# ---------- 1. S&P500 티커 목록 (위키백과) ----------
-Write-Host "S&P500 종목 목록 조회 중..."
-$usTickers = New-Object System.Collections.Generic.List[string]
-$wiki = Invoke-WebRequest -Uri "https://en.wikipedia.org/w/index.php?title=List_of_S%26P_500_companies&action=raw" -Headers $secHeaders -UseBasicParsing -TimeoutSec 20
-$text = $wiki.Content
-$tableStart = $text.IndexOf('id="constituents"')
-$tableEnd = $text.IndexOf("`n|}", $tableStart)
-$tableText = $text.Substring($tableStart, $tableEnd - $tableStart)
-[regex]::Matches($tableText, '\{\{(Nyse|Nasdaq)Symbol\|([A-Za-z0-9.\-]+)\}\}') | ForEach-Object {
-  $usTickers.Add($_.Groups[2].Value.ToUpper())
-}
-Write-Host "  S&P500 $($usTickers.Count)개 확보"
-
-# ---------- 2. 티커 -> CIK 매핑 ----------
-Write-Host "SEC CIK 매핑 조회 중..."
-$tickerMapResp = Invoke-WebRequest -Uri "https://www.sec.gov/files/company_tickers.json" -Headers $secHeaders -UseBasicParsing -TimeoutSec 20
+# ---------- 1. 미국 주요 거래소(Nasdaq/NYSE/CBOE) 상장 종목 전체 + CIK 매핑 ----------
+# OTC(장외) 종목은 신뢰할 만한 XBRL 데이터가 거의 없어 제외한다. company_tickers_exchange.json은
+# company_tickers.json과 달리 거래소 정보까지 포함하고, 티커 표기(예: BRK-B)도 더 정확하다.
+Write-Host "미국 상장 종목 목록 조회 중..."
+$tickerMapResp = Invoke-WebRequest -Uri "https://www.sec.gov/files/company_tickers_exchange.json" -Headers $secHeaders -UseBasicParsing -TimeoutSec 20
 $tickerMapJson = $tickerMapResp.Content | ConvertFrom-Json
+$usTickers = New-Object System.Collections.Generic.List[string]
 $cikByTicker = @{}
-foreach ($prop in $tickerMapJson.PSObject.Properties) {
-  $entry = $prop.Value
-  $cikByTicker[$entry.ticker.ToUpper()] = "{0:D10}" -f [int]$entry.cik_str
+foreach ($row in $tickerMapJson.data) {
+  $cik = $row[0]; $ticker = $row[2]; $exchange = $row[3]
+  if ($exchange -notin @("Nasdaq", "NYSE", "CBOE")) { continue }
+  if ([string]::IsNullOrWhiteSpace($ticker)) { continue }
+  $tickerUpper = $ticker.ToUpper()
+  $usTickers.Add($tickerUpper)
+  $cikByTicker[$tickerUpper] = "{0:D10}" -f [int]$cik
 }
-Write-Host "  CIK 매핑 $($cikByTicker.Count)개 확보"
+Write-Host "  Nasdaq/NYSE/CBOE 상장 $($usTickers.Count)개 확보"
 
 if ($Limit -gt 0) {
   $usTickers = $usTickers | Select-Object -Skip $StartIndex -First $Limit
@@ -250,24 +244,49 @@ Write-Host "수집 완료. 청크 파일 $((Get-ChildItem $chunksDir -Filter '*.
 
 if ($SkipMerge) { return }
 
-# ---------- 4. 청크 병합 ----------
-Write-Host "청크 병합 중..."
-$merged = [ordered]@{}
-Get-ChildItem $chunksDir -Filter '*.json' | Sort-Object Name | ForEach-Object {
-  $ticker = $_.BaseName
-  try {
-    $merged[$ticker] = Get-Content $_.FullName -Raw | ConvertFrom-Json
-  } catch {
-    Write-Host "  경고: 청크 $($_.Name) 파싱 실패 - $($_.Exception.Message)"
+# ---------- 4. 청크를 샤드 파일로 병합 ----------
+# 종목이 수천 개라 하나의 파일로 합치면 GitHub 100MB 파일 제한을 넘고 브라우저도 버거워진다.
+# 종목 500개씩 묶어 여러 개의 작은 shard 파일로 나눠 저장하고, 브라우저에서는 이 목록을 읽어
+# 순차적으로 fetch해서 화면에 진행률을 보여주며 불러온다 (js/factor-loader.js가 담당).
+Write-Host "청크를 샤드로 병합 중..."
+$shardsDir = Join-Path $root "data\factor-shards"
+if (Test-Path $shardsDir) { Remove-Item $shardsDir -Recurse -Force }
+New-Item -ItemType Directory -Path $shardsDir | Out-Null
+
+$chunkFiles = Get-ChildItem $chunksDir -Filter '*.json' | Sort-Object Name
+$shardSize = 500
+$shardCount = [math]::Ceiling($chunkFiles.Count / $shardSize)
+$shardNames = New-Object System.Collections.Generic.List[string]
+
+for ($s = 0; $s -lt $shardCount; $s++) {
+  $shardName = "shard-{0:D3}.js" -f $s
+  $shardFiles = $chunkFiles | Select-Object -Skip ($s * $shardSize) -First $shardSize
+  $shardObj = [ordered]@{}
+  foreach ($f in $shardFiles) {
+    try {
+      $shardObj[$f.BaseName] = Get-Content $f.FullName -Raw | ConvertFrom-Json
+    } catch {
+      Write-Host "  경고: 청크 $($f.Name) 파싱 실패 - $($_.Exception.Message)"
+    }
   }
+  $shardJson = $shardObj | ConvertTo-Json -Compress -Depth 8
+  $shardLabel = "$s of $($shardCount - 1)"
+  $shardOut = "// 개별종목 팩터 백테스트 데이터 샤드 ($shardLabel). scripts/update-factor-data.ps1 로 갱신.`nObject.assign(FACTOR_DATA.stocks, $shardJson);`n"
+  [System.IO.File]::WriteAllText((Join-Path $shardsDir $shardName), $shardOut, [System.Text.UTF8Encoding]::new($false))
+  $shardNames.Add($shardName)
+  Write-Host "  $shardName : $($shardObj.Keys.Count)개 종목"
 }
 
-$data = [ordered]@{
-  updatedAt = (Get-Date).ToString("yyyy-MM-dd")
-  stocks    = $merged
-}
-$json = $data | ConvertTo-Json -Compress -Depth 8
-$out = "// 개별종목 팩터 백테스트 데이터 (출처: SEC EDGAR XBRL, Yahoo Finance). scripts/update-factor-data.ps1 로 갱신.`nconst FACTOR_DATA = $json;`n"
-[System.IO.File]::WriteAllText($outPath, $out, [System.Text.UTF8Encoding]::new($false))
+$totalStocks = ($chunkFiles | Measure-Object).Count
+# ConvertTo-Json은 원소가 1개인 배열을 배열이 아니라 스칼라로 풀어버리는 함정이 있어(PS 5.1),
+# 항상 배열이 되도록 직접 JSON 배열 문자열을 만든다
+$shardNamesJson = "[" + (($shardNames | ForEach-Object { "`"$_`"" }) -join ",") + "]"
+$indexOut = "// 샤드 목록 + 메타데이터. scripts/update-factor-data.ps1 로 갱신.`n" +
+  "const FACTOR_DATA = { updatedAt: `"$((Get-Date).ToString('yyyy-MM-dd'))`", totalStocks: $totalStocks, stocks: {} };`n" +
+  "const FACTOR_SHARD_FILES = $shardNamesJson;`n"
+[System.IO.File]::WriteAllText((Join-Path $shardsDir "index.js"), $indexOut, [System.Text.UTF8Encoding]::new($false))
 
-Write-Host "완료: $($merged.Keys.Count)개 종목"
+# 기존 단일 파일은 더 이상 안 쓰지만, 남아있으면 혼동을 주니 지운다
+if (Test-Path $outPath) { Remove-Item $outPath -Force }
+
+Write-Host "완료: 총 $totalStocks 개 종목, 샤드 $shardCount 개"

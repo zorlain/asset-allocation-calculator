@@ -174,7 +174,7 @@ function renderDdChart(bt) {
   });
 }
 
-function runFromParams() {
+async function runFromParams() {
   const resultEl = document.getElementById("factor-result");
   const options = parseFactorParams();
 
@@ -182,10 +182,15 @@ function runFromParams() {
     resultEl.innerHTML = `<p class="result-placeholder">불러올 결과가 없습니다. 전략 탭에서 조건을 설정하고 다시 시도해주세요.</p>`;
     return;
   }
-  if (typeof FACTOR_DATA === "undefined" || !FACTOR_DATA.stocks || Object.keys(FACTOR_DATA.stocks).length === 0) {
+  if (typeof FACTOR_DATA === "undefined") {
     resultEl.innerHTML = `<p class="result-placeholder">팩터 데이터를 불러오지 못했습니다.</p>`;
     return;
   }
+
+  resultEl.innerHTML = `<p class="result-placeholder">종목 데이터 불러오는 중... 0%</p>`;
+  await loadAllFactorShards((loaded, total) => {
+    resultEl.innerHTML = `<p class="result-placeholder">종목 데이터 불러오는 중... ${Math.round((loaded / total) * 100)}% (${loaded}/${total})</p>`;
+  });
 
   const bt = runFactorBacktest({ ...options, universe: Object.keys(FACTOR_DATA.stocks) });
   const metrics = factorBacktestMetrics(bt);
