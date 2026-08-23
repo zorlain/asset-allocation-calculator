@@ -133,14 +133,6 @@ header.hero h1 {
   line-height: 1.1;
 }
 
-header.hero p {
-  color: var(--text-muted);
-  margin: 14px 0 0;
-  font-size: 15px;
-  line-height: 1.56;
-  letter-spacing: -0.09px;
-}
-
 .hero-actions {
   display: flex;
   align-items: center;
@@ -1593,10 +1585,6 @@ footer {
   }
   header.hero h1 {
     font-size: 22px;
-  }
-  header.hero p {
-    font-size: 13.5px;
-    line-height: 1.5;
   }
   .game-tabs {
     gap: 16px;
