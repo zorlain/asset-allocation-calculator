@@ -14,7 +14,7 @@ $outPath = Join-Path $root "data\asset-data.js"
 # 이상치 판정 범위를 기본값보다 넓게 잡는다(minRatio/maxRatio).
 $assets = [ordered]@{
   SPY      = @{ name = "미국주식 (S&P500)"; symbol = "SPY" }
-  QQQ      = @{ name = "미국 기술주 (나스닥100)"; symbol = "QQQ" }
+  QQQ      = @{ name = "나스닥100 (QQQ)"; symbol = "QQQ" }
   SCHD     = @{ name = "미국 배당주 (SCHD)"; symbol = "SCHD" }
   SSO      = @{ name = "미국 S&P500 2배 레버리지 (SSO)"; symbol = "SSO"; minRatio = 0.4; maxRatio = 2.5 }
   SDS      = @{ name = "미국 S&P500 2배 인버스 (SDS)"; symbol = "SDS"; minRatio = 0.4; maxRatio = 2.5 }
