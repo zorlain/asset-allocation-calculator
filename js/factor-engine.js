@@ -358,9 +358,89 @@ function rankByFactors(snapshots, factorConfigs) {
     .sort((a, b) => b.composite - a.composite);
 }
 
+/* ---------- SIC 코드 -> GICS 유사 업종 매핑 ----------
+   SEC의 ownerOrg는 "심사 부서" 단위라 에너지+운송처럼 실제로는 다른 업종이 한 묶음으로
+   보인다(예: "Energy & Transportation"). SIC 코드(더 세분화된 미국 정부 표준 업종 코드,
+   이미 수집돼 있음)를 GICS 11개 섹터와 비슷한 수준으로 다시 묶어서 더 직관적인 업종으로 쓴다.
+   범위가 겹치는 경우 위에서부터 먼저 매칭되는 규칙이 우선한다. */
+const SIC_SECTOR_RANGES = [
+  { min: 2833, max: 2836, sector: "헬스케어" },
+  { min: 3826, max: 3845, sector: "헬스케어" },
+  { min: 8000, max: 8099, sector: "헬스케어" },
+  { min: 8731, max: 8734, sector: "헬스케어" },
+  { min: 6500, max: 6599, sector: "부동산" },
+  { min: 6798, max: 6798, sector: "부동산" },
+  { min: 6000, max: 6799, sector: "금융" },
+  { min: 4900, max: 4949, sector: "유틸리티" },
+  { min: 1300, max: 1389, sector: "에너지" },
+  { min: 1200, max: 1241, sector: "에너지" },
+  { min: 2900, max: 2912, sector: "에너지" },
+  { min: 4610, max: 4619, sector: "에너지" },
+  { min: 3570, max: 3579, sector: "정보기술" },
+  { min: 3660, max: 3679, sector: "정보기술" },
+  { min: 7370, max: 7379, sector: "정보기술" },
+  { min: 3674, max: 3674, sector: "정보기술" },
+  { min: 4800, max: 4899, sector: "커뮤니케이션서비스" },
+  { min: 2700, max: 2799, sector: "커뮤니케이션서비스" },
+  { min: 7810, max: 7829, sector: "커뮤니케이션서비스" },
+  { min: 1000, max: 1099, sector: "소재" },
+  { min: 1400, max: 1499, sector: "소재" },
+  { min: 2600, max: 2661, sector: "소재" },
+  { min: 2800, max: 2829, sector: "소재" },
+  { min: 2840, max: 2899, sector: "소재" },
+  { min: 3200, max: 3299, sector: "소재" },
+  { min: 3300, max: 3399, sector: "소재" },
+  { min: 2000, max: 2099, sector: "필수소비재" },
+  { min: 2100, max: 2199, sector: "필수소비재" },
+  { min: 5140, max: 5149, sector: "필수소비재" },
+  { min: 5411, max: 5412, sector: "필수소비재" },
+  { min: 2300, max: 2399, sector: "임의소비재" },
+  { min: 3140, max: 3199, sector: "임의소비재" },
+  { min: 3630, max: 3652, sector: "임의소비재" },
+  { min: 3711, max: 3716, sector: "임의소비재" },
+  { min: 5200, max: 5999, sector: "임의소비재" },
+  { min: 7000, max: 7099, sector: "임의소비재" },
+  { min: 7800, max: 7999, sector: "임의소비재" },
+  { min: 3400, max: 3599, sector: "산업재" },
+  { min: 3700, max: 3799, sector: "산업재" },
+  { min: 4000, max: 4789, sector: "산업재" },
+  { min: 1500, max: 1799, sector: "산업재" },
+  { min: 8700, max: 8748, sector: "산업재" },
+  { min: 3812, max: 3812, sector: "산업재" },
+  { min: 3800, max: 3873, sector: "산업재" },
+  { min: 3990, max: 3999, sector: "산업재" },
+  { min: 3020, max: 3089, sector: "소재" },
+  { min: 5100, max: 5122, sector: "헬스케어" },
+  { min: 5123, max: 5199, sector: "임의소비재" },
+  { min: 7300, max: 7399, sector: "산업재" },
+  { min: 7320, max: 7320, sector: "금융" },
+  { min: 7340, max: 7349, sector: "임의소비재" },
+
+  // 위 세부 규칙에 안 걸리는 나머지는 SIC의 큰 division 경계로 넓게 분류한다
+  // (완벽하진 않지만 "기타"로 빠지는 종목을 최소화하기 위한 안전망)
+  { min: 100, max: 999, sector: "소재" },      // 농림수산
+  { min: 1000, max: 1499, sector: "소재" },     // 광업
+  { min: 1500, max: 1799, sector: "산업재" },   // 건설
+  { min: 2000, max: 3999, sector: "산업재" },   // 제조업 나머지
+  { min: 4000, max: 4799, sector: "산업재" },   // 운송
+  { min: 4800, max: 4899, sector: "커뮤니케이션서비스" },
+  { min: 4900, max: 4999, sector: "유틸리티" },
+  { min: 5000, max: 5199, sector: "임의소비재" }, // 도매
+  { min: 5200, max: 5999, sector: "임의소비재" }, // 소매
+  { min: 6000, max: 6799, sector: "금융" },
+  { min: 7000, max: 8999, sector: "산업재" },   // 서비스업 나머지
+];
+
+function sicToSector(sic) {
+  const n = Number(sic);
+  if (!Number.isFinite(n)) return "기타";
+  const match = SIC_SECTOR_RANGES.find((r) => n >= r.min && n <= r.max);
+  return match ? match.sector : "기타";
+}
+
 /* ---------- 유니버스 필터: 업종/기업형태 휴리스틱 ---------- */
 function isFinancialStock(stock) {
-  return !!(stock.ownerOrg && stock.ownerOrg.indexOf("Finance") >= 0);
+  return sicToSector(stock.sic) === "금융";
 }
 
 function isHoldingCompany(stock) {
@@ -410,7 +490,7 @@ function runFactorBacktest(options) {
     excludeLossTTM = false,         // 적자기업 제외 (년간/TTM 순이익 기준)
     excludeLossLastQuarter = false, // 적자기업 제외 (최근 분기 순이익 기준)
     excludeDistressZone = false,    // 관리종목 제외 근사치 (Altman Z-score 부실위험 구간)
-    excludeOwnerOrgs = null,        // 제외할 ownerOrg(업종 대분류) 집합 (Set)
+    excludeOwnerOrgs = null,        // 제외할 업종(sicToSector 결과) 집합 (Set) - 이름은 예전 그대로 두었지만 내용은 SIC 기반 업종
     excludeFinancials = false,
     excludeHoldingCompanies = false,
     excludePTP = false,
@@ -422,7 +502,7 @@ function runFactorBacktest(options) {
   const tickers = universe.filter((t) => {
     const stock = FACTOR_DATA.stocks[t];
     if (!stock) return false;
-    if (excludeOwnerOrgs && excludeOwnerOrgs.has(stock.ownerOrg)) return false;
+    if (excludeOwnerOrgs && excludeOwnerOrgs.has(sicToSector(stock.sic))) return false;
     if (excludeFinancials && isFinancialStock(stock)) return false;
     if (excludeHoldingCompanies && isHoldingCompany(stock)) return false;
     if (excludePTP && isLikelyPTP(stock)) return false;

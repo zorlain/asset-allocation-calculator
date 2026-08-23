@@ -237,7 +237,7 @@ function runFromParams() {
   const picksRows = (lastSelection ? lastSelection.picks : []).map((p) => {
     const stock = FACTOR_DATA.stocks[p.ticker];
     const name = (stock && stock.name) || p.ticker;
-    const sector = stock && stock.ownerOrg ? stock.ownerOrg.replace(/^\d+\s*/, "") : "-";
+    const sector = stock ? sicToSector(stock.sic) : "-";
     return `<tr><td class="asset-name-cell">${name} <span class="ticker-tag">${p.ticker}</span></td><td>${sector}</td><td>${p.composite.toFixed(1)}</td></tr>`;
   }).join("");
 

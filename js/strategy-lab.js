@@ -43,15 +43,15 @@ function fillYearMonthSelect(yearSel, monthSel, minDate, maxDate, defaultDate) {
 function populateSectorChecks() {
   const wrap = document.getElementById("strat-sector-checks");
   if (!wrap) return;
-  const orgs = new Set();
-  Object.values(FACTOR_DATA.stocks).forEach((s) => { if (s.ownerOrg) orgs.add(s.ownerOrg); });
-  const sorted = [...orgs].sort();
+  const sectors = new Set();
+  Object.values(FACTOR_DATA.stocks).forEach((s) => sectors.add(sicToSector(s.sic)));
+  const sorted = [...sectors].sort((a, b) => a.localeCompare(b, "ko"));
   if (sorted.length === 0) {
     wrap.innerHTML = `<p class="card-desc-short">업종 분류 데이터가 아직 없습니다 (전체 종목 대상으로 진행됩니다).</p>`;
     return;
   }
   wrap.innerHTML = sorted
-    .map((org) => `<label class="checkbox-label"><input type="checkbox" data-owner-org="${org}" checked /><span>${org.replace(/^\d+\s*/, "")}</span></label>`)
+    .map((sector) => `<label class="checkbox-label"><input type="checkbox" data-owner-org="${sector}" checked /><span>${sector}</span></label>`)
     .join("");
 }
 
@@ -187,7 +187,7 @@ function runStockExtraction() {
   const { min: minDate, max: asOfDate } = priceDateRange();
   const universe = Object.keys(FACTOR_DATA.stocks).filter((t) => {
     const stock = FACTOR_DATA.stocks[t];
-    if (options.excludeOwnerOrgs && options.excludeOwnerOrgs.has(stock.ownerOrg)) return false;
+    if (options.excludeOwnerOrgs && options.excludeOwnerOrgs.has(sicToSector(stock.sic))) return false;
     if (options.excludeFinancials && isFinancialStock(stock)) return false;
     if (options.excludeHoldingCompanies && isHoldingCompany(stock)) return false;
     if (options.excludePTP && isLikelyPTP(stock)) return false;
@@ -229,7 +229,7 @@ function runStockExtraction() {
       return `
         <tr>
           <td class="asset-name-cell">${name} <span class="ticker-tag">${r.ticker}</span></td>
-          <td>${stock.ownerOrg ? stock.ownerOrg.replace(/^\d+\s*/, "") : "-"}</td>
+          <td>${sicToSector(stock.sic)}</td>
           <td>${price !== null ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "-"}</td>
           <td>${r.factors.marketCap ? formatMarketCapShort(r.factors.marketCap) : "-"}</td>
           <td>${r.composite.toFixed(1)}</td>
