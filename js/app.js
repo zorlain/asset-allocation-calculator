@@ -1197,6 +1197,7 @@ function renderDashboard() {
     const s = assetStandaloneStats(t);
     const cls1m = s.oneMonthReturn === null ? "" : s.oneMonthReturn >= 0 ? "positive" : "negative";
     const cls1y = s.oneYearReturn === null ? "" : s.oneYearReturn >= 0 ? "positive" : "negative";
+    const clsDD = s.currentDD < 0 ? "negative" : "";
     return `
       <tr>
         <td class="asset-name-cell">${s.name}</td>
@@ -1205,6 +1206,10 @@ function renderDashboard() {
         <td class="${cls1y}">${s.oneYearReturn === null ? "-" : formatSignedPct(s.oneYearReturn, 1)}</td>
         <td>${formatSignedPct(s.cagr, 1)}</td>
         <td>${formatPct(s.annVol, 1)}</td>
+        <td>${s.beta === null ? "-" : s.beta.toFixed(2)}</td>
+        <td>${s.winRate12m === null ? "-" : formatPct(s.winRate12m, 0)}</td>
+        <td class="negative">${formatPct(s.maxDD, 1)}</td>
+        <td class="${clsDD}">${formatPct(s.currentDD, 1)}</td>
       </tr>
     `;
   }).join("");

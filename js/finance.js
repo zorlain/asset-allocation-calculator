@@ -448,6 +448,52 @@ function alignReturns(tickers) {
   return { dates: commonDates, returnsByTicker };
 }
 
+/* 종가 시계열(숫자 배열)의 최대낙폭(MDD)과 현재 시점 드로다운(전고점 대비) */
+function drawdownStats(closes) {
+  let peak = closes[0];
+  let maxDD = 0;
+  closes.forEach((c) => {
+    if (c > peak) peak = c;
+    const dd = c / peak - 1;
+    if (dd < maxDD) maxDD = dd;
+  });
+  const currentDD = closes[closes.length - 1] / peak - 1;
+  return { maxDD, currentDD };
+}
+
+/* 월간 수익률에서 12개월 롤링 구간 수익률의 승률(양수로 끝난 구간 비율) - 특정 시기 운으로 좋아 보이는 자산인지 구분하는 용도 */
+function rollingWinRate(returns, window = 12) {
+  if (returns.length < window) return null;
+  let wins = 0;
+  let total = 0;
+  for (let i = window - 1; i < returns.length; i++) {
+    let growth = 1;
+    for (let j = i - window + 1; j <= i; j++) growth *= 1 + returns[j];
+    total++;
+    if (growth > 1) wins++;
+  }
+  return wins / total;
+}
+
+/* SPY 대비 베타 (공분산 / SPY 분산), 공통 구간 기준 */
+function betaVsSpy(ticker) {
+  if (ticker === "SPY") return 1;
+  const { returnsByTicker } = alignReturns(["SPY", ticker]);
+  const spy = returnsByTicker.SPY;
+  const asset = returnsByTicker[ticker];
+  if (spy.length < 6) return null;
+  const mSpy = mean(spy);
+  const mAsset = mean(asset);
+  let cov = 0;
+  let varSpy = 0;
+  for (let i = 0; i < spy.length; i++) {
+    cov += (asset[i] - mAsset) * (spy[i] - mSpy);
+    varSpy += (spy[i] - mSpy) * (spy[i] - mSpy);
+  }
+  if (varSpy === 0) return null;
+  return cov / varSpy;
+}
+
 /* ---------- 자산 단독 통계 (자산 현황 탭) ---------- */
 function assetStandaloneStats(ticker) {
   const rawSeries = ASSET_DATA.assets[ticker].series; // 표시용 최근 종가는 항상 원래 통화·비조정 가격
@@ -459,6 +505,7 @@ function assetStandaloneStats(ticker) {
   const lastRaw = rawSeries[rawSeries.length - 1];
   const oneMonthReturn = returns.length > 0 ? returns[returns.length - 1] : null;
   const oneYearReturn = series.length > 12 ? series[series.length - 1].c / series[series.length - 13].c - 1 : null;
+  const { maxDD, currentDD } = drawdownStats(series.map((p) => p.c));
   return {
     ticker,
     name: ASSET_DATA.assets[ticker].name,
@@ -469,6 +516,10 @@ function assetStandaloneStats(ticker) {
     annVol,
     oneMonthReturn,
     oneYearReturn,
+    beta: betaVsSpy(ticker),
+    maxDD,
+    currentDD,
+    winRate12m: rollingWinRate(returns, 12),
   };
 }
 
