@@ -63,7 +63,7 @@ function initThemeToggle() {
   });
 }
 
-/* ---------- 탭 내비게이션 ---------- */
+/* ---------- 탭 내비게이션 (포트폴리오 게임 내부: 배분·백테스트 / 자산 현황) ---------- */
 function activateTab(target) {
   const tabs = document.getElementById("tabs");
   const btn = tabs.querySelector(`.tab-btn[data-tab="${target}"]`);
@@ -82,10 +82,33 @@ function initTabs() {
     if (!btn) return;
     activateTab(btn.dataset.tab);
   });
+}
 
-  // 다른 사이트(예: 은퇴계산기 리다이렉트)에서 #retirement 처럼 해시로 들어오면 해당 탭을 바로 연다
-  const hashTab = location.hash.replace("#", "");
-  if (hashTab) activateTab(hashTab);
+/* ---------- 게임 전환 (포트폴리오 백테스트 / 은퇴계산기, 로또·연금복권 사이트와 같은 구조) ---------- */
+function activateGame(target) {
+  const switcher = document.getElementById("game-tabs");
+  if (!switcher) return false;
+  const btn = switcher.querySelector(`.game-tab-btn[data-game="${target}"]`);
+  if (!btn) return false;
+  switcher.querySelectorAll(".game-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  document.querySelectorAll(".game-panel").forEach((panel) => {
+    panel.hidden = panel.id !== `game-${target}`;
+  });
+  return true;
+}
+
+function initGameSwitcher() {
+  const switcher = document.getElementById("game-tabs");
+  if (!switcher) return;
+  switcher.addEventListener("click", (e) => {
+    const btn = e.target.closest(".game-tab-btn");
+    if (!btn) return;
+    activateGame(btn.dataset.game);
+  });
+
+  // 다른 사이트(예: 은퇴계산기 리다이렉트)에서 #retirement 처럼 해시로 들어오면 해당 게임을 바로 연다
+  const hashGame = location.hash.replace("#", "");
+  if (hashGame) activateGame(hashGame);
 }
 
 /* ---------- 헤더 햄버거 메뉴 ---------- */
@@ -1454,6 +1477,7 @@ function setupDepletion() {
 function init() {
   initThemeToggle();
   initMenu();
+  initGameSwitcher();
   initTabs();
   initInfoTooltips();
   initBacktestSettings();
