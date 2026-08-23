@@ -141,11 +141,6 @@ header.hero h1 {
   position: relative;
 }
 
-/* 헤더 햄버거 메뉴 — 누르면 다른 도구 목록이 드롭다운으로 표시 */
-.menu {
-  position: relative;
-}
-
 .menu-toggle {
   display: inline-flex;
   align-items: center;
@@ -168,58 +163,6 @@ header.hero h1 {
 
 .menu-toggle:active {
   transform: scale(0.94);
-}
-
-.menu-dropdown {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  min-width: 240px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--card-elevated);
-  border-radius: 16px;
-  padding: 8px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
-  z-index: 40;
-}
-
-.menu.open .menu-dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.tool-list-group-label {
-  padding: 6px 10px 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.tool-list-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 10px;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-
-.tool-list-item:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
 }
 
 /* 탭 내비게이션 */

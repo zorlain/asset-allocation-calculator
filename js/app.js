@@ -112,17 +112,6 @@ function initGameSwitcher() {
 }
 
 /* ---------- 헤더 햄버거 메뉴 ---------- */
-function initMenu() {
-  const menu = document.getElementById("menu");
-  const toggle = document.getElementById("menu-toggle");
-  if (!menu || !toggle) return;
-  toggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.toggle("open");
-  });
-  document.addEventListener("click", () => menu.classList.remove("open"));
-}
-
 /* ---------- 자산 추가/제거 (자산 추가 버튼을 눌러 목록에서 고른 자산만 행으로 표시) ---------- */
 let addedTickers = [];
 
@@ -1483,7 +1472,6 @@ function setupDepletion() {
 /* ---------- 초기화 ---------- */
 function init() {
   initThemeToggle();
-  initMenu();
   initGameSwitcher();
   initTabs();
   initInfoTooltips();
