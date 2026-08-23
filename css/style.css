@@ -1390,12 +1390,6 @@ footer {
 .asset-table td.positive { color: var(--positive); }
 .asset-table td.negative { color: var(--negative); }
 
-.ticker-tag {
-  font-weight: 500;
-  font-size: 11.5px;
-  color: var(--text-muted);
-}
-
 /* ---------- 자산 간 상관관계 표 ---------- */
 .corr-table {
   border-collapse: collapse;

@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=37" />
+<link rel="stylesheet" href="css/style.css?v=38" />
 </head>
 <body>
 <div class="page">
@@ -605,112 +605,17 @@
     </div>
   </section>
 
-  <!-- 탭 2: 전략 (개별주식 스크리너, 리스트 종류 탭 → 필터 조건 → 결과 순서) -->
+  <!-- 탭 2: 전략 (팩터 조합 백테스트 - 개발 중) -->
   <section class="tab-panel" data-tab-panel="strategy" hidden>
-    <nav class="tabs" id="strategy-tabs">
-      <button class="tab-btn active" data-strategy-tab="screener">스크리너</button>
-    </nav>
-
     <div class="card">
       <h2>
-        필터 조건
-        <button type="button" class="info-btn" aria-label="자세히 보기">
-          <span aria-hidden="true">ⓘ</span>
-          <span class="info-tooltip">
-            미국 S&amp;P500 전 종목과 한국 코스피 시가총액 상위 200개(코스피200 근사치)를 대상으로 합니다.
-            네이버페이 증권 데이터 기준이며, 미국 종목의 ROE는 재무제표 원본이 아니라 EPS/BPS 비율로 추정한
-            근사치입니다. 실시간 시세가 아니니 상단 기준일을 확인하세요.
-          </span>
-        </button>
+        전략 설계
+        <span class="coming-soon-badge">개발 중</span>
       </h2>
-      <p class="card-desc-short" id="screener-asof">기준일 확인 중...</p>
-
-      <div class="field-row">
-        <div class="field-group">
-          <label for="scr-market">시장</label>
-          <select id="scr-market" class="select-input">
-            <option value="all" selected>전체</option>
-            <option value="US">미국</option>
-            <option value="KR">한국</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="scr-sector">업종</label>
-          <select id="scr-sector" class="select-input">
-            <option value="all" selected>전체</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="scr-sort">정렬 기준</label>
-          <select id="scr-sort" class="select-input">
-            <option value="marketCapDesc" selected>시가총액 큰 순</option>
-            <option value="perAsc">PER 낮은 순</option>
-            <option value="pbrAsc">PBR 낮은 순</option>
-            <option value="roeDesc">ROE 높은 순</option>
-            <option value="dividendDesc">배당수익률 높은 순</option>
-            <option value="high52Desc">52주 고점에 가까운 순</option>
-            <option value="volumeDesc">거래량 많은 순</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="scr-limit">표시 개수</label>
-          <select id="scr-limit" class="select-input">
-            <option value="50" selected>상위 50개</option>
-            <option value="100">상위 100개</option>
-            <option value="300">상위 300개</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="field-row">
-        <div class="field-group">
-          <label for="scr-per-max">PER 이하</label>
-          <div class="field-input-wrap"><input type="text" inputmode="decimal" id="scr-per-max" placeholder="예: 20" /><span class="field-suffix">배</span></div>
-        </div>
-        <div class="field-group">
-          <label for="scr-pbr-max">PBR 이하</label>
-          <div class="field-input-wrap"><input type="text" inputmode="decimal" id="scr-pbr-max" placeholder="예: 3" /><span class="field-suffix">배</span></div>
-        </div>
-        <div class="field-group">
-          <label for="scr-roe-min">ROE 이상</label>
-          <div class="field-input-wrap"><input type="text" inputmode="decimal" id="scr-roe-min" placeholder="예: 10" /><span class="field-suffix">%</span></div>
-        </div>
-        <div class="field-group">
-          <label for="scr-div-min">배당수익률 이상</label>
-          <div class="field-input-wrap"><input type="text" inputmode="decimal" id="scr-div-min" placeholder="예: 2" /><span class="field-suffix">%</span></div>
-        </div>
-        <div class="field-group">
-          <label for="scr-momentum-min">52주 고점 대비 (모멘텀)</label>
-          <div class="field-input-wrap"><input type="text" inputmode="decimal" id="scr-momentum-min" placeholder="예: -20" /><span class="field-suffix">% 이상</span></div>
-        </div>
-      </div>
-
-      <button type="button" class="calc-btn" id="scr-run-btn">필터 적용</button>
-    </div>
-
-    <div class="card">
-      <h2>스크리닝 결과</h2>
-      <p class="card-desc-short" id="scr-result-summary">필터 적용을 누르면 결과가 여기 표시됩니다.</p>
-      <div class="asset-table-wrap">
-        <table class="asset-table" id="scr-result-table">
-          <thead>
-            <tr>
-              <th>종목</th>
-              <th>시장</th>
-              <th>업종</th>
-              <th>현재가</th>
-              <th>등락률</th>
-              <th>시가총액</th>
-              <th>PER</th>
-              <th>PBR</th>
-              <th title="한국 종목은 재무제표 기준, 미국 종목은 EPS/BPS 비율로 추정한 근사치입니다.">ROE</th>
-              <th>배당수익률</th>
-              <th title="현재가가 52주 최고가 대비 얼마나 낮은지">52주 고점 대비</th>
-            </tr>
-          </thead>
-          <tbody id="scr-result-body"></tbody>
-        </table>
-      </div>
+      <p class="card-desc-short">
+        미국 S&amp;P500 종목을 대상으로, PER·PBR·ROE·성장률·모멘텀 같은 팩터를 조합해 시점별로
+        상위 종목을 뽑아 리밸런싱했을 때의 성과를 백테스트하는 기능을 준비하고 있습니다.
+      </p>
     </div>
   </section>
 
@@ -896,9 +801,7 @@
 </div>
 
 <script src="data/asset-data.js"></script>
-<script src="data/stock-data.js"></script>
 <script src="js/finance.js?v=6"></script>
 <script src="js/app.js?v=36"></script>
-<script src="js/screener.js?v=1"></script>
 </body>
 </html>
