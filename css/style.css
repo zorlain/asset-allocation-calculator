@@ -235,7 +235,7 @@ header.hero p {
 .game-tabs {
   display: flex;
   gap: 8px;
-  max-width: 560px;
+  max-width: 680px;
   margin: 0 auto 24px;
 }
 
@@ -319,6 +319,37 @@ header.hero p {
   font-size: 14px;
   line-height: 1.5;
   margin: -12px 0 16px;
+}
+
+/* ---------- 준비 중인 탭 안내 (전략 탭 등) ---------- */
+.coming-soon {
+  text-align: center;
+  padding: 56px 32px;
+}
+
+.coming-soon-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+}
+
+.coming-soon h2 {
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.coming-soon .card-desc-short {
+  margin: 0 auto;
+  max-width: 420px;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 .tip-text {

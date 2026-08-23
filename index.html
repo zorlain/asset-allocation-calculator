@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=32" />
+<link rel="stylesheet" href="css/style.css?v=33" />
 </head>
 <body>
 <div class="page">
@@ -55,7 +55,8 @@
   </header>
 
   <nav class="game-tabs" id="game-tabs">
-    <button class="game-tab-btn active" data-game="portfolio">📊 포트폴리오 백테스트</button>
+    <button class="game-tab-btn active" data-game="portfolio">📊 자산배분</button>
+    <button class="game-tab-btn" data-game="strategy">🧮 전략</button>
     <button class="game-tab-btn" data-game="retirement">🏦 은퇴계산기</button>
   </nav>
 
@@ -645,7 +646,19 @@
 
   </div>
 
-  <!-- 게임 2: 은퇴계산기 (은퇴자산계산기에서 통합) -->
+  <!-- 게임 2: 전략 (개별주식 전략 - 개발 중) -->
+  <div id="game-strategy" class="game-panel" hidden>
+    <div class="card coming-soon">
+      <div class="coming-soon-icon">🧮</div>
+      <h2>전략 <span class="coming-soon-badge">개발 중</span></h2>
+      <p class="card-desc-short">
+        시가총액·재무지표 같은 조건으로 개별 종목을 필터링하고 우선순위를 매겨 투자하는
+        개별주식 전략 기능을 준비하고 있습니다. 완성되면 이 탭에서 바로 만나보실 수 있어요.
+      </p>
+    </div>
+  </div>
+
+  <!-- 게임 3: 은퇴계산기 (은퇴자산계산기에서 통합) -->
   <div id="game-retirement" class="game-panel" hidden>
     <!-- 목표 자산 + 필요 저축액 (통합) -->
     <div class="card">
