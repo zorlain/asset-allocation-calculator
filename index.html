@@ -13,7 +13,7 @@
 </script>
 <title>무료 포트폴리오 백테스트 - 자산배분 계산·시뮬레이터</title>
 <meta name="description" content="주식·채권·금·리츠 등 자산군별 비중을 입력해 기대수익률과 변동성을 계산하고, 60/40·영구포트폴리오·올웨더 같은 전략을 과거 데이터로 백테스트해보세요. 무료입니다." />
-<meta name="keywords" content="포트폴리오백테스트,자산배분계산기,포트폴리오계산기,백테스트,자산배분,영구포트폴리오,올웨더포트폴리오,60대40포트폴리오,분산투자" />
+<meta name="keywords" content="포트폴리오백테스트,자산배분계산기,포트폴리오계산기,백테스트,자산배분,영구포트폴리오,올웨더포트폴리오,60대40포트폴리오,분산투자,은퇴자산계산기,경제적자유계산기,파이어계산기,FIRE계산기,은퇴계산기" />
 <meta name="robots" content="index, follow" />
 <link rel="canonical" href="https://zorlain.github.io/asset-allocation-calculator/" />
 <meta name="google-site-verification" content="mv-oXvo6ZrAOkqeYce0jNg3vF7Jf_Q9YJhgHb22YaSU" />
@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=28" />
+<link rel="stylesheet" href="css/style.css?v=29" />
 </head>
 <body>
 <div class="page">
@@ -48,7 +48,6 @@
         <button type="button" class="menu-toggle" id="menu-toggle" aria-label="메뉴 열기">☰</button>
         <div class="menu-dropdown" id="menu-dropdown">
           <div class="tool-list-group-label">다른 도구</div>
-          <a class="tool-list-item" href="https://zorlain.github.io/retirement-calculator/">🏦 은퇴자산계산기</a>
           <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또·연금복권 번호 생성기</a>
         </div>
       </div>
@@ -58,6 +57,7 @@
   <nav class="tabs" id="tabs">
     <button class="tab-btn active" data-tab="allocator">배분·백테스트</button>
     <button class="tab-btn" data-tab="dashboard">자산 현황</button>
+    <button class="tab-btn" data-tab="retirement">은퇴계산기</button>
   </nav>
 
   <!-- 탭 1: 배분 계산기 + 백테스트 -->
@@ -637,6 +637,119 @@
 
   </section>
 
+  <!-- 탭 3: 은퇴계산기 (은퇴자산계산기에서 통합) -->
+  <section class="tab-panel" data-tab-panel="retirement" hidden>
+    <!-- 목표 자산 + 필요 저축액 (통합) -->
+    <div class="card">
+      <h2>
+        🏝️ 목표 자산 계산 (낙원 금액)
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            <b>실질 인출률</b>: 예상 연 수익률에서 인플레이션을 뺀 값입니다. 은퇴 후 이 비율만큼만
+            인출해서 쓰면 자산의 실질 가치가 잘 줄어들지 않는다고 가정하고, 원하는 생활비를 충당하는 데
+            필요한 자산을 이 비율로 역산합니다.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short">원하는 월 생활비와 은퇴 조건을 입력하면, 낙원을 이루기 위한 목표 자산과 필요 월 저축액을 계산합니다.</p>
+
+      <div class="field-group">
+        <label for="saving-current-asset">현재 자산</label>
+        <div class="field-input-wrap">
+          <input type="text" autocomplete="off" inputmode="numeric" id="saving-current-asset" placeholder="예: 5,000" />
+          <span class="field-suffix">만원</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="goal-spend">원하는 월 생활비 (현재 기준)</label>
+        <div class="field-input-wrap">
+          <input type="text" autocomplete="off" inputmode="numeric" id="goal-spend" placeholder="예: 300" />
+          <span class="field-suffix">만원</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="goal-rate">예상 연 수익률</label>
+          <div class="field-input-wrap">
+            <input type="text" autocomplete="off" inputmode="decimal" id="goal-rate" placeholder="예: 7" />
+            <span class="field-suffix">%</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="goal-years">은퇴 시기</label>
+          <div class="field-input-wrap">
+            <input type="text" autocomplete="off" inputmode="numeric" id="goal-years" placeholder="예: 20" />
+            <span class="field-suffix">년 후</span>
+          </div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="goal-inflation">저축 증감율 (인플레이션)</label>
+        <div class="field-input-wrap">
+          <input type="text" autocomplete="off" inputmode="decimal" id="goal-inflation" placeholder="예: 3" value="3" />
+          <span class="field-suffix">%</span>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div id="goal-result"></div>
+        <div class="result-block" id="saving-result"></div>
+      </div>
+    </div>
+
+    <!-- 은퇴 후 자산 소진 검증 -->
+    <div class="card">
+      <div class="card-split">
+        <div class="card-split-inputs">
+          <h2>
+            📉 은퇴 후 자산 소진 검증
+            <button type="button" class="info-btn" aria-label="자세히 보기">
+              <span aria-hidden="true">ⓘ</span>
+              <span class="info-tooltip">
+                은퇴 시점 자산에서 매달 생활비를 인출하면서, 그 생활비가 매년 인플레이션만큼 늘어난다고
+                가정해 자산이 몇 년 동안 유지되는지 월 단위로 시뮬레이션합니다.
+              </span>
+            </button>
+          </h2>
+          <p class="card-desc-short" id="depletion-context">먼저 위에서 목표 자산을 계산합니다.</p>
+
+          <div class="field-group">
+            <label for="depletion-asset">은퇴 시점 자산</label>
+            <div class="field-input-wrap">
+              <input type="text" autocomplete="off" inputmode="numeric" id="depletion-asset" placeholder="예: 50,000" />
+              <span class="field-suffix">만원</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="depletion-withdrawal">월 인출액 (생활비)</label>
+            <div class="field-input-wrap">
+              <input type="text" autocomplete="off" inputmode="numeric" id="depletion-withdrawal" placeholder="예: 300" />
+              <span class="field-suffix">만원</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-split-result">
+          <div id="depletion-result"></div>
+        </div>
+      </div>
+
+      <p class="tip-text" style="margin-top:24px;">
+        Tip. 위에서 계산한 목표 자산·수익률·인플레이션이 아래 단계에 자동으로 채워집니다. 값은
+        직접 바꿔서 다른 조건도 확인할 수 있습니다.<br />
+        Tip. 자산 소진 시뮬레이션은 최대 60년까지만 계산합니다. 60년 후에도 자산이 남아있으면
+        소진되지 않는 것으로 판단합니다.
+      </p>
+    </div>
+
+    <p class="tip-text">
+      이 계산기는 매달 복리 성장과 일정한 안전인출률(SWR)을 가정한 참고용 시뮬레이션이며, 실제
+      투자수익률·물가상승률·세금 등에 따라 결과가 크게 달라질 수 있습니다. 중요한 은퇴·투자 계획은
+      반드시 전문가와 상담하세요.
+    </p>
+  </section>
+
   <footer>
     이 사이트의 모든 계산과 백테스트는 미국·한국 상장 ETF, 코스피·코스닥 지수, 비트코인·이더리움 등 자산군별
     대표 상품의 과거 월간 종가를 기준으로 한 참고용 시뮬레이션입니다. 환율 반영·배당 재투자는 체크박스로 켜지 않으면 반영되지 않으며,
@@ -651,6 +764,6 @@
 
 <script src="data/asset-data.js"></script>
 <script src="js/finance.js?v=4"></script>
-<script src="js/app.js?v=32"></script>
+<script src="js/app.js?v=33"></script>
 </body>
 </html>

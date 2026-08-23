@@ -590,6 +590,116 @@ header.hero p {
   padding: 20px 0;
 }
 
+/* ---------- 은퇴계산기 (은퇴자산계산기에서 통합) ---------- */
+.result-panel {
+  background: var(--card-elevated);
+  border-radius: 16px;
+  padding: 28px 24px;
+  margin-top: 28px;
+}
+
+.result-block:not(:empty) {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.result-hero-value.positive { color: var(--positive); }
+.result-hero-value.negative { color: var(--negative); }
+
+.card-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.card-split-inputs .field-group:last-child {
+  margin-bottom: 0;
+}
+
+/* 결과가 입력보다 훨씬 길어질 수 있으므로, 입력 패널은 스크롤해도 계속 보이게 고정 */
+.card-split-inputs {
+  position: sticky;
+  top: 20px;
+}
+
+.card-split-result {
+  background: var(--card-elevated);
+  border-radius: 16px;
+  padding: 28px 24px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 결과 패널 내부 요소는 카드 톤으로 한 단계 낮춰 배경과 겹치지 않게 한다 */
+.card-split-result .result-stat,
+.result-panel .result-stat {
+  background: var(--card);
+}
+
+.growth-chart {
+  margin-top: 24px;
+}
+
+.growth-chart-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.growth-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 160px;
+  padding: 0 2px;
+}
+
+.growth-chart-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.growth-chart-value {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.growth-chart-bar {
+  width: 100%;
+  max-width: 28px;
+  background: var(--chart-fill);
+  border-radius: 5px 5px 0 0;
+  min-height: 3px;
+}
+
+.growth-chart-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .card-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .card-split-inputs {
+    position: static;
+  }
+}
+
 .result-subheading {
   font-size: 15px;
   font-weight: 700;
@@ -1388,6 +1498,15 @@ footer {
 @media (max-width: 640px) {
   .page {
     padding: 28px 16px 72px;
+  }
+
+  .growth-chart-bars {
+    height: 130px;
+    gap: 3px;
+  }
+  .growth-chart-value,
+  .growth-chart-label {
+    font-size: 9px;
   }
 
   .info-tooltip {
