@@ -4,12 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>
-  (function () {
-    var saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") {
-      document.documentElement.setAttribute("data-theme", saved);
-    }
-  })();
+  document.documentElement.setAttribute("data-theme", "dark");
 </script>
 <title>백테스트 결과 상세 - 퀀트투자</title>
 <meta name="robots" content="noindex, nofollow" />
@@ -34,7 +29,6 @@
     <h1>백테스트 결과 상세</h1>
     <p>메인 페이지에서 넘어온 설정으로 다시 계산한 결과입니다.</p>
     <div class="hero-actions">
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크/라이트 모드 전환">🌙</button>
       <a class="menu-toggle" href="index.html" aria-label="메인으로 돌아가기">←</a>
     </div>
   </header>

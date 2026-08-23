@@ -4,12 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>
-  (function () {
-    var saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") {
-      document.documentElement.setAttribute("data-theme", saved);
-    }
-  })();
+  document.documentElement.setAttribute("data-theme", "dark");
 </script>
 <title>무료 퀀트투자 - 자산배분 백테스트·투자전략·낙원계산기</title>
 <meta name="description" content="자산배분 포트폴리오를 과거 데이터로 백테스트하고, 개별주식 투자전략과 은퇴(낙원) 자산 계산까지 한 곳에서 무료로 이용하세요. 데이터 기반 퀀트 투자 도구 모음입니다." />
@@ -47,17 +42,14 @@
           <button class="game-tab-btn active" data-game="portfolio">퀀트</button>
           <button class="game-tab-btn" data-game="retirement">낙원계산기</button>
           <button class="game-tab-btn" data-game="dashboard">데이터</button>
-        </nav>
-      </div>
-      <div class="hero-actions">
-        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크/라이트 모드 전환">🌙</button>
-        <div class="menu" id="menu">
-          <button type="button" class="menu-toggle" id="menu-toggle" aria-label="메뉴 열기">☰</button>
-          <div class="menu-dropdown" id="menu-dropdown">
-            <div class="tool-list-group-label">다른 도구</div>
-            <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또·연금복권 번호 생성기</a>
+          <div class="menu" id="menu">
+            <button type="button" class="game-tab-btn" id="menu-toggle" aria-label="다른 도구 메뉴 열기">다른 도구</button>
+            <div class="menu-dropdown" id="menu-dropdown">
+              <div class="tool-list-group-label">다른 도구</div>
+              <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또·연금복권 번호 생성기</a>
+            </div>
           </div>
-        </div>
+        </nav>
       </div>
     </div>
   </header>
@@ -640,7 +632,7 @@
     <!-- 목표 자산 + 필요 저축액 (통합) -->
     <div class="card">
       <h2>
-        🏝️ 목표 자산 계산 (낙원 금액)
+        목표 자산 계산 (낙원 금액)
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
@@ -701,7 +693,7 @@
       <div class="card-split">
         <div class="card-split-inputs">
           <h2>
-            📉 은퇴 후 자산 소진 검증
+            은퇴 후 자산 소진 검증
             <button type="button" class="info-btn" aria-label="자세히 보기">
               <span aria-hidden="true">ⓘ</span>
               <span class="info-tooltip">
