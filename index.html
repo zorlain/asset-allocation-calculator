@@ -34,31 +34,34 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=34" />
+<link rel="stylesheet" href="css/style.css?v=35" />
 </head>
 <body>
 <div class="page">
 
   <header class="hero">
-    <h1>퀀트투자</h1>
-    <p>자산배분 백테스트, 투자전략, 낙원계산기까지 — 데이터 기반 퀀트 투자 도구 모음입니다.</p>
-    <div class="hero-actions">
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크/라이트 모드 전환">🌙</button>
-      <div class="menu" id="menu">
-        <button type="button" class="menu-toggle" id="menu-toggle" aria-label="메뉴 열기">☰</button>
-        <div class="menu-dropdown" id="menu-dropdown">
-          <div class="tool-list-group-label">다른 도구</div>
-          <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또·연금복권 번호 생성기</a>
+    <div class="hero-top">
+      <div class="hero-brand">
+        <h1>퀀트투자</h1>
+        <nav class="game-tabs" id="game-tabs">
+          <button class="game-tab-btn active" data-game="portfolio">📊 자산배분</button>
+          <button class="game-tab-btn" data-game="strategy">🧮 전략</button>
+          <button class="game-tab-btn" data-game="retirement">🏝️ 낙원계산기</button>
+        </nav>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크/라이트 모드 전환">🌙</button>
+        <div class="menu" id="menu">
+          <button type="button" class="menu-toggle" id="menu-toggle" aria-label="메뉴 열기">☰</button>
+          <div class="menu-dropdown" id="menu-dropdown">
+            <div class="tool-list-group-label">다른 도구</div>
+            <a class="tool-list-item" href="https://zorlain.github.io/lotto-generator/">🎱 로또·연금복권 번호 생성기</a>
+          </div>
         </div>
       </div>
     </div>
+    <p>자산배분 백테스트, 투자전략, 낙원계산기까지 — 데이터 기반 퀀트 투자 도구 모음입니다.</p>
   </header>
-
-  <nav class="game-tabs" id="game-tabs">
-    <button class="game-tab-btn active" data-game="portfolio">📊 자산배분</button>
-    <button class="game-tab-btn" data-game="strategy">🧮 전략</button>
-    <button class="game-tab-btn" data-game="retirement">🏝️ 낙원계산기</button>
-  </nav>
 
   <div id="game-portfolio" class="game-panel">
 
