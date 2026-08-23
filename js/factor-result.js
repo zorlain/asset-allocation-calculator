@@ -11,8 +11,6 @@ function parseFactorParams() {
     });
 
   const exclList = (params.get("excl") || "").split(",").filter(Boolean);
-  const sectorExclRaw = params.get("sectorExcl");
-  const excludeOwnerOrgs = sectorExclRaw ? new Set(sectorExclRaw.split("|")) : null;
 
   return {
     factorConfigs,
@@ -31,7 +29,6 @@ function parseFactorParams() {
     excludeHoldingCompanies: exclList.includes("holding"),
     excludePTP: exclList.includes("ptp"),
     excludeChinese: exclList.includes("china"),
-    excludeOwnerOrgs,
   };
 }
 
@@ -204,7 +201,6 @@ function runFromParams() {
     ...(options.excludeChinese ? [FILTER_LABELS.china] : []),
     ...(options.minMarketCap > 0 ? [`최소 시가총액 $${(options.minMarketCap / 1e6).toLocaleString()}백만`] : []),
     ...(options.smallCapBottomPct > 0 ? [`소형주 하위 ${options.smallCapBottomPct}% 제외`] : []),
-    ...(options.excludeOwnerOrgs ? [`업종 제외 ${options.excludeOwnerOrgs.size}개`] : []),
   ].join(" · ") || "없음";
 
   const periodRows = bt.dates.map((d, i) => {

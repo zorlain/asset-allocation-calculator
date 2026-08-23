@@ -40,21 +40,6 @@ function fillYearMonthSelect(yearSel, monthSel, minDate, maxDate, defaultDate) {
   monthSel.value = String(Number(dm));
 }
 
-function populateSectorChecks() {
-  const wrap = document.getElementById("strat-sector-checks");
-  if (!wrap) return;
-  const sectors = new Set();
-  Object.values(FACTOR_DATA.stocks).forEach((s) => sectors.add(sicToSector(s.sic)));
-  const sorted = [...sectors].sort((a, b) => a.localeCompare(b, "ko"));
-  if (sorted.length === 0) {
-    wrap.innerHTML = `<p class="card-desc-short">업종 분류 데이터가 아직 없습니다 (전체 종목 대상으로 진행됩니다).</p>`;
-    return;
-  }
-  wrap.innerHTML = sorted
-    .map((sector) => `<label class="checkbox-label"><input type="checkbox" data-owner-org="${sector}" checked /><span>${sector}</span></label>`)
-    .join("");
-}
-
 /* ---------- 팩터 설정: 배분·백테스트의 "자산 추가"와 같은 추가/제거 패턴 ---------- */
 let addedFactors = [];
 let expandedFactorGroup = null;
@@ -203,11 +188,6 @@ function selectedFactorConfigs() {
   });
 }
 
-function excludedOwnerOrgs() {
-  const unchecked = [...document.querySelectorAll('[data-owner-org]')].filter((el) => !el.checked).map((el) => el.dataset.ownerOrg);
-  return unchecked.length > 0 ? new Set(unchecked) : null;
-}
-
 function formatStratStat(x, digits = 1) {
   if (x === null || x === undefined || !Number.isFinite(x)) return "-";
   return formatSignedPct(x, digits);
@@ -258,7 +238,6 @@ function gatherStrategyOptions() {
     excludeLossLastQuarter: document.getElementById("strat-exclude-loss-quarter").checked,
     excludeLossTTM: document.getElementById("strat-exclude-loss-annual").checked,
     excludeDistressZone: document.getElementById("strat-exclude-distress").checked,
-    excludeOwnerOrgs: excludedOwnerOrgs(),
     excludeFinancials: document.getElementById("strat-exclude-financial").checked,
     excludeHoldingCompanies: document.getElementById("strat-exclude-holding").checked,
     excludePTP: document.getElementById("strat-exclude-ptp").checked,
@@ -289,7 +268,6 @@ function buildFactorResultUrl(options) {
   if (options.excludePTP) excl.push("ptp");
   if (options.excludeChinese) excl.push("china");
   if (excl.length > 0) params.set("excl", excl.join(","));
-  if (options.excludeOwnerOrgs) params.set("sectorExcl", [...options.excludeOwnerOrgs].join("|"));
   return "factor-result.html?" + params.toString();
 }
 
@@ -300,7 +278,6 @@ function runStockExtraction() {
   const { min: minDate, max: asOfDate } = priceDateRange();
   const universe = Object.keys(FACTOR_DATA.stocks).filter((t) => {
     const stock = FACTOR_DATA.stocks[t];
-    if (options.excludeOwnerOrgs && options.excludeOwnerOrgs.has(sicToSector(stock.sic))) return false;
     if (options.excludeFinancials && isFinancialStock(stock)) return false;
     if (options.excludeHoldingCompanies && isHoldingCompany(stock)) return false;
     if (options.excludePTP && isLikelyPTP(stock)) return false;
@@ -373,8 +350,6 @@ function initStrategyLab() {
 
   const count = Object.keys(FACTOR_DATA.stocks).length;
   document.getElementById("strat-asof").textContent = `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${count}개 (S&P500 기준, SEC EDGAR 공시데이터)`;
-
-  populateSectorChecks();
 
   const { min, max } = priceDateRange();
   const safeMin = min && min > "2011-01-01" ? min : "2011-01-01";
