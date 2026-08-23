@@ -44,9 +44,9 @@
       <div class="hero-brand">
         <h1>퀀트투자</h1>
         <nav class="game-tabs" id="game-tabs">
-          <button class="game-tab-btn active" data-game="portfolio">📊 자산배분</button>
-          <button class="game-tab-btn" data-game="strategy">🧮 전략</button>
+          <button class="game-tab-btn active" data-game="portfolio">🧮 퀀트</button>
           <button class="game-tab-btn" data-game="retirement">🏝️ 낙원계산기</button>
+          <button class="game-tab-btn" data-game="dashboard">📈 자산 현황</button>
         </nav>
       </div>
       <div class="hero-actions">
@@ -66,7 +66,7 @@
 
   <nav class="tabs" id="tabs">
     <button class="tab-btn active" data-tab="allocator">배분·백테스트</button>
-    <button class="tab-btn" data-tab="dashboard">자산 현황</button>
+    <button class="tab-btn" data-tab="strategy">전략</button>
   </nav>
 
   <!-- 탭 1: 배분 계산기 + 백테스트 -->
@@ -595,61 +595,8 @@
     </div>
   </section>
 
-  <!-- 탭 2: 자산 현황 + 가이드 -->
-  <section class="tab-panel" data-tab-panel="dashboard" hidden>
-    <div class="card">
-      <h2>
-        자산 현황
-        <button type="button" class="info-btn" aria-label="자세히 보기">
-          <span aria-hidden="true">ⓘ</span>
-          <span class="info-tooltip">
-            실시간 시세가 아니라, <code>scripts/update-data.ps1</code>을 재실행할 때마다 갱신되는
-            최근 종가 기준 데이터입니다. 상단에 표시된 기준일을 확인하세요.
-          </span>
-        </button>
-      </h2>
-      <p class="card-desc-short" id="dashboard-asof">기준일 확인 중...</p>
-
-      <div class="asset-table-wrap">
-        <table class="asset-table" id="asset-table">
-          <thead>
-            <tr>
-              <th>자산</th>
-              <th>최근 종가</th>
-              <th>1개월</th>
-              <th>1년</th>
-              <th>연평균(CAGR)</th>
-              <th>변동성</th>
-            </tr>
-          </thead>
-          <tbody id="asset-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>
-        자산 간 상관관계
-        <button type="button" class="info-btn" aria-label="자세히 보기">
-          <span aria-hidden="true">ⓘ</span>
-          <span class="info-tooltip">
-            두 자산이 같은 방향으로 움직이는 정도(-1~+1)입니다. 각 자산 쌍이 데이터가 겹치는
-            공통 구간을 기준으로 계산합니다. 값이 낮거나 마이너스일수록 분산투자 효과가 큽니다.
-          </span>
-        </button>
-      </h2>
-      <p class="card-desc-short">초록색에 가까울수록 상관관계가 낮아 분산 효과가 크고, 빨간색에 가까울수록 함께 움직이는 경향이 강합니다.</p>
-      <div class="asset-table-wrap">
-        <table class="corr-table" id="corr-table"></table>
-      </div>
-    </div>
-
-  </section>
-
-  </div>
-
-  <!-- 게임 2: 전략 (개별주식 전략 - 개발 중, 리스트 종류 탭 → 필터 조건 → 결과 순서) -->
-  <div id="game-strategy" class="game-panel" hidden>
+  <!-- 탭 2: 전략 (개별주식 전략 - 개발 중, 리스트 종류 탭 → 필터 조건 → 결과 순서) -->
+  <section class="tab-panel" data-tab-panel="strategy" hidden>
     <nav class="tabs" id="strategy-tabs">
       <button class="tab-btn active" data-strategy-tab="screener">🔍 스크리너</button>
     </nav>
@@ -684,9 +631,11 @@
       <h2>스크리닝 결과</h2>
       <p class="result-placeholder">종목 데이터와 필터 엔진이 준비되면 이 자리에 결과 표가 표시됩니다.</p>
     </div>
+  </section>
+
   </div>
 
-  <!-- 게임 3: 은퇴계산기 (은퇴자산계산기에서 통합) -->
+  <!-- 게임 2: 은퇴계산기 (은퇴자산계산기에서 통합) -->
   <div id="game-retirement" class="game-panel" hidden>
     <!-- 목표 자산 + 필요 저축액 (통합) -->
     <div class="card">
@@ -797,6 +746,56 @@
       투자수익률·물가상승률·세금 등에 따라 결과가 크게 달라질 수 있습니다. 중요한 은퇴·투자 계획은
       반드시 전문가와 상담하세요.
     </p>
+  </div>
+
+  <!-- 게임 3: 자산 현황 -->
+  <div id="game-dashboard" class="game-panel" hidden>
+    <div class="card">
+      <h2>
+        자산 현황
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            실시간 시세가 아니라, <code>scripts/update-data.ps1</code>을 재실행할 때마다 갱신되는
+            최근 종가 기준 데이터입니다. 상단에 표시된 기준일을 확인하세요.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short" id="dashboard-asof">기준일 확인 중...</p>
+
+      <div class="asset-table-wrap">
+        <table class="asset-table" id="asset-table">
+          <thead>
+            <tr>
+              <th>자산</th>
+              <th>최근 종가</th>
+              <th>1개월</th>
+              <th>1년</th>
+              <th>연평균(CAGR)</th>
+              <th>변동성</th>
+            </tr>
+          </thead>
+          <tbody id="asset-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>
+        자산 간 상관관계
+        <button type="button" class="info-btn" aria-label="자세히 보기">
+          <span aria-hidden="true">ⓘ</span>
+          <span class="info-tooltip">
+            두 자산이 같은 방향으로 움직이는 정도(-1~+1)입니다. 각 자산 쌍이 데이터가 겹치는
+            공통 구간을 기준으로 계산합니다. 값이 낮거나 마이너스일수록 분산투자 효과가 큽니다.
+          </span>
+        </button>
+      </h2>
+      <p class="card-desc-short">초록색에 가까울수록 상관관계가 낮아 분산 효과가 크고, 빨간색에 가까울수록 함께 움직이는 경향이 강합니다.</p>
+      <div class="asset-table-wrap">
+        <table class="corr-table" id="corr-table"></table>
+      </div>
+    </div>
   </div>
 
   <footer>
