@@ -62,12 +62,14 @@ function runFromParams() {
   const parsedAmount = Number(params.get("amount"));
   const amount = Number.isFinite(parsedAmount) ? parsedAmount : 10000;
   const fee = Number(params.get("fee")) || 0;
+  const txFee = Number(params.get("txFee")) || 0;
   const start = params.get("start") || "";
   const end = params.get("end") || "";
   const dcaMode = params.get("dca") === "1";
   const monthlyContribution = Number(params.get("monthly")) || 0;
   const baseOptions = {
     feeAnnualPct: fee,
+    txFeePct: txFee,
     startDate: start || null,
     endDate: end || null,
     dcaMode,

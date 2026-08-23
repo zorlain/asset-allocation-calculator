@@ -945,6 +945,7 @@ function buildResultUrl() {
   params.set("mode", allocationMode);
   params.set("amount", String(toNumberOrDefault(document.getElementById("bt-amount").value, 10000)));
   params.set("fee", String(toNumberOrDefault(document.getElementById("bt-fee").value, 0)));
+  params.set("txFee", String(toNumberOrDefault(document.getElementById("bt-tx-fee").value, 0)));
 
   const dcaCb = document.getElementById("opt-dca");
   params.set("dca", dcaCb && dcaCb.checked ? "1" : "0");
@@ -1088,6 +1089,7 @@ function restoreSavedState() {
 
   if (params.has("amount")) document.getElementById("bt-amount").value = Number(params.get("amount")).toLocaleString("ko-KR");
   if (params.has("fee")) document.getElementById("bt-fee").value = params.get("fee");
+  if (params.has("txFee")) document.getElementById("bt-tx-fee").value = params.get("txFee");
 
   const dcaCb = document.getElementById("opt-dca");
   if (dcaCb) {

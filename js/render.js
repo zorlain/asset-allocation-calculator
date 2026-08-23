@@ -541,15 +541,37 @@ function buildDecisionSection(bt) {
 /* ---------- 비용 영향 (수수료 반영 전/후) ---------- */
 function buildCostSection(bt) {
   const c = bt.costComparison;
-  if (!c) return "";
+  const tc = bt.txCostComparison;
+  if (!c && !tc) return "";
+
+  const aumBlock = c
+    ? `
+      <div class="subsection-label">연 수수료 영향 (자산 규모 비례, 매달)</div>
+      <div class="result-grid">
+        ${statTile("연 수수료 반영 전 CAGR", formatSignedPct(c.cagrNoFee, 2), "positive")}
+        ${statTile("연 수수료 반영 후 CAGR", formatSignedPct(bt.cagr, 2))}
+        ${statTile("연간 손실분", formatSignedPct(-Math.abs(c.feeDragAnnual), 2), "negative")}
+        ${statTile("연 수수료 반영 전 최종자산", formatManwon(c.finalValueNoFee))}
+      </div>
+    `
+    : "";
+
+  const txBlock = tc
+    ? `
+      <div class="subsection-label">거래 수수료 영향 (리밸런싱으로 실제 매매한 금액 비례)</div>
+      <div class="result-grid">
+        ${statTile("거래 수수료 반영 전 CAGR", formatSignedPct(tc.cagrNoTxFee, 2), "positive")}
+        ${statTile("거래 수수료 반영 후 CAGR", formatSignedPct(bt.cagr, 2))}
+        ${statTile("연간 손실분", formatSignedPct(-Math.abs(tc.txFeeDragAnnual), 2), "negative")}
+        ${statTile("누적 거래 비용", formatManwon(bt.totalTxCost || 0))}
+      </div>
+    `
+    : "";
+
   return `
-    <h3 class="result-subheading">비용 영향 (수수료 반영 전/후)</h3>
-    <div class="result-grid">
-      ${statTile("수수료 반영 전 CAGR", formatSignedPct(c.cagrNoFee, 2), "positive")}
-      ${statTile("수수료 반영 후 CAGR", formatSignedPct(bt.cagr, 2))}
-      ${statTile("연간 비용 손실 (Fee Drag)", formatSignedPct(-Math.abs(c.feeDragAnnual), 2), "negative")}
-      ${statTile("수수료 반영 전 최종자산", formatManwon(c.finalValueNoFee))}
-    </div>
+    <h3 class="result-subheading">비용 영향</h3>
+    ${aumBlock}
+    ${txBlock}
   `;
 }
 
@@ -560,6 +582,7 @@ function renderResult(bt) {
       ? DYNAMIC_REBALANCE_LABEL[bt.rebalanceMonths] || "매달 재평가"
       : REBALANCE_LABEL[bt.rebalanceMonths] || "매달 리밸런싱";
   const feeNote = bt.feeAnnualPct > 0 ? ` · 연 수수료 ${bt.feeAnnualPct}%` : "";
+  const txFeeNote = bt.txFeePct > 0 ? ` · 거래 수수료 ${bt.txFeePct}%` : "";
   const riskModeLabel = { invVol: "역변동성 가중", riskParity: "리스크 패리티", volTarget: "변동성 타겟팅" }[bt.riskMode] || "";
   const strategyNote =
     bt.mode === "dynamic"
@@ -604,7 +627,7 @@ function renderResult(bt) {
     <div class="result-hero">
       <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
-      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · ${investNote} · ${strategyNote}${rebalanceLabel}${feeNote}</div>
+      <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · ${investNote} · ${strategyNote}${rebalanceLabel}${feeNote}${txFeeNote}</div>
     </div>
     <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
 

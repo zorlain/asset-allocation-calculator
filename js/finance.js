@@ -849,12 +849,14 @@ function runBacktest(weights, initialAmount, options = {}) {
   const {
     rebalanceMonths = 1,
     feeAnnualPct = 0,
+    txFeePct = 0,
     startDate = null,
     endDate = null,
     dcaMode = false,
     monthlyContribution = 0,
     seasonal = null,
   } = options;
+  const txFeeRate = txFeePct / 100;
   const tickers = Object.keys(weights).filter((t) => weights[t] > 0);
   if (tickers.length === 0) return null;
 
@@ -905,6 +907,7 @@ function runBacktest(weights, initialAmount, options = {}) {
   const weightSnapshots = [];
   const trades = [];
   const contributionByTicker = {};
+  let totalTxCost = 0;
   for (let i = 0; i < dates.length; i++) {
     if (dcaMode) {
       allTickers.forEach((t) => {
@@ -917,40 +920,55 @@ function runBacktest(weights, initialAmount, options = {}) {
       contributionByTicker[t] = (contributionByTicker[t] || 0) + w * (returnsByTicker[t][i] || 0);
       holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
-    const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
-    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
-    values.push(after);
+    let after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
 
     const driftedWeights = {};
     allTickers.forEach((t) => (driftedWeights[t] = after > 0 ? holdings[t] / after : 0));
     weightSnapshots.push({ date: dates[i], weights: driftedWeights });
 
     const monthIndex = i + 1;
+    let newTargetWeights = null;
+    let rebalanceDate = null;
     if (seasonal) {
       // 계절 전환은 사용자가 정한 리밸런싱 주기와 무관하게 항상 매달 확인한다
       if (monthIndex < dates.length) {
         currentTargets = targetWeightsFor(dates[monthIndex]);
-        const newWeights = {};
-        allTickers.forEach((t) => {
-          newWeights[t] = currentTargets[t] || 0;
-          holdings[t] = newWeights[t] * after;
-          const delta = newWeights[t] - driftedWeights[t];
-          if (Math.abs(delta) > 0.0005) trades.push({ date: dates[monthIndex], ticker: t, before: driftedWeights[t], after: newWeights[t], delta });
-        });
+        newTargetWeights = {};
+        allTickers.forEach((t) => (newTargetWeights[t] = currentTargets[t] || 0));
+        rebalanceDate = dates[monthIndex];
       }
     } else if (rebalanceMonths > 0 && monthIndex % rebalanceMonths === 0) {
-      const rebalanceDate = dates[monthIndex] || dates[i];
-      tickers.forEach((t) => {
-        holdings[t] = weights[t] * after;
-        const delta = weights[t] - driftedWeights[t];
-        if (Math.abs(delta) > 0.0005) trades.push({ date: rebalanceDate, ticker: t, before: driftedWeights[t], after: weights[t], delta });
+      newTargetWeights = {};
+      allTickers.forEach((t) => (newTargetWeights[t] = weights[t] || 0));
+      rebalanceDate = dates[monthIndex] || dates[i];
+    }
+
+    if (newTargetWeights) {
+      // 거래 수수료: 실제로 사고판 금액(매수+매도 절대값 합)에 비례해 리밸런싱 시점에만 발생
+      let sumAbsDelta = 0;
+      allTickers.forEach((t) => {
+        sumAbsDelta += Math.abs(newTargetWeights[t] - driftedWeights[t]);
+      });
+      const txCost = sumAbsDelta * after * txFeeRate;
+      totalTxCost += txCost;
+      after -= txCost;
+
+      allTickers.forEach((t) => {
+        holdings[t] = newTargetWeights[t] * after;
+        const delta = newTargetWeights[t] - driftedWeights[t];
+        if (Math.abs(delta) > 0.0005) trades.push({ date: rebalanceDate, ticker: t, before: driftedWeights[t], after: newTargetWeights[t], delta });
       });
     }
+
+    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
+    values.push(after);
   }
 
   const result = computeBacktestMetrics(dates, values, monthlyReturns, initialAmount, { dcaMode, monthlyContribution });
   result.rebalanceMonths = seasonal ? 1 : rebalanceMonths;
   result.feeAnnualPct = feeAnnualPct;
+  result.txFeePct = txFeePct;
+  result.totalTxCost = totalTxCost;
   result.mode = "static";
   result.finalWeights = currentTargets;
   result.seasonal = seasonal;
@@ -972,6 +990,16 @@ function runBacktest(weights, initialAmount, options = {}) {
         cagrNoFee: noFee.cagr,
         finalValueNoFee: noFee.finalValue,
         feeDragAnnual: noFee.cagr - result.cagr,
+      };
+    }
+  }
+  if (txFeePct > 0) {
+    const noTxFee = runBacktest(weights, initialAmount, { ...options, txFeePct: 0 });
+    if (noTxFee) {
+      result.txCostComparison = {
+        cagrNoTxFee: noTxFee.cagr,
+        finalValueNoTxFee: noTxFee.finalValue,
+        txFeeDragAnnual: noTxFee.cagr - result.cagr,
       };
     }
   }
@@ -1498,6 +1526,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   const {
     rebalanceMonths = 1,
     feeAnnualPct = 0,
+    txFeePct = 0,
     startDate = null,
     endDate = null,
     dcaMode = false,
@@ -1505,6 +1534,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
     riskMode = "none",
     riskParams = {},
   } = options;
+  const txFeeRate = txFeePct / 100;
   const namedPreset = NAMED_STRATEGY_PRESETS[strategy];
   if (!namedPreset && candidates.length === 0) return null;
 
@@ -1560,6 +1590,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
   const weightSnapshots = [];
   const trades = [];
   const contributionByTicker = {};
+  let totalTxCost = 0;
 
   for (let i = simStart; i < simEndExclusive; i++) {
     if (dcaMode) {
@@ -1573,9 +1604,7 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
       contributionByTicker[t] = (contributionByTicker[t] || 0) + w * (returnsByTicker[t][i] || 0);
       holdings[t] = holdings[t] * (1 + (returnsByTicker[t][i] || 0)) * (1 - monthlyFee);
     });
-    const after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
-    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
-    values.push(after);
+    let after = allTickers.reduce((sum, t) => sum + holdings[t], 0);
     simDates.push(returnDates[i]);
 
     const driftedWeights = {};
@@ -1589,6 +1618,15 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
         currentTargets = nextTargets;
         lastDecisionIdx = i + 1;
         const rebalanceDate = returnDates[i + 1];
+
+        let sumAbsDelta = 0;
+        allTickers.forEach((t) => {
+          sumAbsDelta += Math.abs((currentTargets[t] || 0) - driftedWeights[t]);
+        });
+        const txCost = sumAbsDelta * after * txFeeRate;
+        totalTxCost += txCost;
+        after -= txCost;
+
         allTickers.forEach((t) => {
           holdings[t] = (currentTargets[t] || 0) * after;
           const delta = (currentTargets[t] || 0) - driftedWeights[t];
@@ -1598,11 +1636,16 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
         });
       }
     }
+
+    monthlyReturns.push(before > 0 ? after / before - 1 : 0);
+    values.push(after);
   }
 
   const result = computeBacktestMetrics(simDates, values, monthlyReturns, initialAmount, { dcaMode, monthlyContribution });
   result.rebalanceMonths = rebalanceMonths;
   result.feeAnnualPct = feeAnnualPct;
+  result.txFeePct = txFeePct;
+  result.totalTxCost = totalTxCost;
   result.mode = "dynamic";
   result.strategy = strategy;
   result.riskMode = riskMode;
@@ -1627,6 +1670,16 @@ function runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmou
         cagrNoFee: noFee.cagr,
         finalValueNoFee: noFee.finalValue,
         feeDragAnnual: noFee.cagr - result.cagr,
+      };
+    }
+  }
+  if (txFeePct > 0) {
+    const noTxFee = runDynamicBacktest(strategy, params, candidates, safeAsset, initialAmount, { ...options, txFeePct: 0 });
+    if (noTxFee) {
+      result.txCostComparison = {
+        cagrNoTxFee: noTxFee.cagr,
+        finalValueNoTxFee: noTxFee.finalValue,
+        txFeeDragAnnual: noTxFee.cagr - result.cagr,
       };
     }
   }

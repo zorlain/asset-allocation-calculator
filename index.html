@@ -69,10 +69,12 @@
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
-            초기 투자금액, 연 수수료, 백테스트 기간을 설정합니다. 적립식을 선택하면 초기 투자금에
+            초기 투자금액, 수수료, 백테스트 기간을 설정합니다. 적립식을 선택하면 초기 투자금에
             더해 매달 일정 금액을 추가로 납입하는 방식으로 계산합니다 (초기 투자금을 0으로 두면
-            매달 납입액만으로도 계산할 수 있습니다). 리밸런싱 주기는 정적/동적 배분마다 의미가 달라
-            포트폴리오 구성 쪽에서 방식별로 따로 설정합니다.
+            매달 납입액만으로도 계산할 수 있습니다). <b>연 수수료</b>는 펀드 보수·자문료처럼 보유
+            자산 규모에 비례해 매달 계속 빠지는 비용이고, <b>거래 수수료</b>는 리밸런싱으로 실제
+            사고팔 때만 그 거래금액에 비례해 발생하는 비용입니다(매수·매도 각각 적용). 리밸런싱
+            주기는 정적/동적 배분마다 의미가 달라 포트폴리오 구성 쪽에서 방식별로 따로 설정합니다.
           </span>
         </button>
       </h2>
@@ -95,7 +97,24 @@
         <div class="field-group">
           <label for="bt-fee">연 수수료</label>
           <div class="field-input-wrap">
-            <input type="text" inputmode="decimal" id="bt-fee" value="0.1" />
+            <input type="text" inputmode="decimal" id="bt-fee" value="0.05" />
+            <span class="field-suffix">%</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="bt-tx-fee">
+            거래 수수료
+            <button type="button" class="info-btn stat-info-btn" aria-label="자세히 보기">
+              <span aria-hidden="true">ⓘ</span>
+              <span class="info-tooltip">
+                리밸런싱으로 실제 매수·매도가 일어날 때만, 그 거래금액에 비례해 발생하는 비용입니다
+                (증권사 수수료·호가 스프레드 등을 단순화한 값). 연 수수료와 달리 리밸런싱을 자주
+                할수록 더 많이 발생합니다.
+              </span>
+            </button>
+          </label>
+          <div class="field-input-wrap">
+            <input type="text" inputmode="decimal" id="bt-tx-fee" value="0.1" />
             <span class="field-suffix">%</span>
           </div>
         </div>
@@ -803,7 +822,7 @@
 </div>
 
 <script src="data/asset-data.js"></script>
-<script src="js/finance.js?v=4"></script>
-<script src="js/app.js?v=34"></script>
+<script src="js/finance.js?v=5"></script>
+<script src="js/app.js?v=35"></script>
 </body>
 </html>
