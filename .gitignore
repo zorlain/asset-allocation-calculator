@@ -1,0 +1,2 @@
+# 팩터 데이터 수집 중간 산출물(종목별 청크 파일) - data/factor-data.js로 병합된 결과만 커밋한다
+data/factor-chunks/

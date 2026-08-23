@@ -6,7 +6,7 @@
 <script>
   document.documentElement.setAttribute("data-theme", "dark");
 </script>
-<title>백테스트 결과 상세 - 퀀트투자</title>
+<title>팩터 백테스트 결과 상세 - 퀀트투자</title>
 <meta name="robots" content="noindex, nofollow" />
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E" />
@@ -26,31 +26,32 @@
 <div class="page report-page">
 
   <header class="hero">
-    <h1>백테스트 결과 상세</h1>
-    <p>메인 페이지에서 넘어온 설정으로 다시 계산한 결과입니다.</p>
+    <h1>팩터 백테스트 결과</h1>
+    <p>전략 탭에서 설정한 조건으로 다시 계산한 결과입니다.</p>
     <div class="hero-actions">
-      <a class="menu-toggle" href="index.html" aria-label="메인으로 돌아가기">←</a>
+      <a class="menu-toggle" href="index.html#portfolio/strategy" aria-label="전략 탭으로 돌아가기">←</a>
     </div>
   </header>
 
   <div class="card">
     <h2>결과</h2>
-    <div id="allocator-result">
+    <div id="factor-result">
       <p class="result-placeholder">불러오는 중...</p>
     </div>
   </div>
 
   <footer>
-    이 결과는 과거 데이터를 기반으로 한 참고용 시뮬레이션이며, 실제 투자 수익을 보장하지 않습니다.
-    투자에 대한 최종 결정과 책임은 투자자 본인에게 있습니다.
+    이 결과는 SEC EDGAR 공시 데이터를 기반으로 한 참고용 시뮬레이션이며, 실제 투자 수익을 보장하지
+    않습니다. 투자에 대한 최종 결정과 책임은 투자자 본인에게 있습니다.
   </footer>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="data/asset-data.js"></script>
+<script src="data/factor-data.js"></script>
 <script src="js/finance.js?v=6"></script>
-<script src="js/render.js?v=8"></script>
-<script src="js/result.js?v=12"></script>
+<script src="js/factor-engine.js?v=5"></script>
+<script src="js/factor-result.js?v=1"></script>
 </body>
 </html>
