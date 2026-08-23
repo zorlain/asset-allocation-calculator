@@ -506,6 +506,21 @@ header.hero h1 {
   margin-top: 20px;
 }
 
+/* 일반 필터·업종 체크박스처럼 항목이 많고 라벨이 짧은 경우, 세로로 길게 늘어놓지 않고
+   여러 열로 촘촘하게 배치한다 (Quantus의 "일반 필터"/"산업 필터" 그리드 참고) */
+.checkbox-row.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 16px;
+}
+
+/* 그리드 안의 info-btn 툴팁은 오른쪽 끝 칸에 있을 때 왼쪽 기준(left:0)으로 펼치면 화면
+   밖으로 넘친다. 오른쪽 기준으로 왼쪽으로 펼치게 바꿔서 페이지 가로 스크롤을 막는다 */
+.checkbox-grid .info-tooltip {
+  left: auto;
+  right: 0;
+}
+
 .checkbox-label {
   display: flex;
   align-items: flex-start;
