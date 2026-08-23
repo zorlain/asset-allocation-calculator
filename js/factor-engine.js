@@ -65,6 +65,47 @@ const FACTOR_META = {
   altmanZ: { unit: "raw", min: -2, max: 8, suffix: "" },
 };
 
+const FACTOR_LABELS = {
+  marketCap: "시가총액", per: "PER (낮을수록 유리)", pbr: "PBR (낮을수록 유리)", psr: "PSR (낮을수록 유리)",
+  evSales: "EV/Sales (낮을수록 유리)", evEbit: "EV/EBIT (낮을수록 유리)",
+  por: "POR (시가총액/영업이익, 낮을수록 유리)", pgpr: "PGPR (시가총액/매출총이익, 낮을수록 유리)",
+  evGp: "EV/GP (낮을수록 유리)", ncavToPrice: "NCAV/시가총액 (그레이엄 순유동자산가치, 높을수록 유리)",
+  peg: "PEG (PER/이익성장률, 낮을수록 유리)",
+  roe: "ROE", roa: "ROA", gpa: "GP/A (매출총이익/자산)", debtToEquity: "부채비율 (낮을수록 유리)",
+  currentRatio: "유동비율", rndToSales: "R&D/매출", altmanZ: "Altman Z-score (부실 위험, 높을수록 안전)",
+  roic: "ROIC", rocE: "ROCE", gpe: "GP/E (매출총이익/자본)", gpm: "매출총이익률 (GPM)",
+  opm: "영업이익률 (OPM)", npm: "순이익률 (NPM)", assetTurnover: "총자산회전율",
+  opIncomeToDebt: "영업이익/차입금", debtToAssets: "차입금비율 (차입금/자산, 낮을수록 유리)",
+  retentionRatio: "유보율 (이익잉여금/자본, 근사치)",
+  revenueGrowthYoY: "매출액성장률 (YoY)", netIncomeGrowthYoY: "순이익성장률 (YoY)",
+  grossProfitGrowthYoY: "매출총이익성장률 (YoY)", opIncomeGrowthYoY: "영업이익성장률 (YoY)",
+  assetGrowthYoY: "자산성장률 (YoY)", equityGrowthYoY: "자본성장률 (YoY)",
+  cashGrowthYoY: "보유현금성자산 성장 (YoY)", debtGrowthYoY: "차입금 성장 (YoY, 낮을수록 유리)",
+  rndGrowthYoY: "연구개발비 지출 성장 (YoY)",
+  momentum1m: "1개월 모멘텀", momentum3m: "3개월 모멘텀", momentum6m: "6개월 모멘텀", momentum12m: "12개월 모멘텀",
+  maDisparity3m: "3개월 이동평균 이격도", maDisparity6m: "6개월 이동평균 이격도", maDisparity12m: "12개월 이동평균 이격도",
+  goldenCross: "골든크로스 (단기MA 대비 장기MA 위치)", rsi6: "RSI (6개월)", rsi12: "RSI (12개월)",
+  beta: "베타 (S&P500 대비, 최근 24개월)",
+};
+
+const FACTOR_GROUP_LABEL = { value: "가치 팩터", quality: "퀄리티 팩터", growth: "성장성 팩터", price: "가격·기술적 팩터" };
+const FACTOR_GROUP_ORDER = ["value", "quality", "growth", "price"];
+const FACTOR_GROUP = {
+  marketCap: "value", per: "value", pbr: "value", psr: "value", evSales: "value", evEbit: "value",
+  por: "value", pgpr: "value", evGp: "value", ncavToPrice: "value", peg: "value",
+  roe: "quality", roa: "quality", gpa: "quality", debtToEquity: "quality", currentRatio: "quality",
+  rndToSales: "quality", altmanZ: "quality", roic: "quality", rocE: "quality", gpe: "quality",
+  gpm: "quality", opm: "quality", npm: "quality", assetTurnover: "quality", opIncomeToDebt: "quality",
+  debtToAssets: "quality", retentionRatio: "quality",
+  revenueGrowthYoY: "growth", netIncomeGrowthYoY: "growth", grossProfitGrowthYoY: "growth",
+  opIncomeGrowthYoY: "growth", assetGrowthYoY: "growth", equityGrowthYoY: "growth",
+  cashGrowthYoY: "growth", debtGrowthYoY: "growth", rndGrowthYoY: "growth",
+  momentum1m: "price", momentum3m: "price", momentum6m: "price", momentum12m: "price",
+  maDisparity3m: "price", maDisparity6m: "price", maDisparity12m: "price", goldenCross: "price",
+  rsi6: "price", rsi12: "price", beta: "price",
+};
+const FACTOR_ORDER = Object.keys(FACTOR_LABELS);
+
 function factorRawToDisplay(key, raw) {
   if (raw === null || raw === undefined) return null;
   const unit = (FACTOR_META[key] || {}).unit || "raw";
@@ -321,14 +362,37 @@ const LOWER_IS_BETTER = new Set([
   "por", "pgpr", "evGp", "peg", "debtToAssets", "debtGrowthYoY",
 ]);
 
+/* 후보군 전체를 대상으로 팩터별 백분위(0=하위, 100=상위, LOWER_IS_BETTER는 방향 반전)를 계산 */
+function computePercentiles(snapshots, key) {
+  const valid = snapshots.filter((s) => Number.isFinite(s.factors[key]));
+  const sorted = [...valid].sort((a, b) => a.factors[key] - b.factors[key]);
+  const n = sorted.length;
+  const result = new Map();
+  sorted.forEach((s, i) => {
+    const pct = n > 1 ? (i / (n - 1)) * 100 : 50;
+    result.set(s.ticker, LOWER_IS_BETTER.has(key) ? 100 - pct : pct);
+  });
+  return result;
+}
+
 /* ---------- 팩터 조합 랭킹 ----------
-   factorConfigs: [{ key, min, max }] - min/max는 그 팩터의 "실제 단위" 값(예: PER 5~20배,
-   이격도 90~110%, ROE 10% 이상 등 FACTOR_META 기준 표시 단위). 각 팩터마다 실제 값이 그
-   구간 안에 드는 종목만 남기고(모든 선택 팩터를 동시 만족해야 함), 살아남은 종목들 사이에서만
-   백분위를 다시 매겨 평균(종합 점수)으로 정렬한다 — 필터링은 절대값 기준, 정렬은 상대 순위 기준. */
+   factorConfigs: [{ key, mode, min, max }] - mode="value"(기본)면 min/max는 그 팩터의 실제
+   단위 값(예: PER 5~20배), mode="percentile"이면 min/max는 후보군 내 백분위(0~100, 예: 상위
+   30% = 70~100). 각 팩터마다 조건을 만족하는 종목만 남기고(모든 선택 팩터 동시 만족), 살아남은
+   종목들 사이에서만 다시 백분위를 매겨 평균(종합 점수)으로 정렬한다. */
 function rankByFactors(snapshots, factorConfigs) {
+  // percentile 모드인 팩터는 필터링 전 "전체 후보군" 기준 백분위가 필요하므로 미리 계산해둔다
+  const universePercentiles = {};
+  factorConfigs.filter((c) => c.mode === "percentile").forEach(({ key }) => {
+    universePercentiles[key] = computePercentiles(snapshots, key);
+  });
+
   const passed = snapshots.filter((s) => {
-    return factorConfigs.every(({ key, min, max }) => {
+    return factorConfigs.every(({ key, mode, min, max }) => {
+      if (mode === "percentile") {
+        const score = universePercentiles[key].get(s.ticker);
+        return score !== undefined && score >= min && score <= max;
+      }
       const raw = s.factors[key];
       if (!Number.isFinite(raw)) return false;
       const display = factorRawToDisplay(key, raw);
@@ -336,22 +400,12 @@ function rankByFactors(snapshots, factorConfigs) {
     });
   });
 
-  const percentiles = {};
-  factorConfigs.forEach(({ key }) => {
-    const sorted = [...passed].sort((a, b) => a.factors[key] - b.factors[key]);
-    const n = sorted.length;
-    sorted.forEach((s, i) => {
-      const pct = n > 1 ? (i / (n - 1)) * 100 : 50;
-      const score = LOWER_IS_BETTER.has(key) ? 100 - pct : pct;
-      percentiles[s.ticker] = percentiles[s.ticker] || {};
-      percentiles[s.ticker][key] = score;
-    });
-  });
+  const survivorPercentiles = {};
+  factorConfigs.forEach(({ key }) => { survivorPercentiles[key] = computePercentiles(passed, key); });
 
   return passed
     .map((s) => {
-      const p = percentiles[s.ticker];
-      const scores = factorConfigs.map(({ key }) => p[key]);
+      const scores = factorConfigs.map(({ key }) => survivorPercentiles[key].get(s.ticker));
       const composite = scores.reduce((a, b) => a + b, 0) / scores.length;
       return { ...s, composite };
     })

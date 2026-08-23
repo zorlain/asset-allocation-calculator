@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=40" />
+<link rel="stylesheet" href="css/style.css?v=41" />
 </head>
 <body>
 <div class="page">
@@ -686,102 +686,19 @@
     <div class="card">
       <h2>팩터 설정</h2>
       <p class="card-desc-short">
-        팩터를 선택하면 그 팩터의 실제 값(예: PER 배수, ROE %)이 아래 입력한 범위 안에 드는
-        종목만 후보로 남기고, 선택한 모든 팩터를 동시에 만족해야 합니다. 그렇게 걸러진 종목들
-        사이에서만 다시 순위를 매겨(선택 팩터 평균 백분위) 상위 N개를 고릅니다. 카테고리를
-        눌러 펼치고 접을 수 있습니다.
+        아래 "+ 팩터 추가"로 원하는 팩터를 고르면 목록에 추가됩니다. 기본은 그 팩터의 실제 값
+        (예: PER 배수, ROE %)으로 범위를 정하고, 각 팩터마다 "백분위(%)로 설정"을 따로 켜면
+        전체 후보군 중 상대 순위(0~100%, 예: 상위 30%)로 바꿀 수 있습니다. 추가한 모든 팩터를
+        동시에 만족하는 종목만 남기고, 그 안에서 다시 평균 순위로 정렬해 상위 N개를 고릅니다.
       </p>
 
-      <div class="factor-group-block open" data-factor-group="value">
-        <button type="button" class="factor-group-header" data-group-toggle="value" aria-expanded="true">
-          <span>가치 팩터 <span class="factor-group-count"></span></span>
-          <span class="factor-group-caret" aria-hidden="true">▾</span>
-        </button>
-        <div class="factor-group-body">
-      <div class="factor-list">
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="marketCap" /><span>시가총액</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="marketCap" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="marketCap" value="5000000" /><span>백만$</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="per" checked /><span>PER (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="per" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="per" value="50" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="pbr" checked /><span>PBR (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="pbr" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="pbr" value="10" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="psr" /><span>PSR (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="psr" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="psr" value="20" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="evSales" /><span>EV/Sales (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="evSales" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="evSales" value="20" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="evEbit" /><span>EV/EBIT (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="evEbit" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="evEbit" value="50" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="por" /><span>POR (시가총액/영업이익, 낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="por" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="por" value="50" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="pgpr" /><span>PGPR (시가총액/매출총이익, 낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="pgpr" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="pgpr" value="30" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="evGp" /><span>EV/GP (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="evGp" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="evGp" value="30" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="ncavToPrice" /><span>NCAV/시가총액 (그레이엄 순유동자산가치, 높을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="ncavToPrice" value="-100" /><span>~</span><input type="text" inputmode="numeric" data-range-max="ncavToPrice" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="peg" /><span>PEG (PER/이익성장률, 낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="peg" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="peg" value="5" /><span>배</span></div></div>
-      </div>
-        </div>
-      </div>
+      <div class="factor-active-list" id="factor-active-list"></div>
 
-      <div class="factor-group-block open" data-factor-group="quality">
-        <button type="button" class="factor-group-header" data-group-toggle="quality" aria-expanded="true">
-          <span>퀄리티 팩터 <span class="factor-group-count"></span></span>
-          <span class="factor-group-caret" aria-hidden="true">▾</span>
+      <div class="select-box asset-add-select" id="factor-add-select">
+        <button type="button" class="select-box-toggle asset-add-toggle" id="factor-add-toggle" aria-haspopup="listbox" aria-expanded="false">
+          <span class="select-box-title">+ 팩터 추가</span>
         </button>
-        <div class="factor-group-body">
-      <div class="factor-list">
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="roe" checked /><span>ROE</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="roe" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="roe" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="roa" /><span>ROA</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="roa" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="roa" value="30" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="gpa" /><span>GP/A (매출총이익/자산)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="gpa" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="gpa" value="60" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="debtToEquity" /><span>부채비율 (낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="debtToEquity" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="debtToEquity" value="300" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="currentRatio" /><span>유동비율</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="currentRatio" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="currentRatio" value="5" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="rndToSales" /><span>R&amp;D/매출</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="rndToSales" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="rndToSales" value="40" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="altmanZ" /><span>Altman Z-score (부실 위험, 높을수록 안전)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="altmanZ" value="-2" /><span>~</span><input type="text" inputmode="numeric" data-range-max="altmanZ" value="8" /><span></span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="roic" /><span>ROIC</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="roic" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="roic" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="rocE" /><span>ROCE</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="rocE" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="rocE" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="gpe" /><span>GP/E (매출총이익/자본)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="gpe" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="gpe" value="200" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="gpm" /><span>매출총이익률 (GPM)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="gpm" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="gpm" value="90" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="opm" /><span>영업이익률 (OPM)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="opm" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="opm" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="npm" /><span>순이익률 (NPM)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="npm" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="npm" value="40" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="assetTurnover" /><span>총자산회전율</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="assetTurnover" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="assetTurnover" value="3" /><span>배</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="opIncomeToDebt" /><span>영업이익/차입금</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="opIncomeToDebt" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="opIncomeToDebt" value="200" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="debtToAssets" /><span>차입금비율 (차입금/자산, 낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="debtToAssets" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="debtToAssets" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="retentionRatio" /><span>유보율 (이익잉여금/자본, 근사치)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="retentionRatio" value="-200" /><span>~</span><input type="text" inputmode="numeric" data-range-max="retentionRatio" value="500" /><span>%</span></div></div>
-      </div>
-        </div>
-      </div>
-
-      <div class="factor-group-block" data-factor-group="growth">
-        <button type="button" class="factor-group-header" data-group-toggle="growth" aria-expanded="false">
-          <span>성장성 팩터 <span class="factor-group-count"></span></span>
-          <span class="factor-group-caret" aria-hidden="true">▸</span>
-        </button>
-        <div class="factor-group-body">
-      <div class="factor-list">
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="revenueGrowthYoY" /><span>매출액성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="revenueGrowthYoY" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="revenueGrowthYoY" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="netIncomeGrowthYoY" /><span>순이익성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="netIncomeGrowthYoY" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="netIncomeGrowthYoY" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="assetGrowthYoY" /><span>자산성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="assetGrowthYoY" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="assetGrowthYoY" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="grossProfitGrowthYoY" /><span>매출총이익성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="grossProfitGrowthYoY" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="grossProfitGrowthYoY" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="opIncomeGrowthYoY" /><span>영업이익성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="opIncomeGrowthYoY" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="opIncomeGrowthYoY" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="equityGrowthYoY" /><span>자본성장률 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="equityGrowthYoY" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="equityGrowthYoY" value="50" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="cashGrowthYoY" /><span>보유현금성자산 성장 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="cashGrowthYoY" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="cashGrowthYoY" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="debtGrowthYoY" /><span>차입금 성장 (YoY, 낮을수록 유리)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="debtGrowthYoY" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="debtGrowthYoY" value="100" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="rndGrowthYoY" /><span>연구개발비 지출 성장 (YoY)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="rndGrowthYoY" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="rndGrowthYoY" value="50" /><span>%</span></div></div>
-      </div>
-        </div>
-      </div>
-
-      <div class="factor-group-block open" data-factor-group="price">
-        <button type="button" class="factor-group-header" data-group-toggle="price" aria-expanded="true">
-          <span>가격·기술적 팩터 <span class="factor-group-count"></span></span>
-          <span class="factor-group-caret" aria-hidden="true">▾</span>
-        </button>
-        <div class="factor-group-body">
-      <div class="factor-list">
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="momentum1m" /><span>1개월 모멘텀</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="momentum1m" value="-20" /><span>~</span><input type="text" inputmode="numeric" data-range-max="momentum1m" value="20" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="momentum3m" /><span>3개월 모멘텀</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="momentum3m" value="-30" /><span>~</span><input type="text" inputmode="numeric" data-range-max="momentum3m" value="30" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="momentum6m" checked /><span>6개월 모멘텀</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="momentum6m" value="-40" /><span>~</span><input type="text" inputmode="numeric" data-range-max="momentum6m" value="40" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="momentum12m" /><span>12개월 모멘텀</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="momentum12m" value="-50" /><span>~</span><input type="text" inputmode="numeric" data-range-max="momentum12m" value="60" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="maDisparity3m" /><span>3개월 이동평균 이격도</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="maDisparity3m" value="80" /><span>~</span><input type="text" inputmode="numeric" data-range-max="maDisparity3m" value="120" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="maDisparity6m" /><span>6개월 이동평균 이격도</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="maDisparity6m" value="70" /><span>~</span><input type="text" inputmode="numeric" data-range-max="maDisparity6m" value="130" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="maDisparity12m" /><span>12개월 이동평균 이격도</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="maDisparity12m" value="60" /><span>~</span><input type="text" inputmode="numeric" data-range-max="maDisparity12m" value="140" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="goldenCross" /><span>골든크로스 (단기MA 대비 장기MA 위치)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="goldenCross" value="80" /><span>~</span><input type="text" inputmode="numeric" data-range-max="goldenCross" value="120" /><span>%</span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="rsi6" /><span>RSI (6개월)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="rsi6" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="rsi6" value="100" /><span></span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="rsi12" /><span>RSI (12개월)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="rsi12" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="rsi12" value="100" /><span></span></div></div>
-        <div class="factor-row"><label class="checkbox-label"><input type="checkbox" data-factor="beta" /><span>베타 (S&amp;P500 대비, 최근 24개월)</span></label><div class="factor-range"><input type="text" inputmode="numeric" data-range-min="beta" value="0" /><span>~</span><input type="text" inputmode="numeric" data-range-max="beta" value="2.5" /><span></span></div></div>
-      </div>
-        </div>
+        <div class="select-box-dropdown" id="factor-add-dropdown" role="listbox"></div>
       </div>
 
       <p class="card-desc-short" style="margin-top:16px;">
@@ -791,7 +708,7 @@
         일봉 시세나 배당·현금흐름표 데이터를 새로 모아야 합니다).
       </p>
 
-      <p class="calc-error-msg" id="strat-factor-error" hidden>팩터를 1개 이상 선택해주세요.</p>
+      <p class="calc-error-msg" id="strat-factor-error" hidden>팩터를 1개 이상 추가해주세요.</p>
     </div>
 
     <div class="card">
@@ -1045,8 +962,8 @@
 <script src="data/asset-data.js"></script>
 <script src="data/factor-data.js"></script>
 <script src="js/finance.js?v=6"></script>
-<script src="js/factor-engine.js?v=7"></script>
+<script src="js/factor-engine.js?v=8"></script>
 <script src="js/app.js?v=36"></script>
-<script src="js/strategy-lab.js?v=5"></script>
+<script src="js/strategy-lab.js?v=6"></script>
 </body>
 </html>

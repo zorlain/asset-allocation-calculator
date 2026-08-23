@@ -6,8 +6,8 @@ function parseFactorParams() {
     .split("|")
     .filter(Boolean)
     .map((chunk) => {
-      const [key, min, max] = chunk.split(":");
-      return { key, min: Number(min), max: Number(max) };
+      const [key, mode, min, max] = chunk.split(":");
+      return { key, mode: mode === "percentile" ? "percentile" : "value", min: Number(min), max: Number(max) };
     });
 
   const exclList = (params.get("excl") || "").split(",").filter(Boolean);
@@ -35,21 +35,7 @@ function parseFactorParams() {
   };
 }
 
-const FACTOR_LABELS = {
-  marketCap: "시가총액", per: "PER", pbr: "PBR", psr: "PSR", evSales: "EV/Sales", evEbit: "EV/EBIT",
-  por: "POR", pgpr: "PGPR", evGp: "EV/GP", ncavToPrice: "NCAV/시가총액", peg: "PEG",
-  roe: "ROE", roa: "ROA", gpa: "GP/A", debtToEquity: "부채비율", currentRatio: "유동비율",
-  rndToSales: "R&D/매출", altmanZ: "Altman Z-score", roic: "ROIC", rocE: "ROCE", gpe: "GP/E",
-  gpm: "매출총이익률", opm: "영업이익률", npm: "순이익률", assetTurnover: "총자산회전율",
-  opIncomeToDebt: "영업이익/차입금", debtToAssets: "차입금비율", retentionRatio: "유보율",
-  revenueGrowthYoY: "매출액성장률(YoY)", netIncomeGrowthYoY: "순이익성장률(YoY)",
-  grossProfitGrowthYoY: "매출총이익성장률(YoY)", opIncomeGrowthYoY: "영업이익성장률(YoY)",
-  assetGrowthYoY: "자산성장률(YoY)", equityGrowthYoY: "자본성장률(YoY)", cashGrowthYoY: "현금성자산성장률(YoY)",
-  debtGrowthYoY: "차입금성장률(YoY)", rndGrowthYoY: "R&D성장률(YoY)",
-  momentum1m: "1개월 모멘텀", momentum3m: "3개월 모멘텀", momentum6m: "6개월 모멘텀", momentum12m: "12개월 모멘텀",
-  maDisparity3m: "3개월 이평 이격도", maDisparity6m: "6개월 이평 이격도", maDisparity12m: "12개월 이평 이격도",
-  goldenCross: "골든크로스", rsi6: "RSI(6개월)", rsi12: "RSI(12개월)", beta: "베타",
-};
+/* FACTOR_LABELS는 factor-engine.js에 이미 있는 걸 그대로 쓴다(중복 정의 방지) */
 const FILTER_LABELS = {
   lossQ: "적자기업 제외(분기)", lossA: "적자기업 제외(년간)", distress: "관리종목 제외(근사)",
   financial: "금융주 제외", holding: "지주사 제외", ptp: "PTP 제외", china: "중국기업 제외",
@@ -58,7 +44,8 @@ const FILTER_LABELS = {
 function formatFactorRange(cfg) {
   const meta = FACTOR_META[cfg.key] || {};
   const label = FACTOR_LABELS[cfg.key] || cfg.key;
-  return `${label} ${cfg.min}~${cfg.max}${meta.suffix || ""}`;
+  const suffix = cfg.mode === "percentile" ? "%(백분위)" : meta.suffix || "";
+  return `${label} ${cfg.min}~${cfg.max}${suffix}`;
 }
 
 function fmtPct(x, digits = 1) {

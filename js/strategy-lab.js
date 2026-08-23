@@ -55,38 +55,151 @@ function populateSectorChecks() {
     .join("");
 }
 
-/* 각 입력칸 값은 팩터마다 실제 단위(PER는 배, ROE는 %, 이격도는 이동평균=100 기준 %)로
-   그대로 받는다 - FACTOR_META의 unit에 맞춰 raw 팩터값과 비교 가능한 형태로 엔진에 넘긴다 */
-function selectedFactorConfigs() {
-  return [...document.querySelectorAll('[data-factor]')]
-    .filter((el) => el.checked)
-    .map((el) => {
-      const key = el.dataset.factor;
-      const minInput = document.querySelector(`[data-range-min="${key}"]`);
-      const maxInput = document.querySelector(`[data-range-max="${key}"]`);
-      const meta = FACTOR_META[key] || { min: -Infinity, max: Infinity };
-      const min = toNumberOrDefault(minInput.value, meta.min);
-      const max = toNumberOrDefault(maxInput.value, meta.max);
-      return { key, min: Math.min(min, max), max: Math.max(min, max) };
-    });
+/* ---------- 팩터 설정: 배분·백테스트의 "자산 추가"와 같은 추가/제거 패턴 ---------- */
+let addedFactors = [];
+let expandedFactorGroup = null;
+
+function factorRowHtml(key) {
+  const meta = FACTOR_META[key] || { min: 0, max: 100, suffix: "" };
+  const label = FACTOR_LABELS[key] || key;
+  return `
+    <div class="factor-active-row" data-factor-row="${key}">
+      <div class="factor-active-row-head">
+        <span class="factor-active-row-name">${label}</span>
+        <button type="button" class="weight-row-remove" data-remove-factor="${key}" aria-label="팩터 제거">×</button>
+      </div>
+      <div class="factor-active-row-controls">
+        <label class="factor-mode-toggle-label">
+          <input type="checkbox" data-mode-toggle="${key}" />
+          <span>백분위(%)로 설정</span>
+        </label>
+        <div class="factor-range">
+          <input type="text" inputmode="numeric" data-range-min="${key}" value="${meta.min}" />
+          <span>~</span>
+          <input type="text" inputmode="numeric" data-range-max="${key}" value="${meta.max}" />
+          <span data-suffix="${key}">${meta.suffix}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-function updateFactorGroupCounts() {
-  document.querySelectorAll(".factor-group-block").forEach((block) => {
-    const checked = block.querySelectorAll('[data-factor]:checked').length;
-    const countEl = block.querySelector(".factor-group-count");
-    if (countEl) countEl.textContent = checked > 0 ? `(${checked}개 선택됨)` : "";
+function setFactorMode(key, isPercentile) {
+  const minInput = document.querySelector(`[data-range-min="${key}"]`);
+  const maxInput = document.querySelector(`[data-range-max="${key}"]`);
+  const suffixEl = document.querySelector(`[data-suffix="${key}"]`);
+  if (isPercentile) {
+    minInput.value = "0";
+    maxInput.value = "100";
+    if (suffixEl) suffixEl.textContent = "%";
+  } else {
+    const meta = FACTOR_META[key] || { min: 0, max: 100, suffix: "" };
+    minInput.value = String(meta.min);
+    maxInput.value = String(meta.max);
+    if (suffixEl) suffixEl.textContent = meta.suffix;
+  }
+}
+
+function addFactorRow(key) {
+  if (addedFactors.includes(key) || !FACTOR_META[key]) return;
+  addedFactors.push(key);
+  const list = document.getElementById("factor-active-list");
+  const wrap = document.createElement("div");
+  wrap.innerHTML = factorRowHtml(key).trim();
+  const row = wrap.firstElementChild;
+  list.appendChild(row);
+
+  row.querySelector(`[data-remove-factor="${key}"]`).addEventListener("click", () => removeFactorRow(key));
+  row.querySelector(`[data-mode-toggle="${key}"]`).addEventListener("change", (e) => setFactorMode(key, e.target.checked));
+}
+
+function removeFactorRow(key) {
+  addedFactors = addedFactors.filter((k) => k !== key);
+  const row = document.querySelector(`[data-factor-row="${key}"]`);
+  if (row) row.remove();
+  renderFactorAddOptions();
+}
+
+function renderFactorAddOptions() {
+  const dropdown = document.getElementById("factor-add-dropdown");
+  if (!dropdown) return;
+  const remaining = FACTOR_ORDER.filter((k) => !addedFactors.includes(k));
+  if (remaining.length === 0) {
+    dropdown.innerHTML = `<div class="select-box-empty">추가할 수 있는 팩터가 없습니다</div>`;
+    return;
+  }
+  dropdown.innerHTML = FACTOR_GROUP_ORDER.map((group) => {
+    const keys = remaining.filter((k) => FACTOR_GROUP[k] === group);
+    if (keys.length === 0) return "";
+    const isOpen = expandedFactorGroup === group;
+    const items = keys
+      .map((k) => `
+        <button type="button" class="select-box-option" data-factor-add="${k}" role="option">
+          <div class="select-box-option-title">${FACTOR_LABELS[k]}</div>
+        </button>
+      `)
+      .join("");
+    return `
+      <div class="asset-group-block${isOpen ? " open" : ""}">
+        <button type="button" class="asset-group-header" data-group="${group}" aria-expanded="${isOpen}">
+          <span>${FACTOR_GROUP_LABEL[group]}</span>
+          <span class="asset-group-caret" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+        </button>
+        <div class="asset-group-body">${items}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function initFactorAddSelect() {
+  const toggle = document.getElementById("factor-add-toggle");
+  const dropdown = document.getElementById("factor-add-dropdown");
+  if (!toggle || !dropdown) return;
+
+  renderFactorAddOptions();
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !dropdown.classList.contains("open");
+    closeAllSelectBoxDropdowns();
+    dropdown.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", String(willOpen));
   });
+
+  dropdown.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const groupHeader = e.target.closest(".asset-group-header");
+    if (groupHeader) {
+      const group = groupHeader.dataset.group;
+      expandedFactorGroup = expandedFactorGroup === group ? null : group;
+      renderFactorAddOptions();
+      return;
+    }
+    const optionBtn = e.target.closest("[data-factor-add]");
+    if (optionBtn) {
+      addFactorRow(optionBtn.dataset.factorAdd);
+      renderFactorAddOptions();
+      closeSelectBoxDropdown("factor-add-select");
+    }
+  });
+
+  document.addEventListener("click", () => closeSelectBoxDropdown("factor-add-select"));
 }
 
-/* 체크 안 된 팩터의 범위 입력칸은 비활성화해서 "이 값은 지금 안 쓰인다"를 시각적으로 알려준다 */
-function syncFactorRangeDisabled() {
-  document.querySelectorAll('[data-factor]').forEach((el) => {
-    const key = el.dataset.factor;
+/* 기본은 팩터 실제 값(예: PER 배수) 범위, 행마다 "백분위(%)로 설정"을 켜면 후보군 내
+   상대 순위(0~100%) 기준으로 바뀐다 - FACTOR_META의 unit에 맞춰 엔진에 넘긴다 */
+function selectedFactorConfigs() {
+  return addedFactors.map((key) => {
     const minInput = document.querySelector(`[data-range-min="${key}"]`);
     const maxInput = document.querySelector(`[data-range-max="${key}"]`);
-    if (minInput) minInput.disabled = !el.checked;
-    if (maxInput) maxInput.disabled = !el.checked;
+    const modeToggle = document.querySelector(`[data-mode-toggle="${key}"]`);
+    const isPercentile = !!(modeToggle && modeToggle.checked);
+    const meta = FACTOR_META[key] || { min: -Infinity, max: Infinity };
+    const fallbackMin = isPercentile ? 0 : meta.min;
+    const fallbackMax = isPercentile ? 100 : meta.max;
+    const min = toNumberOrDefault(minInput.value, fallbackMin);
+    const max = toNumberOrDefault(maxInput.value, fallbackMax);
+    return { key, mode: isPercentile ? "percentile" : "value", min: Math.min(min, max), max: Math.max(min, max) };
   });
 }
 
@@ -158,7 +271,7 @@ function gatherStrategyOptions() {
    전부 쿼리스트링 하나에 압축해 담고, 새 창에서 다시 파싱해 동일한 조건으로 재계산한다. */
 function buildFactorResultUrl(options) {
   const params = new URLSearchParams();
-  params.set("f", options.factorConfigs.map((c) => `${c.key}:${c.min}:${c.max}`).join("|"));
+  params.set("f", options.factorConfigs.map((c) => `${c.key}:${c.mode}:${c.min}:${c.max}`).join("|"));
   params.set("topN", String(options.topN));
   params.set("rebalance", String(options.rebalanceMonths));
   params.set("start", options.startDate);
@@ -272,21 +385,8 @@ function initStrategyLab() {
   fillYearMonthSelect(startYearSel, startMonthSel, safeMin, max, safeMin);
   fillYearMonthSelect(endYearSel, endMonthSel, safeMin, max, max);
 
-  syncFactorRangeDisabled();
-  updateFactorGroupCounts();
-  document.querySelectorAll('[data-factor]').forEach((el) => el.addEventListener("change", () => {
-    syncFactorRangeDisabled();
-    updateFactorGroupCounts();
-  }));
-
-  document.querySelectorAll('[data-group-toggle]').forEach((header) => {
-    header.addEventListener("click", () => {
-      const block = header.closest(".factor-group-block");
-      const isOpen = block.classList.toggle("open");
-      header.setAttribute("aria-expanded", String(isOpen));
-      header.querySelector(".factor-group-caret").textContent = isOpen ? "▾" : "▸";
-    });
-  });
+  ["per", "pbr", "roe", "momentum6m"].forEach(addFactorRow);
+  initFactorAddSelect();
 
   const selectAll = document.getElementById("strat-select-all-filters");
   const genFilters = [...document.querySelectorAll(".strat-gen-filter")];
