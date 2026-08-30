@@ -254,26 +254,23 @@ header.hero h1 {
 }
 
 /* 탭 내비게이션 */
-/* ---------- 게임(도구) 전환: 자산배분 / 전략 / 낙원계산기 ----------
-   좌측 세로 사이드바 대신 로또 사이트와 동일하게 제목 바로 아래 가로 탭으로 배치 */
+/* ---------- 게임(도구) 전환: 퀀트 / 낙원계산기 / 데이터 ----------
+   제목(H1) 옆에 소제목처럼 나란히 배치 (.hero-brand가 h1 + 탭을 한 줄에 정렬) */
 .game-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 2px;
 }
 
 .game-tab-btn {
-  flex: 1;
-  border: 1px solid var(--border);
-  background: var(--card);
-  padding: 16px 12px;
-  font-size: 16px;
-  font-weight: 700;
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-muted);
-  border-radius: 14px;
-  text-align: center;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .game-tab-btn:hover:not(.active) {
@@ -282,9 +279,8 @@ header.hero h1 {
 }
 
 .game-tab-btn.active {
-  background: var(--accent);
-  color: var(--accent-on);
-  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .tabs {
@@ -1745,7 +1741,7 @@ footer {
   }
   .game-tab-btn {
     font-size: 13.5px;
-    padding: 13px 4px;
+    padding: 5px 8px;
   }
 
   .card {
