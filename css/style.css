@@ -254,41 +254,26 @@ header.hero h1 {
 }
 
 /* 탭 내비게이션 */
-/* ---------- 게임(도구) 전환: 자산배분 / 전략 / 낙원계산기 (아이투자 상단 탭 참고 - 버튼형이
-   아니라 밑줄 강조형 얇은 탭) ---------- */
-/* 상단 밑줄 탭 대신 좌측 세로 사이드바 방식으로 배치 (clock-timer와 동일한 내비게이션 틀) */
-.tab-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 28px;
-}
-
-.tab-main {
-  flex: 1;
-  min-width: 0;
-}
-
+/* ---------- 게임(도구) 전환: 자산배분 / 전략 / 낙원계산기 ----------
+   좌측 세로 사이드바 대신 로또 사이트와 동일하게 제목 바로 아래 가로 탭으로 배치 */
 .game-tabs {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex-shrink: 0;
-  width: 132px;
-  position: sticky;
-  top: 20px;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .game-tab-btn {
-  border: none;
-  background: transparent;
-  padding: 16px 14px;
-  font-size: 15px;
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 16px 12px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-muted);
   border-radius: 14px;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
 .game-tab-btn:hover:not(.active) {
@@ -297,8 +282,9 @@ header.hero h1 {
 }
 
 .game-tab-btn.active {
-  color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--accent);
+  color: var(--accent-on);
+  border-color: var(--accent);
 }
 
 .tabs {
@@ -1757,28 +1743,9 @@ footer {
   header.hero h1 {
     font-size: 22px;
   }
-  .tab-layout {
-    flex-direction: column;
-    gap: 0;
-  }
-  .game-tabs {
-    flex-direction: row;
-    width: 100%;
-    position: static;
-    background: var(--accent-soft);
-    border-radius: 9999px;
-    padding: 5px;
-    gap: 4px;
-    margin-bottom: 18px;
-  }
   .game-tab-btn {
-    flex: 1;
-    text-align: center;
-    border-radius: 9999px;
     font-size: 13.5px;
-  }
-  .game-tab-btn.active {
-    background: var(--card);
+    padding: 13px 4px;
   }
 
   .card {
