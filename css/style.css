@@ -90,7 +90,7 @@ body {
 }
 
 .page {
-  max-width: 1440px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 56px 32px 110px;
 }
@@ -198,7 +198,7 @@ header.hero h1 {
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
-  width: 148px;
+  width: 132px;
   position: sticky;
   top: 20px;
 }
@@ -1814,16 +1814,13 @@ footer {
 /* 넓은 화면: 사이드바 구조와 함께 주요 요소를 단계적으로 키운다 (색상은 원래대로 유지) */
 @media (min-width: 1150px) {
   .card {
-    padding: 36px;
+    padding: 30px;
   }
   .card h2 {
-    font-size: 22px;
+    font-size: 20px;
   }
   .calc-btn {
-    padding: 22px;
-    font-size: 17px;
-  }
-  .game-tab-btn {
+    padding: 20px;
     font-size: 16px;
   }
 }
