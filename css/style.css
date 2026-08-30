@@ -90,7 +90,7 @@ body {
 }
 
 .page {
-  max-width: 1100px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 56px 32px 110px;
 }
@@ -181,31 +181,49 @@ header.hero h1 {
 /* 탭 내비게이션 */
 /* ---------- 게임(도구) 전환: 자산배분 / 전략 / 낙원계산기 (아이투자 상단 탭 참고 - 버튼형이
    아니라 밑줄 강조형 얇은 탭) ---------- */
+/* 상단 밑줄 탭 대신 좌측 세로 사이드바 방식으로 배치 (clock-timer와 동일한 내비게이션 틀) */
+.tab-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.tab-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .game-tabs {
   display: flex;
-  gap: 22px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  width: 148px;
+  position: sticky;
+  top: 20px;
 }
 
 .game-tab-btn {
   border: none;
   background: transparent;
-  padding: 6px 2px;
+  padding: 16px 14px;
   font-size: 15px;
   font-weight: 700;
   color: var(--text-muted);
-  border-bottom: 2px solid transparent;
+  border-radius: 14px;
+  text-align: left;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .game-tab-btn:hover:not(.active) {
   color: var(--text);
+  background: var(--hover-tint);
 }
 
 .game-tab-btn.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .tabs {
@@ -1660,11 +1678,28 @@ footer {
   header.hero h1 {
     font-size: 22px;
   }
+  .tab-layout {
+    flex-direction: column;
+    gap: 0;
+  }
   .game-tabs {
-    gap: 16px;
+    flex-direction: row;
+    width: 100%;
+    position: static;
+    background: var(--accent-soft);
+    border-radius: 9999px;
+    padding: 5px;
+    gap: 4px;
+    margin-bottom: 18px;
   }
   .game-tab-btn {
+    flex: 1;
+    text-align: center;
+    border-radius: 9999px;
     font-size: 13.5px;
+  }
+  .game-tab-btn.active {
+    background: var(--card);
   }
 
   .card {
@@ -1773,5 +1808,22 @@ footer {
     font-size: 12px;
     margin-top: 32px;
     line-height: 1.7;
+  }
+}
+
+/* 넓은 화면: 사이드바 구조와 함께 주요 요소를 단계적으로 키운다 (색상은 원래대로 유지) */
+@media (min-width: 1150px) {
+  .card {
+    padding: 36px;
+  }
+  .card h2 {
+    font-size: 22px;
+  }
+  .calc-btn {
+    padding: 22px;
+    font-size: 17px;
+  }
+  .game-tab-btn {
+    font-size: 16px;
   }
 }

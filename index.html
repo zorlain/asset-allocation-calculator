@@ -59,17 +59,16 @@
 
   <header class="hero">
     <h1 class="sr-only">무료 퀀트투자 - 자산배분 백테스트·투자전략·낙원계산기</h1>
-    <div class="hero-top">
-      <div class="hero-brand">
-        <nav class="game-tabs" id="game-tabs">
-          <button class="game-tab-btn active" data-game="portfolio">퀀트</button>
-          <button class="game-tab-btn" data-game="retirement">낙원계산기</button>
-          <button class="game-tab-btn" data-game="dashboard">데이터</button>
-        </nav>
-      </div>
-    </div>
   </header>
 
+  <div class="tab-layout">
+  <nav class="game-tabs" id="game-tabs">
+    <button class="game-tab-btn active" data-game="portfolio">퀀트</button>
+    <button class="game-tab-btn" data-game="retirement">낙원계산기</button>
+    <button class="game-tab-btn" data-game="dashboard">데이터</button>
+  </nav>
+
+  <main class="tab-main">
   <div id="game-portfolio" class="game-panel">
 
   <nav class="tabs" id="tabs">
@@ -946,6 +945,9 @@
         <table class="corr-table" id="corr-table"></table>
       </div>
     </div>
+  </div>
+
+  </main>
   </div>
 
   <footer>
