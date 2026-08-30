@@ -1,23 +1,24 @@
-/* 퀀터스(quantus.kr) 느낌의 다크 핀테크 대시보드 언어 — 다크가 기본값, 파란색 포인트,
-   버튼/탭은 알약이 아닌 8~14px 라운드 사각형, 1차 버튼은 캔버스 반대색. 그림자 배제.
+/* 타이머·시계 사이트(clock-timer)와 통일한 다크 퍼스트 + 앰버(LED) 액센트 디자인 —
+   버튼/탭 모양(8~14px 라운드 사각형)은 기존 퀀트 대시보드 스타일 유지, 색상 시스템만
+   통일한다. 1차 버튼은 다크 모드에서 앰버, 라이트 모드에서 캔버스 반대색(검정).
    포인트 컬러(브랜드)와 손익 색상(초록/빨강)은 의미가 달라 서로 독립적으로 관리한다.
    data-theme="light"로 라이트 모드 전환. */
 :root {
-  --bg: #151515;
-  --card: #1c1c1c;
-  --card-elevated: #262626;
+  --bg: #000000;
+  --card: #131313;
+  --card-elevated: #1d1d1d;
   --text: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.64);
+  --text-muted: rgba(255, 255, 255, 0.66);
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #3b82f6;
-  --accent-hover: #5b9bf7;
-  --accent-soft: rgba(59, 130, 246, 0.16);
-  --accent-on: #ffffff;
-  --chart-fill: #3b82f6;
-  --btn-primary-bg: #ffffff;
-  --btn-primary-text: #151515;
-  --btn-primary-pressed: #d0d0d0;
-  --hover-tint: rgba(255, 255, 255, 0.06);
+  --accent: #ffb020;
+  --accent-hover: #e6a01c;
+  --accent-soft: rgba(255, 176, 32, 0.14);
+  --accent-on: #17110a;
+  --chart-fill: #e6a01c;
+  --btn-primary-bg: #ffb020;
+  --btn-primary-text: #17110a;
+  --btn-primary-pressed: #e09710;
+  --hover-tint: rgba(255, 255, 255, 0.07);
 
   --positive: #06c47f;
   --negative: #ff5c5c;
@@ -30,10 +31,11 @@
   --text: #0a0a0a;
   --text-muted: rgba(10, 10, 10, 0.62);
   --border: rgba(10, 10, 10, 0.12);
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.1);
-  --chart-fill: #2563eb;
+  --accent: #d9770a;
+  --accent-hover: #c26a09;
+  --accent-soft: rgba(217, 119, 10, 0.12);
+  --accent-on: #ffffff;
+  --chart-fill: #d9770a;
   --btn-primary-bg: #0a0a0a;
   --btn-primary-text: #ffffff;
   --btn-primary-pressed: #2e2e2e;
@@ -90,7 +92,7 @@ body {
 }
 
 .page {
-  max-width: 1100px;
+  max-width: 1760px;
   margin: 0 auto;
   padding: 56px 32px 110px;
 }
@@ -1773,5 +1775,52 @@ footer {
     font-size: 12px;
     margin-top: 32px;
     line-height: 1.7;
+  }
+}
+
+/* 넓은 화면: 시계·타이머 사이트(clock-timer)와 스케일감을 맞추기 위해 주요 요소를
+   단계적으로 키운다. */
+@media (min-width: 1200px) {
+  header.hero h1 {
+    font-size: 38px;
+  }
+  .card {
+    padding: 40px;
+  }
+  .card h2 {
+    font-size: 24px;
+  }
+  .calc-btn {
+    padding: 24px;
+    font-size: 18px;
+  }
+  .game-tab-btn {
+    font-size: 17px;
+  }
+  .tab-btn {
+    padding: 18px 14px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1600px) {
+  header.hero h1 {
+    font-size: 44px;
+  }
+  .card {
+    padding: 44px;
+  }
+  .card h2 {
+    font-size: 26px;
+  }
+  .calc-btn {
+    padding: 26px;
+    font-size: 19px;
+  }
+  .game-tab-btn {
+    font-size: 18px;
+  }
+  .tab-btn {
+    font-size: 17px;
   }
 }
