@@ -178,6 +178,81 @@ header.hero h1 {
   transform: scale(0.94);
 }
 
+/* 사이드바 — 화면 크기와 상관없이 토글 버튼을 눌러야 열리는 드로어 (다른 사이트와 연동용) */
+.sidebar {
+  width: 260px;
+  box-sizing: border-box;
+  background: var(--card);
+  padding: 32px 16px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.2s;
+  z-index: 50;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-group {
+  margin-bottom: 24px;
+}
+
+.sidebar-group:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-group-label {
+  padding: 0 10px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.sidebar-link.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.sidebar-backdrop.open {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 45;
+}
+
 /* 탭 내비게이션 */
 /* ---------- 게임(도구) 전환: 자산배분 / 전략 / 낙원계산기 (아이투자 상단 탭 참고 - 버튼형이
    아니라 밑줄 강조형 얇은 탭) ---------- */
@@ -1642,6 +1717,10 @@ footer {
 @media (max-width: 640px) {
   .page {
     padding: 28px 16px 72px;
+  }
+
+  .sidebar {
+    width: 85vw;
   }
 
   .growth-chart-bars {

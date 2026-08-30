@@ -52,13 +52,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=45" />
+<link rel="stylesheet" href="css/style.css?v=46" />
 </head>
 <body>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">복권</div>
+    <a class="sidebar-link" href="https://zorlain.github.io/lotto-generator/">로또·연금복권 번호 생성기</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">투자</div>
+    <a class="sidebar-link active" href="https://zorlain.github.io/asset-allocation-calculator/">무료 퀀트투자</a>
+  </div>
+</aside>
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
 <div class="page">
 
   <header class="hero">
-    <h1 class="sr-only">무료 퀀트투자 - 자산배분 백테스트·투자전략·낙원계산기</h1>
+    <div class="hero-top">
+      <div class="hero-brand">
+        <h1>무료 퀀트투자</h1>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="menu-toggle" id="sidebar-toggle" aria-label="메뉴 열기">☰</button>
+      </div>
+    </div>
   </header>
 
   <div class="tab-layout">
@@ -962,7 +981,7 @@
 <script src="js/finance.js?v=6"></script>
 <script src="js/factor-engine.js?v=8"></script>
 <script src="js/factor-loader.js?v=1"></script>
-<script src="js/app.js?v=37"></script>
+<script src="js/app.js?v=38"></script>
 <script src="js/strategy-lab.js?v=8"></script>
 </body>
 </html>

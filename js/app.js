@@ -63,6 +63,24 @@ function initThemeToggle() {
   });
 }
 
+/* ---------- 사이드바 (다른 사이트 연동 메뉴 드로어) ---------- */
+function initSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const toggle = document.getElementById("sidebar-toggle");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (!sidebar || !toggle || !backdrop) return;
+  const close = () => {
+    sidebar.classList.remove("open");
+    backdrop.classList.remove("open");
+  };
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle("open");
+    backdrop.classList.toggle("open");
+  });
+  backdrop.addEventListener("click", close);
+}
+
 /* ---------- 탭 내비게이션 (포트폴리오 게임 내부: 배분·백테스트 / 자산 현황) ---------- */
 function activateTab(target) {
   const tabs = document.getElementById("tabs");
@@ -1472,6 +1490,7 @@ function setupDepletion() {
 /* ---------- 초기화 ---------- */
 function init() {
   initThemeToggle();
+  initSidebar();
   initGameSwitcher();
   initTabs();
   initInfoTooltips();
