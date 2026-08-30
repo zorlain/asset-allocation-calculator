@@ -165,7 +165,7 @@ function renderLineChart(bt) {
   const canvas = document.getElementById("line-canvas");
   if (!canvas || typeof Chart === "undefined") return;
   const style = getComputedStyle(document.documentElement);
-  const accent = style.getPropertyValue("--chart-fill").trim() || "#e6a01c";
+  const accent = style.getPropertyValue("--chart-fill").trim() || "#494fdf";
   const gridColor = style.getPropertyValue("--border").trim() || "rgba(0,0,0,0.1)";
   const textMuted = style.getPropertyValue("--text-muted").trim() || "#888888";
 

@@ -140,11 +140,9 @@ function Get-MonthlyPrices($symbol) {
   }
 }
 
-# ---------- 1. 미국 상장 종목 전체(Nasdaq/NYSE/CBOE/OTC) + CIK 매핑 ----------
-# OTC(장외) 종목은 XBRL 데이터 품질이 낮은 경우가 많지만, 최대한 많은 종목을 수집하기 위해
-# 포함한다(품질 낮은 개별 종목은 수집 단계의 크기 가드/파싱 실패 처리로 자연스럽게 걸러진다).
-# company_tickers_exchange.json은 company_tickers.json과 달리 거래소 정보까지 포함하고,
-# 티커 표기(예: BRK-B)도 더 정확하다.
+# ---------- 1. 미국 주요 거래소(Nasdaq/NYSE/CBOE) 상장 종목 전체 + CIK 매핑 ----------
+# OTC(장외) 종목은 신뢰할 만한 XBRL 데이터가 거의 없어 제외한다. company_tickers_exchange.json은
+# company_tickers.json과 달리 거래소 정보까지 포함하고, 티커 표기(예: BRK-B)도 더 정확하다.
 Write-Host "미국 상장 종목 목록 조회 중..."
 $tickerMapResp = Invoke-WebRequest -Uri "https://www.sec.gov/files/company_tickers_exchange.json" -Headers $secHeaders -UseBasicParsing -TimeoutSec 20
 $tickerMapJson = $tickerMapResp.Content | ConvertFrom-Json
@@ -152,12 +150,13 @@ $usTickers = New-Object System.Collections.Generic.List[string]
 $cikByTicker = @{}
 foreach ($row in $tickerMapJson.data) {
   $cik = $row[0]; $ticker = $row[2]; $exchange = $row[3]
+  if ($exchange -notin @("Nasdaq", "NYSE", "CBOE")) { continue }
   if ([string]::IsNullOrWhiteSpace($ticker)) { continue }
   $tickerUpper = $ticker.ToUpper()
   $usTickers.Add($tickerUpper)
   $cikByTicker[$tickerUpper] = "{0:D10}" -f [int]$cik
 }
-Write-Host "  Nasdaq/NYSE/CBOE/OTC 상장 $($usTickers.Count)개 확보"
+Write-Host "  Nasdaq/NYSE/CBOE 상장 $($usTickers.Count)개 확보"
 
 if ($Limit -gt 0) {
   $usTickers = $usTickers | Select-Object -Skip $StartIndex -First $Limit
