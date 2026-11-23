@@ -1823,3 +1823,35 @@ footer {
   .dash-main { grid-template-columns: 1fr; }
   .dash-main .chart-wrap.line-wrap { height: 240px; }
 }
+
+/* ---------- 검색엔진용 본문: 자주 묻는 질문 ---------- */
+.seo-faq {
+  max-width: 760px;
+  margin: 32px auto 8px;
+  padding: 0 24px;
+}
+.seo-faq h2 {
+  font-size: 18px;
+  margin: 0 0 14px;
+}
+.seo-faq-list details {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+.seo-faq-list details:last-child {
+  border-bottom: 1px solid var(--border);
+}
+.seo-faq-list summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+.seo-faq-list p {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+@media (max-width: 640px) {
+  .seo-faq { padding: 0 16px; }
+}
