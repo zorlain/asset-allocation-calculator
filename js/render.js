@@ -600,36 +600,43 @@ function renderResult(bt) {
   const cagrLabel = bt.dcaMode ? statLabelWithInfo("연평균 수익률 (CAGR)", "cagrDca") : "연평균 수익률 (CAGR)";
 
   resultEl.innerHTML = `
-    <div class="result-top">
-      <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
-      <div class="quick-stats">
-        <div class="quick-stat">
-          <div class="quick-stat-label">연평균(CAGR)</div>
-          <div class="quick-stat-value ${bt.cagr >= 0 ? "positive" : "negative"}">${formatSignedPct(bt.cagr, 2)}</div>
-        </div>
-        <div class="quick-stat">
-          <div class="quick-stat-label">최대낙폭(MDD)</div>
-          <div class="quick-stat-value negative">${formatPct(bt.mdd, 1)}</div>
-        </div>
-        <div class="quick-stat">
-          <div class="quick-stat-label">연변동성</div>
-          <div class="quick-stat-value">${formatPct(bt.annVol, 2)}</div>
-        </div>
-        <div class="quick-stat">
-          <div class="quick-stat-label">샤프비율</div>
-          <div class="quick-stat-value">${bt.sharpe.toFixed(2)}</div>
-        </div>
+    <div class="kpi-strip">
+      <div class="kpi-tile">
+        <div class="kpi-label">누적 수익률</div>
+        <div class="kpi-value ${bt.totalReturn >= 0 ? "positive" : "negative"}">${formatSignedPct(bt.totalReturn, 1)}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">연평균 (CAGR)</div>
+        <div class="kpi-value ${bt.cagr >= 0 ? "positive" : "negative"}">${formatSignedPct(bt.cagr, 2)}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">최대낙폭 (MDD)</div>
+        <div class="kpi-value negative">${formatPct(bt.mdd, 1)}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">샤프비율</div>
+        <div class="kpi-value">${bt.sharpe.toFixed(2)}</div>
       </div>
     </div>
-    <div class="chart-legend" id="pie-legend"></div>
-    ${pieCaption}
 
     <div class="result-hero">
       <div class="result-hero-label">최종 자산 (${bt.years.toFixed(1)}년 후 백테스트)</div>
       <div class="result-hero-value">${formatManwon(bt.finalValue)}</div>
       <div class="result-hero-sub">${bt.startDate} ~ ${bt.endDate} · ${investNote} · ${strategyNote}${rebalanceLabel}${feeNote}${txFeeNote}</div>
     </div>
-    <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
+
+    <div class="dash-main">
+      <div class="dash-chart">
+        <div class="dash-panel-title">포트폴리오 가치</div>
+        <div class="chart-wrap line-wrap"><canvas id="line-canvas"></canvas></div>
+      </div>
+      <div class="dash-side">
+        <div class="dash-panel-title">자산 비중</div>
+        <div class="chart-wrap pie-wrap"><canvas id="pie-canvas"></canvas></div>
+        <div class="chart-legend" id="pie-legend"></div>
+        ${pieCaption}
+      </div>
+    </div>
 
     <div class="result-grid">
       <div class="result-stat">
