@@ -159,7 +159,7 @@ function renderPieChart(weights) {
   }
 }
 
-const BENCHMARK_LINE_COLORS = ["#9aa0a6", "#c9a24a", "#7a8fd8"];
+const BENCHMARK_LINE_COLORS = ["#9aa0a6", "#5eead4", "#a5b4fc"];
 
 function renderLineChart(bt) {
   const canvas = document.getElementById("line-canvas");

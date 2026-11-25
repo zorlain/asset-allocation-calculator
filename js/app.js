@@ -907,7 +907,7 @@ function initStaticSeasonalToggle() {
   });
 }
 
-/* ---------- 탭 1: 배분 계산기 + 백테스트 (계산은 result.html에서 수행, 여기서는 검증 후 새 창을 연다) ---------- */
+/* ---------- 탭 1: 배분 계산기 + 백테스트 (계산은 result.html에서 수행, 여기서는 검증 후 같은 화면의 프레임에 결과를 띄운다) ---------- */
 
 /* "0"~"100" 문자열을 0~1 사이 비율로 변환. 비어있거나 숫자가 아니면 defaultFraction 사용 */
 function clampPct(str, defaultFraction) {
@@ -1171,9 +1171,33 @@ function setupAllocator() {
     }
 
     saveStateSnapshot();
-    window.open(buildResultUrl(), "_blank");
+    showInlineResult(buildResultUrl());
   });
 }
+
+/* 결과를 같은 화면 아래의 프레임에 보여준다. 높이는 결과 페이지가 알려 준다(postMessage). */
+function showInlineResult(url) {
+  const card = document.getElementById("result-embed");
+  const frame = document.getElementById("result-frame");
+  const link = document.getElementById("result-open-link");
+  if (!card || !frame) {
+    window.open(url, "_blank");
+    return;
+  }
+  link.href = url;
+  card.hidden = false;
+  frame.style.height = "420px";
+  frame.src = url + (url.includes("?") ? "&" : "?") + "embed=1";
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+window.addEventListener("message", (e) => {
+  if (e.origin !== window.location.origin) return;
+  const d = e.data;
+  if (!d || d.type !== "quant-result-height") return;
+  const frame = document.getElementById("result-frame");
+  if (frame && Number.isFinite(d.height)) frame.style.height = Math.max(240, Math.ceil(d.height)) + "px";
+});
 
 /* ---------- 탭 2: 자산 현황 ---------- */
 function renderDashboard() {

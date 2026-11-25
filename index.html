@@ -42,7 +42,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="css/style.css?v=51" />
+<link rel="stylesheet" href="css/style.css?v=52" />
 </head>
 <body>
 <div class="page">
@@ -608,7 +608,16 @@
       </div>
 
       <p class="calc-error-msg" id="calc-error-msg" hidden></p>
-      <button class="calc-btn" id="allocator-calc-btn">새 창에서 결과 보기 ↗</button>
+      <button class="calc-btn" id="allocator-calc-btn">백테스트 실행</button>
+    </div>
+
+    <!-- 결과: 같은 화면 아래에 바로 보여준다 (새 창으로도 열 수 있음) -->
+    <div class="card result-embed" id="result-embed" hidden>
+      <div class="result-embed-head">
+        <h2>백테스트 결과</h2>
+        <a class="result-embed-link" id="result-open-link" href="result.html" target="_blank" rel="noopener">새 창에서 보기 ↗</a>
+      </div>
+      <iframe id="result-frame" title="백테스트 결과" loading="lazy"></iframe>
     </div>
   </section>
 
@@ -892,8 +901,8 @@
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
-            실시간 시세가 아니라, <code>scripts/update-data.ps1</code>을 재실행할 때마다 갱신되는
-            최근 종가 기준 데이터입니다. 상단에 표시된 기준일을 확인하세요.
+            실시간 시세가 아니라, 주기적으로 갱신되는 최근 종가 기준 데이터입니다.
+            상단에 표시된 기준일을 확인하세요.
           </span>
         </button>
       </h2>
@@ -960,7 +969,7 @@
 <script src="js/finance.js?v=6"></script>
 <script src="js/factor-engine.js?v=8"></script>
 <script src="js/factor-loader.js?v=1"></script>
-<script src="js/app.js?v=38"></script>
+<script src="js/app.js?v=39"></script>
 <script src="js/strategy-lab.js?v=8"></script>
 </body>
 </html>

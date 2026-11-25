@@ -156,7 +156,21 @@ function runFromParams() {
   renderResult(bt);
 }
 
+/* 메인 페이지 안의 프레임(embed=1)으로 열렸을 때: 머리말·바닥글을 숨기고 내용 높이를 부모에게 알린다 */
+function initEmbedMode() {
+  if (new URLSearchParams(window.location.search).get("embed") !== "1") return;
+  document.documentElement.classList.add("embedded");
+  const send = () => {
+    const h = Math.ceil(document.body.getBoundingClientRect().height);
+    window.parent.postMessage({ type: "quant-result-height", height: h }, window.location.origin);
+  };
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(send).observe(document.body);
+  window.addEventListener("load", send);
+  setTimeout(send, 400);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  initEmbedMode();
   initThemeToggleStandalone();
   runFromParams();
 });
