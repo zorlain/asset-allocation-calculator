@@ -3,11 +3,36 @@
    포인트 컬러(브랜드)와 손익 색상(초록/빨강)은 의미가 달라 서로 독립적으로 관리한다.
    data-theme="light"로 라이트 모드 전환. */
 :root {
-  /* 2026-11 디자인 B: toolbox와 같은 따뜻한 검정 + 호박색 포인트 */
+  /* 2026-11 디자인 C: 따뜻한 아이보리 리포트 (라이트가 기본, data-theme="dark"는 따뜻한 검정) */
+  --bg: #faf7f2;
+  --card: #ffffff;
+  --card-elevated: #f3ede3;
+  --field-bg: #faf7f2;
+  --field-border: #d8cfc0;
+  --text: #1f1a14;
+  --text-muted: #6b6259;
+  --border: #e4ddd2;
+  --accent: #b45309;
+  --accent-hover: #92400e;
+  --accent-soft: rgba(180, 83, 9, 0.1);
+  --accent-on: #ffffff;
+  --chart-fill: #b45309;
+  --btn-primary-bg: #1f1a14;
+  --btn-primary-text: #ffffff;
+  --btn-primary-pressed: #3a322a;
+  --hover-tint: rgba(31, 26, 20, 0.06);
+  --report-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
+
+  --positive: #047857;
+  --negative: #b91c1c;
+}
+
+:root[data-theme="dark"] {
   --bg: #14110e;
   --card: #1c1713;
   --card-elevated: #26201a;
-  --sidebar: #17130f;
+  --field-bg: #26201a;
+  --field-border: rgba(255, 255, 255, 0.1);
   --text: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.68);
   --border: rgba(255, 255, 255, 0.1);
@@ -23,28 +48,6 @@
 
   --positive: #06c47f;
   --negative: #ff5c5c;
-}
-
-:root[data-theme="light"] {
-  --bg: #ffffff;
-  --card: #f7f7f8;
-  --card-elevated: #ececef;
-  --sidebar: #f2eee8;
-  --text: #0a0a0a;
-  --text-muted: rgba(10, 10, 10, 0.62);
-  --border: rgba(10, 10, 10, 0.12);
-  --accent: #b45309;
-  --accent-hover: #92400e;
-  --accent-soft: rgba(217, 119, 10, 0.12);
-  --accent-on: #ffffff;
-  --chart-fill: #d9770a;
-  --btn-primary-bg: #0a0a0a;
-  --btn-primary-text: #ffffff;
-  --btn-primary-pressed: #2e2e2e;
-  --hover-tint: rgba(10, 10, 10, 0.06);
-
-  --positive: #059669;
-  --negative: #d8314f;
 }
 
 /* 테마 토글 버튼 */
@@ -1873,58 +1876,192 @@ footer {
   .info-btn { min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
 }
 
+
 /* ======================================================================
-   디자인 B (2026-11): toolbox와 같은 색 + 데스크톱 왼쪽 메뉴 / 폰 하단 메뉴 + 같은 화면 결과
+   디자인 C (2026-11): 아이보리 리포트 — 흰 상단 바 + 밑줄 메뉴, 세리프 숫자, 얇은 선, 같은 화면 결과
    ====================================================================== */
-.card {
-  border: 1px solid var(--border);
-  border-radius: 18px;
-}
-.tabs {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 6px;
-}
-.tab-btn {
-  padding: 14px 10px;
-  font-size: 15px;
-  font-weight: 700;
-  border-radius: 12px;
-}
-.tab-btn.active {
-  background: var(--accent);
-  color: var(--accent-on);
-}
-.field-input-wrap input {
-  border: 1px solid var(--border);
-}
-.field-input-wrap input:focus {
-  border-color: var(--accent);
+html,
+body {
+  overflow-x: clip;
 }
 
-/* 메뉴 아이콘 (퀀트 / 낙원계산기 / 데이터) */
-.game-tab-btn::before {
-  content: "";
-  flex: none;
-  width: 20px;
-  height: 20px;
-  background: currentColor;
-  -webkit-mask: var(--tab-icon) center / contain no-repeat;
-  mask: var(--tab-icon) center / contain no-repeat;
+/* 상단 바 */
+.page:not(.report-page) {
+  max-width: none;
+  padding: 0 0 110px;
 }
-.game-tab-btn[data-game="portfolio"] {
-  --tab-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19V9M10 19V5M16 19v-7M22 19H2'/%3E%3C/svg%3E");
+.page:not(.report-page) > :not(.hero):not(.seo-faq) {
+  width: 100%;
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 32px;
+  padding-right: 32px;
 }
-.game-tab-btn[data-game="retirement"] {
-  --tab-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4v5c0 4.5-3.2 7.7-8 9-4.8-1.3-8-4.5-8-9V7z'/%3E%3C/svg%3E");
+.page:not(.report-page) > .hero {
+  margin: 0 0 32px;
+  padding: 0;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
 }
-.game-tab-btn[data-game="dashboard"] {
-  --tab-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6'/%3E%3C/svg%3E");
+.page:not(.report-page) .hero-top {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+  min-height: 76px;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+.page:not(.report-page) .hero-brand {
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 40px;
+}
+.page:not(.report-page) header.hero h1 {
+  font-size: 20px;
+  font-weight: 800;
+  padding-bottom: 20px;
+  margin: 0;
+}
+.game-tabs {
+  gap: 28px;
 }
 .game-tab-btn {
+  height: 56px;
   display: flex;
   align-items: center;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.game-tab-btn:hover:not(.active) {
+  background: transparent;
+  color: var(--text);
+}
+.game-tab-btn.active {
+  background: transparent;
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* 리포트 제목 + 구분 탭 */
+.report-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.report-eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.report-heading {
+  margin: 8px 0 0;
+  font-family: var(--report-serif);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.tabs {
+  width: fit-content;
+  margin: 0;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--card-elevated);
+  flex-wrap: nowrap;
+}
+.tab-btn {
+  flex: none;
+  height: 44px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 9px;
+  color: var(--text-muted);
+}
+.tab-btn.active {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(31, 26, 20, 0.14);
+}
+
+/* 카드·입력칸·버튼 */
+.card {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.card h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.field-input-wrap input,
+.select-input {
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+}
+.field-input-wrap input:focus,
+.select-input:focus {
+  border-color: var(--accent);
+}
+.calc-btn {
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* 결과 요약: 얇은 선과 세리프 숫자 */
+.kpi-strip {
+  gap: 0;
+  margin-bottom: 20px;
+  background: var(--card);
+  border-top: 2px solid var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.kpi-tile {
+  padding: 20px 24px;
+  border-radius: 0;
+  background: transparent;
+  border-right: 1px solid var(--border);
+}
+.kpi-tile:last-child {
+  border-right: 0;
+}
+.kpi-value {
+  font-family: var(--report-serif);
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  color: var(--text);
+}
+.kpi-value.positive { color: var(--positive); }
+.kpi-value.negative { color: var(--negative); }
+.dash-chart,
+.dash-side {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.result-hero-value {
+  font-family: var(--report-serif);
 }
 
 /* 같은 화면에 나오는 결과 */
@@ -1978,100 +2115,66 @@ html.embedded .card > h2 {
   display: none;
 }
 
-/* 데스크톱: 왼쪽 고정 메뉴 */
-@media (min-width: 1100px) {
-  .page:not(.report-page) {
-    max-width: none;
-    margin: 0 0 0 232px;
-    padding: 40px 40px 110px;
-  }
+/* 폰·좁은 화면: 위쪽 바 안에서 밑줄 메뉴를 가로로 밀어서 본다 */
+@media (max-width: 760px) {
   .page:not(.report-page) > :not(.hero):not(.seo-faq) {
-    max-width: 1040px;
-    margin-left: auto;
-    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .page:not(.report-page) > .hero {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 232px;
-    margin: 0;
-    padding: 28px 16px;
-    border-bottom: 0;
-    border-right: 1px solid var(--border);
-    background: var(--sidebar);
-    z-index: 20;
+    margin-bottom: 20px;
   }
-  .page:not(.report-page) .hero-top,
+  .page:not(.report-page) .hero-top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 0;
+  }
   .page:not(.report-page) .hero-brand {
-    display: flex;
+    display: contents;
+  }
+  .page:not(.report-page) header.hero h1 {
+    grid-column: 1;
+    padding: 0;
+    font-size: 18px;
+    line-height: 56px;
+  }
+  .theme-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .game-tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 22px;
+    overflow-x: auto;
+  }
+  .game-tab-btn {
+    flex: none;
+    height: 48px;
+    font-size: 14px;
+  }
+  .report-head {
     flex-direction: column;
     align-items: stretch;
-    flex-wrap: nowrap;
-    gap: 28px;
+    gap: 16px;
   }
-  .page:not(.report-page) header.hero h1 {
-    font-size: 20px;
-    font-weight: 800;
+  .report-heading {
+    font-size: 26px;
+  }
+  .tabs {
+    width: 100%;
+  }
+  .tab-btn {
+    flex: 1;
     padding: 0 8px;
   }
-  .page:not(.report-page) .game-tabs {
-    flex-direction: column;
-    gap: 6px;
+  .card {
+    padding: 20px;
   }
-  .page:not(.report-page) .game-tab-btn {
-    height: 44px;
-    gap: 10px;
-    padding: 0 12px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    text-align: left;
-  }
-  .page:not(.report-page) .game-tab-btn.active {
-    background: var(--accent);
-    color: var(--accent-on);
-  }
-}
-
-/* 폰·태블릿: 아래쪽 메뉴 */
-@media (max-width: 1099px) {
-  .page:not(.report-page) {
-    padding: 20px 16px 110px;
-  }
-  .page:not(.report-page) header.hero {
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-  }
-  .page:not(.report-page) header.hero h1 {
-    font-size: 24px;
-    font-weight: 800;
-  }
-  .page:not(.report-page) .game-tabs {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 60;
-    gap: 0;
-    background: var(--sidebar);
-    border-top: 1px solid var(--border);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .page:not(.report-page) .game-tab-btn {
-    flex: 1;
-    min-height: 60px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    padding: 6px 4px;
-    border-radius: 0;
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .page:not(.report-page) .game-tab-btn.active {
-    background: transparent;
-    color: var(--accent);
+  .kpi-tile {
+    padding: 16px;
   }
 }

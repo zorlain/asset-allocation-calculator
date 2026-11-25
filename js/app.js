@@ -49,17 +49,30 @@ function initThemeToggle() {
   const btn = document.getElementById("theme-toggle");
   if (!btn) return;
 
-  const getTheme = () => document.documentElement.getAttribute("data-theme") || "dark";
+  const ICON_MOON =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>';
+  const ICON_SUN =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const getTheme = () => document.documentElement.getAttribute("data-theme") || "light";
   const applyIcon = () => {
-    btn.textContent = getTheme() === "dark" ? "☀️" : "🌙";
+    // 지금이 라이트면 달 아이콘(누르면 다크), 다크면 해 아이콘(누르면 라이트)
+    btn.innerHTML = getTheme() === "dark" ? ICON_SUN : ICON_MOON;
   };
 
   applyIcon();
   btn.addEventListener("click", () => {
     const next = getTheme() === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch (e) {
+      /* 저장할 수 없어도 화면 전환은 그대로 진행 */
+    }
     applyIcon();
+    // 같은 화면에 열려 있는 결과(프레임)는 차트 색을 다시 읽어야 하므로 새로 불러온다
+    const card = document.getElementById("result-embed");
+    const frame = document.getElementById("result-frame");
+    if (card && !card.hidden && frame && frame.contentWindow) frame.contentWindow.location.reload();
   });
 }
 
