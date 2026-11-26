@@ -6,31 +6,31 @@
 <script>
   (function () { var t = "light"; try { if (localStorage.getItem("theme") === "dark") t = "dark"; } catch (e) {} document.documentElement.setAttribute("data-theme", t); })();
 </script>
-<title>퀀트투자 - 자산배분 백테스트·투자전략 계산기</title>
+<title>퀀트랩 - 자산배분 백테스트·투자전략 계산기</title>
 <meta name="description" content="자산배분 포트폴리오를 과거 데이터로 백테스트하고 수익률, 최대낙폭, 샤프비율을 확인하세요. 투자전략과 은퇴 자산 계산까지 무료로 이용합니다." />
-<meta name="keywords" content="퀀트투자,머니퀀트,퀀트계산기,포트폴리오백테스트,자산배분계산기,포트폴리오계산기,백테스트,자산배분,영구포트폴리오,올웨더포트폴리오,60대40포트폴리오,분산투자,투자전략,은퇴자산계산기,경제적자유계산기,파이어계산기,FIRE계산기,낙원계산기" />
+<meta name="keywords" content="퀀트랩,퀀트투자,머니퀀트,퀀트계산기,포트폴리오백테스트,자산배분계산기,포트폴리오계산기,백테스트,자산배분,영구포트폴리오,올웨더포트폴리오,60대40포트폴리오,분산투자,투자전략,은퇴자산계산기,경제적자유계산기,파이어계산기,FIRE계산기,낙원계산기" />
 <meta name="robots" content="index, follow" />
 <link rel="canonical" href="https://zorlain.github.io/asset-allocation-calculator/" />
 <meta name="google-site-verification" content="mv-oXvo6ZrAOkqeYce0jNg3vF7Jf_Q9YJhgHb22YaSU" />
 
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="toolbox" />
-<meta property="og:title" content="퀀트투자 - 자산배분 백테스트·투자전략 계산기" />
+<meta property="og:title" content="퀀트랩 - 자산배분 백테스트·투자전략 계산기" />
 <meta property="og:description" content="자산배분 포트폴리오를 과거 데이터로 백테스트하고 은퇴 자산까지 계산합니다." />
 <meta property="og:url" content="https://zorlain.github.io/asset-allocation-calculator/" />
 <meta property="og:locale" content="ko_KR" />
 <meta property="og:image" content="https://zorlain.github.io/asset-allocation-calculator/og-image.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="퀀트투자" />
+<meta property="og:image:alt" content="퀀트랩" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="퀀트투자 - 자산배분 백테스트·투자전략 계산기" />
+<meta name="twitter:title" content="퀀트랩 - 자산배분 백테스트·투자전략 계산기" />
 <meta name="twitter:description" content="자산배분 포트폴리오를 과거 데이터로 백테스트하고 은퇴 자산까지 계산합니다." />
 <meta name="twitter:image" content="https://zorlain.github.io/asset-allocation-calculator/og-image.png" />
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://zorlain.github.io/asset-allocation-calculator/#app","name":"퀀트투자","url":"https://zorlain.github.io/asset-allocation-calculator/","description":"자산배분 포트폴리오를 과거 데이터로 백테스트하고 수익률, 최대낙폭, 샤프비율을 확인하세요. 투자전략과 은퇴 자산 계산까지 무료로 이용합니다.","applicationCategory":"FinanceApplication","operatingSystem":"Any","browserRequirements":"JavaScript 사용","inLanguage":"ko","isAccessibleForFree":true,"image":"https://zorlain.github.io/asset-allocation-calculator/og-image.png","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"toolbox","item":"https://zorlain.github.io/"},{"@type":"ListItem","position":2,"name":"퀀트투자","item":"https://zorlain.github.io/asset-allocation-calculator/"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"자산배분 백테스트는 무엇인가요?","acceptedAnswer":{"@type":"Answer","text":"과거 시장 데이터로 포트폴리오를 가정해 보고 수익률, 최대낙폭, 변동성, 샤프비율 같은 지표를 계산하는 시뮬레이션입니다. 자산을 어떻게 나누면 과거에 어떤 결과가 나왔는지 비교해 볼 수 있습니다."}},{"@type":"Question","name":"백테스트 결과가 미래 수익을 보장하나요?","acceptedAnswer":{"@type":"Answer","text":"아니요. 과거 데이터를 바탕으로 한 참고용 시뮬레이션이라 실제 투자 수익을 보장하지 않습니다. 투자에 대한 판단과 책임은 투자자 본인에게 있습니다."}},{"@type":"Question","name":"어떤 설정을 바꿔 볼 수 있나요?","acceptedAnswer":{"@type":"Answer","text":"초기 투자금과 적립식 투자, 연 수수료와 거래 수수료, 백테스트 기간, 리밸런싱 주기, 배당 재투자와 환율 반영을 정할 수 있습니다. 고정 비중을 유지하는 정적 배분과 시장 상황에 따라 비중이 바뀌는 동적 배분을 고를 수 있습니다."}},{"@type":"Question","name":"계산은 어디에서 이루어지나요?","acceptedAnswer":{"@type":"Answer","text":"계산은 모두 브라우저 안에서 이루어집니다. 결과는 별도 창에서 지표, 차트, 월별 수익률 표로 자세히 볼 수 있습니다."}}]}]}
+{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://zorlain.github.io/asset-allocation-calculator/#app","name":"퀀트랩","url":"https://zorlain.github.io/asset-allocation-calculator/","description":"자산배분 포트폴리오를 과거 데이터로 백테스트하고 수익률, 최대낙폭, 샤프비율을 확인하세요. 투자전략과 은퇴 자산 계산까지 무료로 이용합니다.","applicationCategory":"FinanceApplication","operatingSystem":"Any","browserRequirements":"JavaScript 사용","inLanguage":"ko","isAccessibleForFree":true,"image":"https://zorlain.github.io/asset-allocation-calculator/og-image.png","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"toolbox","item":"https://zorlain.github.io/"},{"@type":"ListItem","position":2,"name":"퀀트랩","item":"https://zorlain.github.io/asset-allocation-calculator/"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"자산배분 백테스트는 무엇인가요?","acceptedAnswer":{"@type":"Answer","text":"과거 시장 데이터로 포트폴리오를 가정해 보고 수익률, 최대낙폭, 변동성, 샤프비율 같은 지표를 계산하는 시뮬레이션입니다. 자산을 어떻게 나누면 과거에 어떤 결과가 나왔는지 비교해 볼 수 있습니다."}},{"@type":"Question","name":"백테스트 결과가 미래 수익을 보장하나요?","acceptedAnswer":{"@type":"Answer","text":"아니요. 과거 데이터를 바탕으로 한 참고용 시뮬레이션이라 실제 투자 수익을 보장하지 않습니다. 투자에 대한 판단과 책임은 투자자 본인에게 있습니다."}},{"@type":"Question","name":"어떤 설정을 바꿔 볼 수 있나요?","acceptedAnswer":{"@type":"Answer","text":"초기 투자금과 적립식 투자, 연 수수료와 거래 수수료, 백테스트 기간, 리밸런싱 주기, 배당 재투자와 환율 반영을 정할 수 있습니다. 고정 비중을 유지하는 정적 배분과 시장 상황에 따라 비중이 바뀌는 동적 배분을 고를 수 있습니다."}},{"@type":"Question","name":"계산은 어디에서 이루어지나요?","acceptedAnswer":{"@type":"Answer","text":"계산은 모두 브라우저 안에서 이루어집니다. 결과는 같은 화면 아래에 지표, 차트, 월별 수익률 표로 나오고, 새 창으로 열어 볼 수도 있습니다."}},{"@type":"Question","name":"종목 전략 탭은 무엇을 하나요?","acceptedAnswer":{"@type":"Answer","text":"PER, PBR, ROE, 모멘텀 같은 팩터 조건으로 미국 상장 대형주를 고르고, 과거에 그 방식으로 운용했다면 어땠는지 백테스트합니다. 가치주, 우량주, 모멘텀 같은 빠른 시작 조건을 불러와 숫자를 바꿔 볼 수 있고, 지금 조건에 맞는 종목 목록도 볼 수 있습니다. 재무 수치는 SEC에 공시된 날 이후의 값만 사용합니다."}},{"@type":"Question","name":"종목 전략 백테스트 결과를 그대로 믿어도 되나요?","acceptedAnswer":{"@type":"Answer","text":"아니요. 대상이 지금 상장된 대형주라 상장폐지된 종목이 빠져 있는 생존편향이 있어 실제보다 좋게 나올 수 있습니다. 배당, 세금, 거래 체결 오차는 반영하지 않았습니다. 전략을 검토하는 참고 자료로만 쓰세요."}}]}]}
 </script>
 
 <meta name="theme-color" content="#14110e" />
@@ -43,7 +43,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap" />
-<link rel="stylesheet" href="css/style.css?v=53" />
+<link rel="stylesheet" href="css/style.css?v=54" />
 </head>
 <body>
 <div class="page">
@@ -51,7 +51,7 @@
   <header class="hero">
     <div class="hero-top">
       <div class="hero-brand">
-        <h1>퀀트투자</h1>
+        <h1>퀀트랩</h1>
         <nav class="game-tabs" id="game-tabs">
           <button class="game-tab-btn active" data-game="portfolio">퀀트</button>
           <button class="game-tab-btn" data-game="retirement">낙원계산기</button>
@@ -71,7 +71,7 @@
     </div>
   <nav class="tabs" id="tabs">
     <button class="tab-btn active" data-tab="allocator">자산배분</button>
-    <button class="tab-btn" data-tab="strategy">전략 (개발중)</button>
+    <button class="tab-btn" data-tab="strategy">종목 전략</button>
   </nav>
   </div>
 
@@ -631,13 +631,24 @@
 
   <!-- 탭 2: 전략 (팩터 조합 백테스트) -->
   <section class="tab-panel" data-tab-panel="strategy" hidden>
+    <div class="card strat-presets-card">
+      <h2>빠른 시작</h2>
+      <p class="card-desc-short">대표적인 전략 조건을 불러온 뒤 숫자를 바꿔 가며 써 보세요. 아래 설정이 그대로 채워집니다.</p>
+      <div class="strat-preset-row" id="strat-presets">
+        <button type="button" class="strat-preset" data-preset="value"><span class="strat-preset-name">가치주</span><span class="strat-preset-desc">PER·PBR이 낮은 흑자 기업</span></button>
+        <button type="button" class="strat-preset" data-preset="quality"><span class="strat-preset-name">우량주</span><span class="strat-preset-desc">ROE·영업이익률이 높고 빚이 적은 기업</span></button>
+        <button type="button" class="strat-preset" data-preset="momentum"><span class="strat-preset-name">모멘텀</span><span class="strat-preset-desc">최근 6·12개월 주가가 오른 종목</span></button>
+        <button type="button" class="strat-preset" data-preset="blend"><span class="strat-preset-name">가치 + 우량</span><span class="strat-preset-desc">싸면서 수익성도 좋은 기업</span></button>
+      </div>
+    </div>
+
     <div class="card">
       <h2>
         유니버스 설정
         <button type="button" class="info-btn" aria-label="자세히 보기">
           <span aria-hidden="true">ⓘ</span>
           <span class="info-tooltip">
-            미국 S&amp;P500 종목을 대상으로 합니다. 재무데이터는 SEC EDGAR 공시 자료(무료·공식)를
+            SEC에 등록된 미국 상장사 중 시가총액이 큰 종목들을 대상으로 합니다. 재무데이터는 SEC EDGAR 공시 자료(무료·공식)를
             기준으로, 각 시점에 실제로 공시되어 있던 값만 사용해 미래 정보가 과거로 새어들어가지
             않도록 합니다. 배당수익률·기관/외인 수급 같은 팩터는 무료 데이터로 구할 수 없어 제외했습니다.
           </span>
@@ -765,13 +776,21 @@
 
       <p class="calc-error-msg" id="strat-run-error" hidden></p>
       <div class="field-row" style="gap:12px;">
-        <button type="button" class="calc-btn" id="strat-extract-btn" style="background:var(--card-elevated); color:var(--text);">종목 추출 (현재 기준)</button>
-        <button type="button" class="calc-btn" id="strat-run-btn">새 창에서 백테스트 결과 보기 ↗</button>
+        <button type="button" class="calc-btn" id="strat-extract-btn" style="background:var(--card-elevated); color:var(--text);">지금 살 종목 보기</button>
+        <button type="button" class="calc-btn" id="strat-run-btn">백테스트 실행</button>
       </div>
     </div>
 
+    <div class="card result-embed" id="strat-result-embed" hidden>
+      <div class="result-embed-head">
+        <h2>백테스트 결과</h2>
+        <a class="result-embed-link" id="strat-result-open-link" href="factor-result.html" target="_blank" rel="noopener">새 창에서 보기 ↗</a>
+      </div>
+      <iframe id="strat-result-frame" title="종목 전략 백테스트 결과" loading="lazy"></iframe>
+    </div>
+
     <div class="card" id="strat-extract-card" hidden>
-      <h2>종목 추출 결과</h2>
+      <h2>조건에 맞는 종목</h2>
       <p class="card-desc-short" id="strat-extract-summary"></p>
       <div class="asset-table-wrap">
         <table class="asset-table" id="strat-extract-table">
@@ -961,7 +980,9 @@
     <details><summary>자산배분 백테스트는 무엇인가요?</summary><p>과거 시장 데이터로 포트폴리오를 가정해 보고 수익률, 최대낙폭, 변동성, 샤프비율 같은 지표를 계산하는 시뮬레이션입니다. 자산을 어떻게 나누면 과거에 어떤 결과가 나왔는지 비교해 볼 수 있습니다.</p></details>
     <details><summary>백테스트 결과가 미래 수익을 보장하나요?</summary><p>아니요. 과거 데이터를 바탕으로 한 참고용 시뮬레이션이라 실제 투자 수익을 보장하지 않습니다. 투자에 대한 판단과 책임은 투자자 본인에게 있습니다.</p></details>
     <details><summary>어떤 설정을 바꿔 볼 수 있나요?</summary><p>초기 투자금과 적립식 투자, 연 수수료와 거래 수수료, 백테스트 기간, 리밸런싱 주기, 배당 재투자와 환율 반영을 정할 수 있습니다. 고정 비중을 유지하는 정적 배분과 시장 상황에 따라 비중이 바뀌는 동적 배분을 고를 수 있습니다.</p></details>
-    <details><summary>계산은 어디에서 이루어지나요?</summary><p>계산은 모두 브라우저 안에서 이루어집니다. 결과는 별도 창에서 지표, 차트, 월별 수익률 표로 자세히 볼 수 있습니다.</p></details>
+    <details><summary>계산은 어디에서 이루어지나요?</summary><p>계산은 모두 브라우저 안에서 이루어집니다. 결과는 같은 화면 아래에 지표, 차트, 월별 수익률 표로 나오고, 새 창으로 열어 볼 수도 있습니다.</p></details>
+    <details><summary>종목 전략 탭은 무엇을 하나요?</summary><p>PER, PBR, ROE, 모멘텀 같은 팩터 조건으로 미국 상장 대형주를 고르고, 과거에 그 방식으로 운용했다면 어땠는지 백테스트합니다. 가치주, 우량주, 모멘텀 같은 빠른 시작 조건을 불러와 숫자를 바꿔 볼 수 있고, 지금 조건에 맞는 종목 목록도 볼 수 있습니다. 재무 수치는 SEC에 공시된 날 이후의 값만 사용합니다.</p></details>
+    <details><summary>종목 전략 백테스트 결과를 그대로 믿어도 되나요?</summary><p>아니요. 대상이 지금 상장된 대형주라 상장폐지된 종목이 빠져 있는 생존편향이 있어 실제보다 좋게 나올 수 있습니다. 배당, 세금, 거래 체결 오차는 반영하지 않았습니다. 전략을 검토하는 참고 자료로만 쓰세요.</p></details>
   </div>
 </section>
 
@@ -975,9 +996,9 @@
 <script src="data/asset-data.js"></script>
 <script src="data/factor-shards/index.js"></script>
 <script src="js/finance.js?v=6"></script>
-<script src="js/factor-engine.js?v=8"></script>
+<script src="js/factor-engine.js?v=9"></script>
 <script src="js/factor-loader.js?v=1"></script>
-<script src="js/app.js?v=40"></script>
-<script src="js/strategy-lab.js?v=8"></script>
+<script src="js/app.js?v=41"></script>
+<script src="js/strategy-lab.js?v=10"></script>
 </body>
 </html>

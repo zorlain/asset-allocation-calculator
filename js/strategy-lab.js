@@ -304,7 +304,9 @@ function runStockExtraction() {
   const ranked = rankByFactors(snapshots, options.factorConfigs).slice(0, options.topN);
 
   const summaryEl = document.getElementById("strat-extract-summary");
-  summaryEl.textContent = `기준일: ${asOfDate} · 조건에 맞는 종목 ${ranked.length}개 (상위 ${options.topN}개 제한)`;
+  summaryEl.textContent = ranked.length === 0
+    ? `시세 기준 ${asOfDate} · 조건에 맞는 종목이 없습니다. 범위를 넓혀 보세요.`
+    : `시세 기준 ${asOfDate} · 조건에 맞는 종목 중 점수가 높은 ${ranked.length}개 (종목 수 ${options.topN}개 기준). 과거 데이터로 계산한 참고용 목록이며 투자 권유가 아닙니다.`;
 
   const body = document.getElementById("strat-extract-body");
   body.innerHTML = ranked
@@ -348,6 +350,8 @@ function refreshDateRangeSelects() {
 /* 백테스트 실행 · 종목 추출 버튼 둘 다, 누르는 시점에 샤드가 아직 안 실려있으면 그때
    불러온다(페이지 진입과 동시에 수백MB를 강제로 받게 하지 않기 위해 지연 로딩). 버튼
    텍스트를 진행률로 바꿔서 로딩 중임을 보여준다. */
+let dateRangeFilled = false;
+
 async function ensureFactorDataLoaded(triggerBtn) {
   const asofEl = document.getElementById("strat-asof");
   const originalBtnText = triggerBtn ? triggerBtn.textContent : "";
@@ -363,9 +367,17 @@ async function ensureFactorDataLoaded(triggerBtn) {
     triggerBtn.disabled = false;
     triggerBtn.textContent = originalBtnText;
   }
-  refreshDateRangeSelects();
+  // 날짜 선택은 데이터를 처음 받았을 때 한 번만 실제 범위로 채운다(실행할 때마다 다시 채우면 사용자가 고른 날짜가 기본값으로 돌아간다)
+  if (!dateRangeFilled) {
+    refreshDateRangeSelects();
+    dateRangeFilled = true;
+  }
   const count = Object.keys(FACTOR_DATA.stocks).length;
-  if (asofEl) asofEl.textContent = `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${count}개 (미국 Nasdaq·NYSE·CBOE 상장, SEC EDGAR 공시데이터)`;
+  if (asofEl) asofEl.textContent = factorUniverseNote(count);
+}
+
+function factorUniverseNote(count) {
+  return `데이터 기준일 ${FACTOR_DATA.updatedAt} · 시가총액이 큰 미국 상장사 ${count.toLocaleString("ko-KR")}개 (Nasdaq·NYSE·CBOE, SEC EDGAR 공시 데이터)`;
 }
 
 function initStrategyLab() {
@@ -377,8 +389,7 @@ function initStrategyLab() {
     return;
   }
 
-  document.getElementById("strat-asof").textContent =
-    `기준일: ${FACTOR_DATA.updatedAt} · 대상 종목 ${FACTOR_DATA.totalStocks}개 (미국 Nasdaq·NYSE·CBOE 상장, SEC EDGAR 공시데이터) · 아래 버튼을 누르면 데이터를 불러옵니다`;
+  document.getElementById("strat-asof").textContent = factorUniverseNote(FACTOR_DATA.totalStocks);
 
   refreshDateRangeSelects();
   if (!document.getElementById("strat-start-year").options.length) {
@@ -403,8 +414,10 @@ function initStrategyLab() {
     await ensureFactorDataLoaded(btn);
     const options = gatherStrategyOptions();
     if (!options) return;
-    window.open(buildFactorResultUrl(options), "_blank");
+    showStrategyResult(buildFactorResultUrl(options));
   });
+
+  initStrategyPresets();
 
   const extractBtn = document.getElementById("strat-extract-btn");
   if (extractBtn) {
@@ -414,8 +427,87 @@ function initStrategyLab() {
     });
   }
 
-  // 페이지를 열자마자 백그라운드로 미리 받아두면, 버튼을 누를 때쯤엔 이미 끝나있을 수 있다
-  ensureFactorDataLoaded(null);
+  // 종목 데이터는 용량이 커서(수십 MB) 페이지를 열 때가 아니라 "종목 전략" 탭을 처음 열 때 받는다.
+  // 탭이 hidden에서 보이는 상태로 바뀌는 순간을 IntersectionObserver로 잡는다.
+  const panel = document.querySelector('[data-tab-panel="strategy"]');
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    ensureFactorDataLoaded(null);
+  };
+  if (panel && "IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) start();
+    }).observe(panel);
+  } else {
+    start();
+  }
+}
+
+/* ---------- 빠른 시작 프리셋 ----------
+   [팩터 키, 최소, 최대] 는 "실제 값" 범위(PER 15배 이하, ROE 15% 이상 등)이고, 범위 안에 든 종목들을
+   팩터 종합 점수로 줄 세워 상위 종목을 고른다. */
+const STRAT_PRESETS = {
+  value: {
+    factors: [["per", 0, 15], ["pbr", 0, 3], ["roe", 5, 80]],
+    filters: ["strat-exclude-financial", "strat-exclude-loss-annual"],
+  },
+  quality: {
+    factors: [["roe", 15, 80], ["opm", 12, 60], ["debtToEquity", 0, 100]],
+    filters: ["strat-exclude-financial", "strat-exclude-loss-annual"],
+  },
+  momentum: {
+    factors: [["momentum12m", 10, 200], ["momentum6m", 5, 100]],
+    filters: ["strat-exclude-loss-annual"],
+  },
+  blend: {
+    factors: [["per", 0, 25], ["pbr", 0, 5], ["roe", 12, 80], ["opm", 8, 60]],
+    filters: ["strat-exclude-financial", "strat-exclude-loss-annual"],
+  },
+};
+
+function applyStrategyPreset(name) {
+  const preset = STRAT_PRESETS[name];
+  if (!preset) return;
+  [...addedFactors].forEach(removeFactorRow);
+  preset.factors.forEach(([key, min, max]) => {
+    addFactorRow(key);
+    const toggle = document.querySelector(`[data-mode-toggle="${key}"]`);
+    if (toggle) toggle.checked = false;
+    document.querySelector(`[data-range-min="${key}"]`).value = String(min);
+    document.querySelector(`[data-range-max="${key}"]`).value = String(max);
+    const suffix = document.querySelector(`[data-suffix="${key}"]`);
+    if (suffix) suffix.textContent = (FACTOR_META[key] || {}).suffix || "";
+  });
+  renderFactorAddOptions();
+  document.querySelectorAll(".strat-gen-filter").forEach((el) => { el.checked = preset.filters.includes(el.id); });
+  const all = document.getElementById("strat-select-all-filters");
+  if (all) all.checked = [...document.querySelectorAll(".strat-gen-filter")].every((f) => f.checked);
+  document.getElementById("strat-factor-error").hidden = true;
+  document.querySelectorAll(".strat-preset").forEach((b) => b.classList.toggle("active", b.dataset.preset === name));
+}
+
+function initStrategyPresets() {
+  document.querySelectorAll(".strat-preset").forEach((b) => {
+    b.addEventListener("click", () => applyStrategyPreset(b.dataset.preset));
+  });
+}
+
+/* 백테스트 결과는 퀀트 결과처럼 같은 화면 아래에 바로 보여주고(iframe), 새 창으로도 열 수 있다 */
+function showStrategyResult(url) {
+  const card = document.getElementById("strat-result-embed");
+  const frame = document.getElementById("strat-result-frame");
+  const link = document.getElementById("strat-result-open-link");
+  if (!card || !frame) {
+    window.open(url, "_blank");
+    return;
+  }
+  link.href = url;
+  card.hidden = false;
+  frame.style.height = "420px";
+  frame.src = url + "&embed=1";
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 document.addEventListener("DOMContentLoaded", initStrategyLab);

@@ -1208,7 +1208,8 @@ window.addEventListener("message", (e) => {
   if (e.origin !== window.location.origin) return;
   const d = e.data;
   if (!d || d.type !== "quant-result-height") return;
-  const frame = document.getElementById("result-frame");
+  // 자산배분 결과와 종목 전략 결과가 같은 메시지를 쓰므로, 보낸 창(e.source)에 맞는 iframe을 고른다
+  const frame = ["result-frame", "strat-result-frame"].map((id) => document.getElementById(id)).find((f) => f && f.contentWindow === e.source);
   if (frame && Number.isFinite(d.height)) frame.style.height = Math.max(240, Math.ceil(d.height)) + "px";
 });
 

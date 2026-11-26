@@ -15,7 +15,8 @@
 param(
   [int]$Limit = 0,       # 0이면 전체, 테스트 시 예: 10
   [int]$StartIndex = 0,
-  [switch]$SkipMerge     # 수집만 하고 최종 병합은 나중에 별도로 하고 싶을 때
+  [switch]$SkipMerge,     # 수집만 하고 최종 병합은 나중에 별도로 하고 싶을 때
+  [datetime]$FreshAfter = [datetime]::MinValue  # 이 시각 이후에 저장된 청크만 최신으로 보고 건너뜀 (예: "2026-11-26 22:00"). 기본은 청크가 있으면 전부 건너뜀
 )
 
 $ErrorActionPreference = "Continue"
@@ -45,6 +46,9 @@ $conceptMap = [ordered]@{
   shares      = @("CommonStockSharesOutstanding")
 }
 $sharesDeiConcept = "EntityCommonStockSharesOutstanding"
+# 보통주가 여러 종류(예: FOX/FOXA, GOOGL/GOOG)면 표지(dei) 주식수가 종류별로 나뉘어 총합이 비는 경우가 있어,
+# 손익계산서의 가중평균 주식수(종류 합계)를 보완값(sharesAlt)으로 함께 저장한다
+$sharesAltConcepts = @("WeightedAverageNumberOfDilutedSharesOutstanding", "WeightedAverageNumberOfSharesOutstandingBasic")
 
 # companyfacts는 회사별 커스텀 XBRL 태그에 대소문자만 다른 키(예: Segment/segment)가 섞여 있어
 # ConvertFrom-Json(대소문자 구분 안 함)이 충돌로 죽는다. System.Web.Extensions의
@@ -60,13 +64,13 @@ $serializer.RecursionLimit = 2000
 # (10-Q 마감 45일, 10-K 마감 60~90일 기준으로 120일이면 정상 지연 제출까지 충분히 커버됨).
 $maxFilingLagDays = 120
 
-function Get-DurationFacts($usGaap, $names) {
+function Get-DurationFacts($usGaap, $names, $unit = 'USD') {
   # 분기(약 80~100일) 단일 구간 값만 추출, end일자 기준으로 최초 공시(filed 가장 이른 것)만 채택
   foreach ($name in $names) {
     if (-not $usGaap.ContainsKey($name)) { continue }
     $unitsWrap = $usGaap[$name]['units']
-    if (-not $unitsWrap.ContainsKey('USD')) { continue }
-    $units = $unitsWrap['USD']
+    if (-not $unitsWrap.ContainsKey($unit)) { continue }
+    $units = $unitsWrap[$unit]
     $byEnd = @{}
     foreach ($u in $units) {
       if (-not $u.ContainsKey('start') -or -not $u.ContainsKey('end')) { continue }
@@ -168,7 +172,7 @@ $skipped = 0
 foreach ($ticker in $usTickers) {
   $i++
   $chunkPath = Join-Path $chunksDir "$ticker.json"
-  if (Test-Path $chunkPath) { $skipped++; continue }
+  if ((Test-Path $chunkPath) -and ((Get-Item $chunkPath).LastWriteTime -ge $FreshAfter)) { $skipped++; continue }
   if ($i % 10 -eq 0) { Write-Host "  진행: $i / $($usTickers.Count) (이번 실행 신규 $($i - $skipped)개, 기존 보유 $skipped 개)" }
   $cik = $cikByTicker[$ticker]
   if (-not $cik) {
@@ -194,11 +198,13 @@ foreach ($ticker in $usTickers) {
     foreach ($key in $durationKeys) { $extracted[$key] = Get-DurationFacts $usGaap $conceptMap[$key] }
     foreach ($key in $instantKeys) { $extracted[$key] = Get-InstantFacts $usGaap $conceptMap[$key] }
     $sharesFacts = if ($facts.ContainsKey('dei')) { Get-SharesFacts $facts['dei'] } else { @{} }
+    $sharesAltFacts = Get-DurationFacts $usGaap $sharesAltConcepts 'shares'
 
     # end 날짜 전체 합집합을 기준으로 분기별 레코드 구성
     $allEnds = New-Object System.Collections.Generic.HashSet[string]
     foreach ($key in $extracted.Keys) { foreach ($e in $extracted[$key].Keys) { [void]$allEnds.Add($e) } }
     foreach ($e in $sharesFacts.Keys) { [void]$allEnds.Add($e) }
+    foreach ($e in $sharesAltFacts.Keys) { [void]$allEnds.Add($e) }
 
     $quarters = New-Object System.Collections.Generic.List[object]
     foreach ($end in ($allEnds | Sort-Object)) {
@@ -213,6 +219,10 @@ foreach ($ticker in $usTickers) {
       if ($sharesFacts.ContainsKey($end)) {
         $rec["shares"] = [math]::Round([double]$sharesFacts[$end]['val'])
         $filedCandidates += [datetime]$sharesFacts[$end]['filed']
+      }
+      if ($sharesAltFacts.ContainsKey($end)) {
+        $rec["sharesAlt"] = [math]::Round([double]$sharesAltFacts[$end]['val'])
+        $filedCandidates += [datetime]$sharesAltFacts[$end]['filed']
       }
       if ($filedCandidates.Count -eq 0) { continue }
       $rec["filed"] = ($filedCandidates | Sort-Object -Descending | Select-Object -First 1).ToString("yyyy-MM-dd")
@@ -230,6 +240,24 @@ foreach ($ticker in $usTickers) {
       cik      = $cik
       quarters = $quarters
       prices   = $prices
+    }
+    # 회사 정보(이름, 업종 코드, 소재 국가): SEC submissions API는 회사당 가벼운 요청이다.
+    # 이게 있어야 업종 표시와 '금융주/중국기업/지주사/PTP 제외' 필터가 동작한다.
+    try {
+      Start-Sleep -Milliseconds 250
+      $subResp = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik.json" -Headers $secHeaders -UseBasicParsing -TimeoutSec 20
+      $sub = $serializer.DeserializeObject($subResp.Content)
+      $stockRecord['name'] = $sub['name']
+      $stockRecord['sic'] = $sub['sic']
+      $stockRecord['sicDesc'] = $sub['sicDescription']
+      $stockRecord['ownerOrg'] = $sub['ownerOrg']
+      $biz = $sub['addresses']['business']
+      if ($biz) {
+        $stockRecord['isForeign'] = $biz['isForeignLocation']
+        $stockRecord['country'] = if ($biz['country']) { $biz['country'] } else { $biz['stateOrCountryDescription'] }
+      }
+    } catch {
+      Write-Host "  경고: $ticker 회사 정보 조회 실패 - $($_.Exception.Message)"
     }
     # 이 티커만 담긴 작은 파일이라 대소문자 충돌 걱정 없이 표준 ConvertTo-Json으로 안전하게 저장
     $chunkJson = $stockRecord | ConvertTo-Json -Compress -Depth 6

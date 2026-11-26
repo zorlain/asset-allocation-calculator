@@ -51,6 +51,11 @@ function fmtPct(x, digits = 1) {
   return `${sign}${(x * 100).toFixed(digits)}%`;
 }
 
+function fmtPlainPct(x, digits = 1) {
+  if (x === null || x === undefined || !Number.isFinite(x)) return "-";
+  return `${(x * 100).toFixed(digits)}%`;
+}
+
 function fmtUsd(x) {
   if (x === null || x === undefined || !Number.isFinite(x)) return "-";
   return `$${Math.round(x).toLocaleString("en-US")}`;
@@ -69,7 +74,13 @@ function computeSpyBenchmark(startDate, endDate, initialAmount) {
   const finalValue = initialAmount * (p1 / p0);
   const years = (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24 * 365.25);
   const cagr = years > 0 ? Math.pow(finalValue / initialAmount, 1 / years) - 1 : 0;
-  return { finalValue, totalReturn: finalValue / initialAmount - 1, cagr };
+  return {
+    finalValue,
+    totalReturn: finalValue / initialAmount - 1,
+    cagr,
+    startDate,
+    priceOf: (date) => byMonth.get(String(date).slice(0, 7)) || null,
+  };
 }
 
 let growthChart = null;
@@ -97,8 +108,12 @@ function renderGrowthChart(bt, spyBench) {
 
   if (spyBench) {
     const n = bt.valuesFlat.length;
+    const p0 = spyBench.priceOf(spyBench.startDate);
     const spySeries = Array.from({ length: n }, (_, i) => {
-      const t = i / (n - 1);
+      const date = i === 0 ? spyBench.startDate : bt.dates[i - 1];
+      const p = date ? spyBench.priceOf(date) : null;
+      if (p0 && p) return bt.initialAmount * (p / p0); // S&P500을 같은 날짜들에 실제로 들고 있었을 때의 경로
+      const t = i / (n - 1); // 그 달 가격이 없으면 양 끝을 잇는 선으로 대신한다
       return bt.initialAmount * Math.pow(spyBench.finalValue / bt.initialAmount, t);
     });
     datasets.push({
@@ -240,9 +255,9 @@ async function runFromParams() {
       <div class="result-stat"><div class="result-stat-label">총수익률</div><div class="result-stat-value ${metrics.totalReturn >= 0 ? "positive" : "negative"}">${fmtPct(metrics.totalReturn)}</div></div>
       <div class="result-stat"><div class="result-stat-label">연평균(CAGR)</div><div class="result-stat-value ${metrics.cagr >= 0 ? "positive" : "negative"}">${fmtPct(metrics.cagr)}</div></div>
       <div class="result-stat"><div class="result-stat-label">최대낙폭(MDD)</div><div class="result-stat-value negative">${fmtPct(metrics.maxDD)}</div></div>
-      <div class="result-stat"><div class="result-stat-label">변동성</div><div class="result-stat-value">${fmtPct(metrics.vol)}</div></div>
+      <div class="result-stat"><div class="result-stat-label">변동성</div><div class="result-stat-value">${fmtPlainPct(metrics.vol)}</div></div>
       <div class="result-stat"><div class="result-stat-label">샤프비율</div><div class="result-stat-value">${metrics.sharpe === null ? "-" : metrics.sharpe.toFixed(2)}</div></div>
-      <div class="result-stat"><div class="result-stat-label">리밸런싱 승률</div><div class="result-stat-value">${fmtPct(metrics.winRate, 0)}</div></div>
+      <div class="result-stat"><div class="result-stat-label">리밸런싱 승률</div><div class="result-stat-value">${fmtPlainPct(metrics.winRate, 0)}</div></div>
       ${spyBench ? `
       <div class="result-stat"><div class="result-stat-label">S&amp;P500 매수보유 CAGR</div><div class="result-stat-value">${fmtPct(spyBench.cagr)}</div></div>
       <div class="result-stat"><div class="result-stat-label">S&amp;P500 대비 초과 CAGR</div><div class="result-stat-value ${metrics.cagr - spyBench.cagr >= 0 ? "positive" : "negative"}">${fmtPct(metrics.cagr - spyBench.cagr)}</div></div>
@@ -261,6 +276,8 @@ async function runFromParams() {
       일반 필터: ${filterSummary}<br />
       종목 수 상위 ${options.topN}개 · 리밸런싱 주기 ${options.rebalanceMonths}개월 · 거래 수수료 ${options.txFeePct}%
     </p>
+
+    <p class="factor-caveat"><b>읽을 때 주의하세요.</b> 대상 종목이 지금 상장돼 있는 대형주라서 과거에 상장폐지되거나 합병으로 사라진 종목이 빠져 있습니다(생존편향). 그래서 실제로 그 시점에 이 전략을 썼을 때보다 결과가 좋게 나오는 경향이 있습니다. 배당과 세금, 거래 체결 오차(슬리피지)는 반영하지 않았고 월말 종가 기준입니다. 재무 수치는 공시된 날 이후에만 쓰도록 맞췄습니다.</p>
 
     <p class="subsection-label" style="margin-top:28px;">리밸런싱별 성과</p>
     <div class="asset-table-wrap">
@@ -283,4 +300,20 @@ async function runFromParams() {
   renderDdChart(bt);
 }
 
-document.addEventListener("DOMContentLoaded", runFromParams);
+/* 메인 페이지 안의 프레임(embed=1)으로 열렸을 때: 머리말·바닥글을 숨기고 내용 높이를 부모에게 알린다 */
+function initEmbedMode() {
+  if (new URLSearchParams(window.location.search).get("embed") !== "1") return;
+  document.documentElement.classList.add("embedded");
+  const send = () => {
+    const h = Math.ceil(document.body.getBoundingClientRect().height);
+    window.parent.postMessage({ type: "quant-result-height", height: h }, window.location.origin);
+  };
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(send).observe(document.body);
+  window.addEventListener("load", send);
+  setTimeout(send, 400);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initEmbedMode();
+  runFromParams();
+});

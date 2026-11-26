@@ -2085,7 +2085,8 @@ body {
 .result-embed-link:hover {
   text-decoration: underline;
 }
-#result-frame {
+#result-frame,
+#strat-result-frame {
   display: block;
   width: 100%;
   min-height: 360px;
@@ -2177,4 +2178,50 @@ html.embedded .card > h2 {
   .kpi-tile {
     padding: 16px;
   }
+}
+
+/* 종목 전략: 빠른 시작 프리셋, 결과 안내 */
+.strat-preset-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+.strat-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.strat-preset:hover {
+  border-color: var(--accent);
+}
+.strat-preset.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.strat-preset-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+.strat-preset-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.factor-caveat {
+  margin: 22px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--card-elevated);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
 }

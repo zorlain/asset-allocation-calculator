@@ -229,11 +229,23 @@ function betaAsOf(prices, asOfDate, months = 24) {
   return varSpy > 0 ? cov / varSpy : null;
 }
 
+/* 주식 수: 공시 표지(shares)와 손익계산서 가중평균 주식수(sharesAlt)를 함께 본다.
+   보통주가 여러 종류인 회사는 표지 값이 한 종류만 담겨 터무니없이 작게 나오는 일이 있어서,
+   두 값이 모두 있고 표지 값이 가중평균의 절반에도 못 미치면 가중평균(전체 종류 합계)을 쓴다. */
+function sharesAsOf(quarters, asOfDate) {
+  const dei = instantAsOf(quarters, "shares", asOfDate);
+  const alt = instantAsOf(quarters, "sharesAlt", asOfDate);
+  if (dei && alt) return dei < alt * 0.5 ? alt : dei;
+  return dei || alt || null;
+}
+
 /* ---------- 종목 하나의 asOfDate 시점 팩터 스냅샷 ---------- */
 function stockFactorSnapshot(ticker, stock, asOfDate) {
   const q = stock.quarters;
   const price = priceAsOf(stock.prices, asOfDate);
-  const shares = instantAsOf(q, "shares", asOfDate);
+  let shares = sharesAsOf(q, asOfDate);
+  // 시가총액이 100만 달러도 안 되면 주식 수를 잘못 읽은 것(한 종류만 읽힌 경우 등)으로 보고 비운다
+  if (shares && price !== null && price * shares < 1e6) shares = null;
   const equity = instantAsOf(q, "equity", asOfDate);
   const assets = instantAsOf(q, "assets", asOfDate);
   const liabilities = instantAsOf(q, "liabilities", asOfDate);
